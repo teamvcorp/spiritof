@@ -1,21 +1,29 @@
 @import "tailwindcss";
 
+@theme inline {
+  /* call as varible here */
+  --color-santa: var(--santa);
+  --color-berryPink: var(--berryPink);
+  --color-frostyBlue: var(--frostyBlue);
+  --color-blueberry: var(--blueberry);
+  --color-mint: var(--mint);
+  --color-evergreen: var(--evergreen);
+}
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Color go here  */
+  --santa: #ea1938;
+  --berryPink: #ff6295;
+  --frostyBlue: #49c5fc;
+  --blueberry: #0084b5;
+  --mint: #46d597;
+  --evergreen: #37776c;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+ 
+    
   }
 }
 

@@ -1,7 +1,13 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Geist, Geist_Mono, Paytone_One } from "next/font/google";
 import "./globals.css";
-
+import Header from "@/components/Header.server";
+import Providers from "@/components/Providers.client";
+const paytoneOne = Paytone_One({
+  variable: "--font-paytone-one",
+  subsets: ["latin"],
+  weight: "400",
+});
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
@@ -25,9 +31,12 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`${geistSans.variable} ${geistMono.variable} ${paytoneOne.variable} antialiased`}
       >
-        {children}
+        <Providers>
+          <Header />
+          {children}
+        </Providers>
       </body>
     </html>
   );
