@@ -25,7 +25,7 @@ export default function HeaderAuth() {
     e?.preventDefault();
     if (actionLoading) return;
     setActionLoading(true);
-    await signOut({ callbackUrl: "/" });
+    await signOut();
     setActionLoading(false);
   };
 

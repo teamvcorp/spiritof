@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono, Paytone_One } from "next/font/google";
 import "./globals.css";
 import Header from "@/components/Header.server";
+import Footer from "@/components/Footer";
 import Providers from "@/components/Providers.client";
 const paytoneOne = Paytone_One({
   variable: "--font-paytone-one",
@@ -36,6 +37,7 @@ export default function RootLayout({
         <Providers>
           <Header />
           {children}
+          <Footer />
         </Providers>
       </body>
     </html>

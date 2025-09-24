@@ -45,14 +45,14 @@ export default async function Header() {
                 className="bg-berryPink text-white transition"
                 type="button"
               >
-                About us
+                Kids Dashboard 
               </Button>
             <Button
                 
                 className="bg-frostyBlue text-white transition"
                 type="button"
               >
-                Meter
+                Parent Dashboard
               </Button>
             <Button
                
