@@ -57,6 +57,8 @@ export interface IParent {
 
     // settings
     giftSettings: GiftSettings;
+    pinIsSet: boolean;
+    pinCode?: string;
 
     // voting (per child per day)
     voteLedger: VoteLedger;

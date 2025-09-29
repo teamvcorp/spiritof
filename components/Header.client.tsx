@@ -51,7 +51,7 @@ export default function HeaderAuth() {
                 alt={session.user?.name ?? "User avatar"}
                 width={32}
                 height={32}
-                className="w-8 h-8 rounded-full"  
+                className="w-10 h-10 rounded-full"
               />
             ) : (
               <div className="w-full h-full flex items-center justify-center bg-gray-200 text-xs text-gray-700">
@@ -72,7 +72,7 @@ export default function HeaderAuth() {
           aria-label="Sign in with Google"
           title="Sign in with Google"
         >
-          <FcGoogle className="w-5 h-5" aria-hidden />
+          <FcGoogle className="w-10 h-10" aria-hidden />
         </Button>
       )}
     </div>

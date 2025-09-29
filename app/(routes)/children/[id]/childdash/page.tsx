@@ -44,12 +44,12 @@ const {id: childId} = await params;
   const magicPoints = child.neighborBalanceCents ?? 0;
 
   return (
-    <div className="min-h-screen bg-[linear-gradient(to_bottom,_#49c5fc_0%,_#49c5fc_50%,_#ea1938_50%,_#EA1938_100%)] pt-10">
-      <Container className="py-10 mb-10  text-center bg-white rounded-2xl text-white">
+    <div className="min-h-screen bg-[linear-gradient(to_bottom,_#49c5fc_0%,_#49c5fc_50%,_#ea1938_50%,_#EA1938_100%)] py-10">
+      <Container className="py-10  text-center bg-white rounded-2xl text-white sm:px-8">
         <h1 className='text-evergreen text-4xl uppercase font-bold'>Welcome back, {child.displayName}! </h1>
 
         <Cards className="mt-10 mb-10 ">
-          <Card className="flex flex-col justify-between p-6 text-center text-center bg-santa border-0 text-white">
+          <Card className="flex flex-col justify-between p-6 text-center text-center bg-santa border-0 text-white md:flex-row flex-wrap  md:gap-8 mx-0 md:mx-10">
             <h2 className=" text-2xl font-semibold">My Naughty Nice Meter</h2>
             <div className='flex justify-center gap-x-20 items-center'>
               <Image
@@ -156,7 +156,7 @@ const {id: childId} = await params;
           </Card>
         </Cards>
         <Link href="/parent/dashboard">
-          <Button className='bg-frostyBlue min-w-full mt-6'><MdOutlineGroup/> Parent Portal</Button>
+          <Button className='bg-frostyBlue max-w-full mt-6'><MdOutlineGroup/> Parent Portal</Button>
         </Link>
       </Container>
 

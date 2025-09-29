@@ -51,6 +51,8 @@ const ParentSchema = new Schema<IParent>(
 
         // settings
         giftSettings: { type: GiftSettingsSchema, default: () => ({}) },
+        pinIsSet: { type: Boolean, default: false },
+        pinCode: { type: String }, 
 
         // Map<childId,"YYYY-MM-DD"> for daily vote lockout
         voteLedger: { type: Map, of: String, default: () => new Map() },

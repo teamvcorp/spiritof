@@ -3,10 +3,10 @@ import type { IChild } from "@/types/childType";
 
 const NeighborLedgerEntrySchema = new Schema(
   {
-    type:    { type: String, enum: ["DONATION","REFUND","ADJUSTMENT"], required: true },
+    type: { type: String, enum: ["DONATION", "REFUND", "ADJUSTMENT"], required: true },
     amountCents: { type: Number, required: true },
     currency: { type: String, enum: ["usd"], default: "usd" },
-    status:  { type: String, enum: ["PENDING","SUCCEEDED","FAILED"], default: "PENDING" },
+    status: { type: String, enum: ["PENDING", "SUCCEEDED", "FAILED"], default: "PENDING" },
 
     stripePaymentIntentId: { type: String },
     stripeCheckoutSessionId: { type: String },
@@ -40,7 +40,11 @@ const ChildSchema = new Schema<IChild>(
   },
   { timestamps: true }
 );
-
+ChildSchema.virtual("gifts", {
+  ref: "Gift",
+  localField: "_id",
+  foreignField: "childId",
+});
 /** Tiny methods */
 ChildSchema.methods.recomputeNeighborBalance = function (this: HydratedDocument<IChild>) {
   const total = (this.neighborLedger ?? []).reduce<number>(

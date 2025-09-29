@@ -3,71 +3,66 @@ import React from "react";
 import dynamic from "next/dynamic";
 import Button from "./ui/Button";
 import Image from "next/image";
+import Link from "next/link";
 // Load the client auth controls only on the client to avoid hydration issues
 const HeaderAuth = dynamic(() => import("./Header.client"));
 
 export default async function Header() {
 
-
   return (
     <header className="p-4 bg-white shadow-sm">
       <div className="grid gap-3">
         {/* Row 1: icon + company name */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-4">
         <Image
           src="/images/logo.svg"
           alt="Spirit of Santa"
-          width={40}
-          height={40}
+          width={70}
+          height={70}
+         
         />
           <Image
           src="/images/logoTxt.svg"
           alt="Spirit of Santa"
-          width={500}
-          height={50}
+          width={450}
+          height={60}
         />
         </div>
-
+   
         {/* Row 2 */}
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-center">
           {/* Left: 5 evenly spaced rounded buttons */}
-          <div className="grid grid-cols-5 gap-3 flex-1">
+          <div className="flex gap-6 justify-between">
          
-            <Button
-                
-                className="bg-santa text-white transition"
+            <Link
+            href="/"
+                className="link-btn bg-santa"
                 type="button"
               >
                 Home
-              </Button>
-            <Button
-                
-                className="bg-berryPink text-white transition"
-                type="button"
+              </Link>
+            <Link
+            href="/children"
+                className="bg-berryPink link-btn"
+                type="Link"
               >
                 Kids Dashboard 
-              </Button>
-            <Button
-                
-                className="bg-frostyBlue text-white transition"
-                type="button"
+              </Link>
+            <Link
+                href="/parent/dashboard"
+                className="bg-frostyBlue link-btn"
+                type="Link"
               >
                 Parent Dashboard
-              </Button>
-            <Button
-               
-                className=" bg-blueberry text-white transition"
-                type="button"
+              </Link>
+            <Link
+               href="/children/list"
+                className=" bg-blueberry link-btn"
+                type="Link"
               >
                 The List
-              </Button>
-            <Button
-                
-                className="bg-mint text-white transition"
-                type="button"
-              >
-                Magic Points
-              </Button>
+              </Link>
+         
           </div>
 
           {/* Right: user avatar + auth controls */}
