@@ -24,7 +24,7 @@ async function submitOnboarding(formData: FormData) {
   const user = await User.findById(session.user.id);
   if (!user) redirect("/login");
 
-  const isParent = String(formData.get("isParent") ?? "") === "on";
+  const isParent = true // All users are parents;
   const magicBudgetCents = parseDollarToCents(formData.get("magicBudget"));
   const minGifts = parseIntField(formData.get("minGifts"), 1);
   const maxGifts = parseIntField(formData.get("maxGifts"), 5);
@@ -74,10 +74,7 @@ export default async function OnboardingPage() {
       </header>
 
       <form action={submitOnboarding} className="space-y-4 rounded-lg border p-4">
-        <div className="flex items-center gap-2">
-          <input id="isParent" name="isParent" type="checkbox" className="h-4 w-4" />
-          <label htmlFor="isParent" className="text-sm">I am a parent/guardian</label>
-        </div>
+      
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div className="flex flex-col gap-1">
@@ -119,9 +116,9 @@ export default async function OnboardingPage() {
           </div>
         </div>
 
-        <div className="flex items-center justify-between pt-2">
+        <div className="flex items-center justify-center pt-2">
           <button type="submit" className="inline-flex items-center rounded-md bg-primary px-3 py-2 text-sm font-medium text-primary-foreground hover:opacity-90">Continue</button>
-          <button formAction={submitOnboarding} name="isParent" value="" className="text-sm underline">Skip (I’m not a parent)</button>
+          
         </div>
       </form>
     </main>

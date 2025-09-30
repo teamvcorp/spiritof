@@ -46,7 +46,19 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: true, parentId: user.parentId.toString() });
   }
 
-  const parent = await Parent.create({
+  // Check if a parent with this email already exists
+  let parent = await Parent.findOne({ email: user.email });
+  
+  if (parent) {
+    // Parent already exists, just link this user to it
+    user.parentId = new Types.ObjectId(parent._id.toString());
+    user.isParentOnboarded = true;
+    await user.save();
+    return NextResponse.json({ ok: true, parentId: parent._id.toString() });
+  }
+
+  // Create new parent
+  parent = await Parent.create({
     userId: user._id,
     name: user.name ?? "",
     email: user.email,
