@@ -3,9 +3,9 @@ import Container from "@/components/ui/Container";
 import { Cards, Card } from "@/components/ui/Card";
 import Button from "@/components/ui/Button";
 import { FaArrowAltCircleRight } from "react-icons/fa";
+import Link from "next/link";
 
 import { auth } from "@/auth";
-import { redirect } from "next/navigation";
 
 
 
@@ -16,12 +16,37 @@ export default async function Home() {
   
   const session = await auth();
 
-  // If you want a logged-out landing page instead, just render it here
-
-
-  if (session && !session?.isParentOnboarded) {
-    redirect("/onboarding");
-  }
+  // Determine the appropriate call-to-action based on user state
+  const getCallToAction = () => {
+    if (!session) {
+      // Not logged in - show login button
+      return (
+        <Link href="/api/auth/signin">
+          <Button className='bg-santa uppercase text-white mt-2 self-center md:self-start'>
+            Login to Get Started<FaArrowAltCircleRight/>
+          </Button>
+        </Link>
+      );
+    } else if (!session.isParentOnboarded) {
+      // Logged in but needs onboarding
+      return (
+        <Link href="/onboarding">
+          <Button className='bg-santa uppercase text-white mt-2 self-center md:self-start'>
+            Complete Setup<FaArrowAltCircleRight/>
+          </Button>
+        </Link>
+      );
+    } else {
+      // Fully set up - go to dashboard
+      return (
+        <Link href="/parent/dashboard">
+          <Button className='bg-santa uppercase text-white mt-2 self-center md:self-start'>
+            Go to Dashboard<FaArrowAltCircleRight/>
+          </Button>
+        </Link>
+      );
+    }
+  };
   return (<>
     
     <div className="min-h-[100dvh] bg-[linear-gradient(to_bottom,_#37776c_0%,_#37776c_33%,_#EA1938_33%,_#EA1938_66%,_#0084B5_66%,_#0084B5_100%)] py-10 px-6 sm:px-8 md:px-0">
@@ -35,7 +60,7 @@ export default async function Home() {
             it’s time to dream big! Make your very own Christmas list for Santa himself. Be kind and spread holiday cheer to collect Christmas magic that you can use to unlock FREE 
             stuff! It’s the most magical way to celebrate Christmas because who doesn’t love a little extra holiday magic?
             </p>
-            <Button className='bg-santa uppercase text-white mt-2 self-center md:self-start'>Get Started<FaArrowAltCircleRight/></Button>
+            {getCallToAction()}
             </div>
             <div className="min-w-0 shrink w-40 sm:w-56 md:w-full md:max-w-[300px]">
                <Image
