@@ -17,27 +17,27 @@ function cn(...classes: Array<string | undefined | false | null>) {
 
 const defaultColumns: FooterColumn[] = [
   {
-    title: "Product",
+    title: "Platform",
     links: [
-      { label: "Features", href: "/#features" },
-      { label: "Pricing", href: "/pricing" },
-      { label: "Docs", href: "/docs" },
+      { label: "Christmas Lists", href: "/children/list" },
+      { label: "Magic Meter", href: "/children" },
+      { label: "Parent Dashboard", href: "/parent/dashboard" },
     ],
   },
   {
     title: "Company",
     links: [
-      { label: "About", href: "/about" },
-      { label: "Careers", href: "/careers" },
-      { label: "Blog", href: "/blog" },
+      { label: "About", href: "/#about" },
+      { label: "How It Works", href: "/#features" },
+      { label: "Contact", href: "/contact" },
     ],
   },
   {
-    title: "Support",
+    title: "Legal",
     links: [
-      { label: "Help Center", href: "/help" },
-      { label: "Contact", href: "/contact" },
-      { label: "Status", href: "/status" },
+      { label: "Privacy Policy", href: "/privacy" },
+      { label: "Terms of Service", href: "/terms" },
+      { label: "COPPA Compliance", href: "/privacy#coppa" },
     ],
   },
 ];
@@ -87,8 +87,8 @@ export default function Footer({
             © {year} {brandName}. All rights reserved.
           </div>
           <div className="flex flex-wrap gap-x-6 gap-y-2">
-            <a href="/legal/privacy" className="hover:text-fg">Privacy</a>
-            <a href="/legal/terms" className="hover:text-fg">Terms</a>
+            <a href="/privacy" className="hover:text-fg">Privacy Policy</a>
+            <a href="/terms" className="hover:text-fg">Terms of Service</a>
             <a href="/contact" className="hover:text-fg">Contact</a>
             {finePrint}
           </div>

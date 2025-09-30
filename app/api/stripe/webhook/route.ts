@@ -23,21 +23,26 @@ export async function POST(req: NextRequest) {
   await dbConnect();
 
   try {
+    console.log(`🎯 Webhook received: ${event.type}`);
+    
     switch (event.type) {
       case 'checkout.session.completed':
+        console.log(`💳 Processing checkout completed`);
         await handleCheckoutCompleted(event.data.object as Stripe.Checkout.Session);
         break;
       
       case 'payment_intent.succeeded':
+        console.log(`✅ Processing payment succeeded`);
         await handlePaymentSucceeded(event.data.object as Stripe.PaymentIntent);
         break;
       
       case 'payment_intent.payment_failed':
+        console.log(`❌ Processing payment failed`);
         await handlePaymentFailed(event.data.object as Stripe.PaymentIntent);
         break;
       
       default:
-        console.log(`Unhandled event type: ${event.type}`);
+        console.log(`🤷 Unhandled event type: ${event.type}`);
     }
 
     return NextResponse.json({ received: true });
@@ -64,10 +69,20 @@ async function handleWalletTopup(session: Stripe.Checkout.Session) {
   const parentId = metadata?.parentId;
   const amount = parseInt(metadata?.amount || '0');
   
-  if (!parentId || !amount) return;
+  console.log(`🎁 Webhook: Processing wallet topup - Parent: ${parentId}, Amount: $${amount / 100}, Session: ${session.id}`);
+  
+  if (!parentId || !amount) {
+    console.log(`❌ Webhook: Missing parentId (${parentId}) or amount (${amount})`);
+    return;
+  }
 
   const parent = await Parent.findById(parentId);
-  if (!parent) return;
+  if (!parent) {
+    console.log(`❌ Webhook: Parent not found: ${parentId}`);
+    return;
+  }
+
+  console.log(`📊 Webhook: Parent found, wallet ledger has ${parent.walletLedger?.length || 0} entries`);
 
   // Find the pending ledger entry and mark as succeeded
   const pendingEntry = parent.walletLedger.find(
@@ -75,15 +90,27 @@ async function handleWalletTopup(session: Stripe.Checkout.Session) {
   );
 
   if (pendingEntry) {
+    console.log(`✅ Webhook: Found pending entry, updating to SUCCEEDED`);
     (pendingEntry as { status: string; stripePaymentIntentId?: string }).status = 'SUCCEEDED';
     (pendingEntry as { status: string; stripePaymentIntentId?: string }).stripePaymentIntentId = session.payment_intent as string;
     
     // Recompute wallet balance
-    const parentDoc = parent as unknown as { recomputeWalletBalance: () => Promise<void> };
-    await parentDoc.recomputeWalletBalance();
+    const oldBalance = parent.walletBalanceCents;
+    parent.recomputeWalletBalance();
+    const newBalance = parent.walletBalanceCents;
+    
+    console.log(`💰 Webhook: Balance updated from $${oldBalance / 100} to $${newBalance / 100}`);
+    
     await parent.save();
     
-    console.log(`Wallet topped up: Parent ${parentId}, Amount: $${amount / 100}`);
+    console.log(`🎉 Webhook: Wallet topped up successfully - Parent ${parentId}, Amount: $${amount / 100}`);
+  } else {
+    console.log(`❌ Webhook: No pending entry found for session ${session.id}`);
+    console.log(`📋 Webhook: Available entries:`, parent.walletLedger.map((e: { stripeCheckoutSessionId?: string; status: string; amountCents: number }) => ({ 
+      sessionId: e.stripeCheckoutSessionId, 
+      status: e.status,
+      amount: e.amountCents 
+    })));
   }
 }
 
@@ -116,8 +143,7 @@ async function handleDonation(session: Stripe.Checkout.Session) {
     child.donorTotals.totalCents += amount;
     
     // Recompute neighbor balance
-    const childDoc = child as unknown as { recomputeNeighborBalance: () => Promise<void> };
-    await childDoc.recomputeNeighborBalance();
+    child.recomputeNeighborBalance();
     await child.save();
     
     console.log(`Donation processed: Child ${childId}, Amount: $${amount / 100}, Magic: +${magicPointsToAdd}`);

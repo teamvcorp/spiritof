@@ -1,5 +1,5 @@
 import { Schema, model, models, Types, type Model, type HydratedDocument } from "mongoose";
-import type { IChild } from "@/types/childType";
+import type { IChild, ChildMethods } from "@/types/childType";
 
 const NeighborLedgerEntrySchema = new Schema(
   {
@@ -17,8 +17,8 @@ const NeighborLedgerEntrySchema = new Schema(
   },
   { _id: true, timestamps: true }
 );
-export type ChildDoc = HydratedDocument<IChild>;
-export type ChildModel = Model<IChild>;
+export type ChildDoc = HydratedDocument<IChild> & ChildMethods;
+export type ChildModel = Model<IChild, object, ChildMethods>;
 const ChildSchema = new Schema<IChild>(
   {
     parentId: { type: Types.ObjectId, ref: "Parent", required: true, index: true },

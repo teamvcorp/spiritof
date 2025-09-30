@@ -18,6 +18,11 @@ export interface NeighborLedgerEntry {
   updatedAt?: Date;
 }
 
+export interface ChildMethods {
+  recomputeNeighborBalance(): number;
+  addNeighborLedgerEntry(entry: Omit<NeighborLedgerEntry, "_id" | "createdAt" | "updatedAt" | "currency" | "status">): NeighborLedgerEntry;
+}
+
 export interface IChild {
   _id: ObjectId;
   parentId: ObjectId;

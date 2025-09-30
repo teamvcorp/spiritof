@@ -22,6 +22,9 @@ export type NewLedgerEntry = Omit<
 
 export interface ParentMethods {
     addLedgerEntry(entry: NewLedgerEntry): IParent["walletLedger"][number];
+    recomputeWalletBalance(): number;
+    canVoteToday(childId: string, todayISO: string): boolean;
+    recordVote(childId: string, todayISO: string): void;
 }
 
 export interface WalletLedgerEntry {

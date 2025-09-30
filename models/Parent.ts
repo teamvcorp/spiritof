@@ -1,6 +1,6 @@
 // /models/Parent.ts
 import { Schema, model, models, Types, type Model, type HydratedDocument } from "mongoose";
-import type { IParent, NewLedgerEntry } from "@/types/parentTypes";
+import type { IParent, NewLedgerEntry, ParentMethods } from "@/types/parentTypes";
 
 const GiftSettingsSchema = new Schema(
     {
@@ -24,8 +24,8 @@ const WalletLedgerEntrySchema = new Schema(
     },
     { _id: true, timestamps: true }
 );
-export type ParentDoc = HydratedDocument<IParent>;
-export type ParentModel = Model<IParent>;
+export type ParentDoc = HydratedDocument<IParent> & ParentMethods;
+export type ParentModel = Model<IParent, object, ParentMethods>;
 const ParentSchema = new Schema<IParent>(
     {
         name: { type: String, required: true, trim: true },

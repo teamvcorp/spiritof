@@ -1,0 +1,12 @@
+# Update these in your production environment (Vercel):
+
+# Domain URLs
+NEXTAUTH_URL=https://spiritofsanta.club
+AUTH_URL=https://spiritofsanta.club
+
+# Webhook secret (get from Stripe Dashboard after creating webhook)
+STRIPE_WEBHOOK_SECRET=whsec_xxxxxxxxxxxxxxxxxxxxx
+
+# Your success/cancel URLs will automatically be:
+# Success: https://spiritofsanta.club/parent/dashboard?payment=success&session_id={CHECKOUT_SESSION_ID}
+# Cancel:  https://spiritofsanta.club/parent/dashboard?payment=cancelled

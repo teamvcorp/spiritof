@@ -84,8 +84,7 @@ export async function POST(req: NextRequest) {
     });
 
     // Create pending ledger entry
-    const parentDoc = parent as unknown as { addWalletLedgerEntry: (entry: { type: string; amountCents: number; stripeCheckoutSessionId: string; status: string }) => void };
-    parentDoc.addWalletLedgerEntry({
+    parent.addLedgerEntry({
       type: "TOP_UP",
       amountCents: amount,
       stripeCheckoutSessionId: checkoutSession.id,
