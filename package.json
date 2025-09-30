@@ -6,17 +6,32 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "migrate:images": "node migrate-images.js migrate",
+    "migrate:stats": "node migrate-images.js stats",
+    "migrate:cron": "node cron-service.js",
+    "sync:catalog": "node sync-catalog-images.js sync",
+    "sync:stats": "node sync-catalog-images.js stats"
   },
   "dependencies": {
+    "@stripe/stripe-js": "^7.9.0",
+    "@types/lodash": "^4.17.20",
+    "@types/qrcode": "^1.5.5",
+    "@vercel/blob": "^2.0.0",
     "bcryptjs": "^3.0.2",
+    "lodash": "^4.17.21",
+    "lucide-react": "^0.544.0",
     "mongoose": "^8.18.1",
     "next": "15.5.3",
     "next-auth": "^5.0.0-beta.29",
+    "openai": "^6.0.0",
     "postcss": "^8.5.6",
+    "qrcode": "^1.5.4",
     "react": "19.1.0",
     "react-dom": "19.1.0",
     "react-icons": "^5.5.0",
+    "resend": "^6.1.1",
+    "stripe": "^18.5.0",
     "zod": "^4.1.11"
   },
   "devDependencies": {
@@ -25,8 +40,11 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "dotenv": "^17.2.3",
     "eslint": "^9",
     "eslint-config-next": "15.5.3",
+    "mongodb": "^6.20.0",
+    "node-fetch": "^3.3.2",
     "tailwindcss": "^4.1.13",
     "typescript": "^5"
   }

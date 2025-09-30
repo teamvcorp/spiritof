@@ -4,7 +4,7 @@ import Image from "next/image";
 import Container from "@/components/ui/Container";
 import { Cards, Card } from "@/components/ui/Card";
 import Button from "@/components/ui/Button";
-import { FaThumbsUp, FaEdit } from "react-icons/fa";
+import { FaThumbsUp, FaEdit, FaGift, FaPlus } from "react-icons/fa";
 import { ImMagicWand, ImEye, ImPieChart } from "react-icons/im";
 import { MdOutlineGroup } from "react-icons/md";
 
@@ -13,11 +13,18 @@ import { redirect } from "next/navigation";
 import { dbConnect } from "@/lib/db";
 import { Parent } from "@/models/Parent";
 import { Child } from "@/models/Child";
+import { Gift } from "@/models/Gift";
 import { Types } from "mongoose";
 import type { IParent } from "@/types/parentTypes";
 import type { IChild } from "@/types/childType";
 
 interface PageProps { params: Promise<{ id: string }> }
+
+// Helper function to extract price from gift notes
+function extractPriceFromNotes(notes: string): number {
+  const priceMatch = notes.match(/Price: \$(\d+(?:\.\d{2})?)/);
+  return priceMatch ? parseFloat(priceMatch[1]) : 0;
+}
 
 export default async function ChildDashPage({ params }: PageProps) {
 
@@ -40,38 +47,83 @@ const {id: childId} = await params;
     .lean<IChild | null>();
   if (!child) redirect("/children");
 
-  // Map your balance to whatever "Magic Points" represents in your design
-  const magicPoints = child.neighborBalanceCents ?? 0;
+  // Get child's gift list (basic wish list items)
+  const gifts = await Gift.find({ childId: child._id })
+    .sort({ createdAt: -1 })
+    .lean();
+
+  // Convert gifts to display format
+  const giftList = gifts.map(gift => ({
+    _id: gift._id,
+    title: gift.title,
+    imageUrl: gift.ids?.imageUrl,
+    price: extractPriceFromNotes(gift.notes || ''),
+    brand: gift.ids?.brand,
+    retailer: gift.ids?.retailer,
+  }));
+
+  // Calculate total gift list budget
+  const totalGiftBudget = giftList.reduce((sum, gift) => sum + (gift.price || 0), 0);
+
+  // Calculate magic points from neighbor donations (stored in cents) and parent votes (score365)
+  const neighborMagicPoints = Math.floor((child.neighborBalanceCents || 0) / 100);
+  const totalMagicPoints = (child.score365 || 0) + neighborMagicPoints;
+
+  // Calculate naughty/nice percentage
+  const nicenessPercentage = totalGiftBudget > 0 
+    ? Math.min(100, Math.round((totalMagicPoints / totalGiftBudget) * 100))
+    : totalMagicPoints > 0 ? 100 : 0;
+
+  // Get top 5 gifts for display
+  const topGifts = giftList.slice(0, 5);
 
   return (
-    <div className="min-h-screen bg-[linear-gradient(to_bottom,_#49c5fc_0%,_#49c5fc_50%,_#ea1938_50%,_#EA1938_100%)] py-10">
-      <Container className="py-10  text-center bg-white rounded-2xl text-white sm:px-8">
-        <h1 className='text-evergreen text-4xl uppercase font-bold'>Welcome back, {child.displayName}! </h1>
+    <div className="min-h-screen p-6 bg-[linear-gradient(to_bottom,_#ea1938_0%,_#ea1938_50%,_#49c5fc_50%,_#49c5fc_100%)] py-10">
+      <Container className="text-center bg-white rounded-2xl  sm:px-6 md:px-10">
+        <h1 className='text-evergreen text-2xl sm:text-3xl md:text-4xl uppercase font-bold pt-10'>Welcome back, {child.displayName}! </h1>
 
-        <Cards className="mt-10 mb-10 ">
-          <Card className="flex flex-col justify-between p-6 text-center text-center bg-santa border-0 text-white md:flex-row flex-wrap  md:gap-8 mx-0 md:mx-10">
-            <h2 className=" text-2xl font-semibold">My Naughty Nice Meter</h2>
-            <div className='flex justify-center gap-x-20 items-center'>
-              <Image
-                src="/images/meter.png"
-                alt="Naughty Nice Meter"
-                width={300}
-                height={300}
-                className="mx-auto"
-              />
-              <div className='flex flex-col justify-center items-center gap-y-6'>
-                <h2 className='text-xl'>Latest Vote</h2>
-                <FaThumbsUp size={40} />
+        <Cards className="mt-10 mb-10">
+          <Card className="flex flex-col justify-between p-6 text-center text-center bg-santa border-0 text-white md:flex-row flex-wrap ">
+          <div className="flex-1 space-y-2 md:items-start md:justify-center">
+            <h2 className="text-xl sm:text-2xl font-semibold">My Naughty Nice Meter</h2>
+            <p className="text-sm opacity-90">
+              {nicenessPercentage >= 80 
+                ? "You're being amazing! Santa is very impressed!" 
+                : nicenessPercentage >= 50 
+                ? "You're doing great! Keep up the good behavior."
+                : "Keep working on being good - you can do it!"}
+            </p>
+          </div>
+            <div className='flex w-full md:w-auto flex-col sm:flex-row items-center justify-center gap-6 sm:gap-10'>
+              <div className="relative">
+                <Image
+                  src="/images/meter.png"
+                  alt="Naughty Nice Meter"
+                  width={300}
+                  height={300}
+                   className="h-auto w-44 sm:w-56 md:w-72"
+                  sizes="(max-width: 640px) 11rem, (max-width: 768px) 14rem, 18rem"
+                  priority
+                />
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <div className="bg-white bg-opacity-90 rounded-full px-3 py-1">
+                    <span className="text-santa font-bold text-lg">{nicenessPercentage}% Nice</span>
+                  </div>
+                </div>
+              </div>
+              <div className='flex flex-col items-center gap-3 sm:gap-4'>
+                <h3 className='text-lg sm:text-xl'>Latest Vote</h3>
+                <FaThumbsUp className="shrink-0" size={36} />
                 <Link href={`/children/${String(child._id)}/child`}>
-                  <Button className='bg-evergreen min-w-40'><span><ImEye /></span>Details</Button>
+                  <Button className='bg-evergreen min-w-36 sm:min-w-40'><ImEye className="mr-2"  />Details</Button>
                 </Link>
               </div>
             </div>
           </Card>
 
-          <Card className="flex flex-col justify-between p-6 text-center bg-evergreen border-0 text-white">
+          <Card className="flex flex-col justify-between  text-center bg-evergreen border-0 text-white">
             <h2 className="text-2xl font-semibold">My Christmas Magic</h2>
-            <div className='flex justify-center gap-x-20 items-center'>
+            <div className='flex justify-center gap-x-20 items-center '>
               <Image
                 src="/images/christmasMagic.png"
                 alt="Spirit of Santa"
@@ -79,15 +131,20 @@ const {id: childId} = await params;
                 height={200}
                 className=""
               />
-              <div className='w-fit p-4 bg-white rounded-xl'>
-                <h2 className='text-santa text-xl'>You Have</h2>
-                <h2 className='text-evergreen font-bold text-2xl'>{magicPoints}</h2>
-                <h2 className='text-santa text-xl'>Magic Points</h2>
+              <div className=' w-fit p-4 bg-white rounded-xl'>
+                <h2 className='text-santa text-base sm:text-lg md:text-xl'>You Have</h2>
+                <h2 className='text-evergreen font-bold text-xl sm:text-2xl md:text-3xl'>{totalMagicPoints}</h2>
+                <h2 className='text-santa text-base sm:text-lg md:text-xl'>Magic Points</h2>
+                {neighborMagicPoints > 0 && (
+                  <div className="text-xs text-gray-600 mt-1">
+                    ({neighborMagicPoints} from neighbors + {child.score365 || 0} from good behavior)
+                  </div>
+                )}
               </div>
             </div>
             <div className='flex justify-center gap-x-10'>
-              <Link href={`/children/${String(child._id)}/add-magic`}>
-                <Button className='bg-santa min-w-40'><span><ImMagicWand /></span>Add Magic</Button>
+              <Link href={`/share/${child.shareSlug}`}>
+                <Button className='bg-santa min-w-40'><span><ImMagicWand /></span>Earn Magic</Button>
               </Link>
               <Link href={`/children/${String(child._id)}/magic`}>
                 <Button className='bg-santa min-w-40'><span><ImEye /></span>Details</Button>
@@ -99,64 +156,73 @@ const {id: childId} = await params;
         <Cards>
           <Card className="flex flex-col justify-between text-center bg-berryPink border-0 text-white">
             <h1 className="text-2xl font-semibold pb-6 ">My Christmas List</h1>
-            <div className=" bg-white rounded-xl pb-5">
-              <p className='text-evergreen text-lg font-bold my-6'>My Top 5</p>
-              <div className='flex justify-evenly py-6'>
-                <Image
-                  src="/images/airbrush.jpg"
-                  alt="marker airbrush set"
-                  width={150}
-                  height={150}
-                  className=""
-                />
-                <Image
-                  src="/images/panda.jpg"
-                  alt="Little live pets Panda"
-                  width={150}
-                  height={150}
-                  className=""
-                />
-                <Image
-                  src="/images/truck.jpg"
-                  alt="Sit in truck"
-                  height={100}
-                  width={200}
-                  className=""
-                />
-                <Image
-                  src="/images/mickey.jpg"
-                  alt="Mickey Mouse Club House play set"
-                  width={200}
-                  height={150}
-                  className=""
-                />
-                <Image
-                  src="/images/walle.jpg"
-                  alt="Walle and Eve lego set"
-                  width={200}
-                  height={150}
-                  className=""
-                />
-              </div>
-            </div>
-            <div className='flex justify-evenly items-start pt-6'>
-              <div className='flex flex-col items-center' >
-                <p className='text-xl '># of Gifts in List</p>
-                <p className='text-4xl font-bold'>23</p>
-              </div>
-              <div className='flex flex-col items-center' >
-                <p className='text-xl '>60% Earned</p>
-                <ImPieChart size={40} />
-              </div>
-
-              <Link href={`/children/${String(child._id)}/gifts`}>
-                <Button className='bg-santa min-w-40 '><FaEdit/> Edit List</Button>
-              </Link>
-            </div>
+            
+            {giftList.length > 0 ? (
+              <>
+                <div className=" bg-white rounded-xl pb-5">
+                  <p className='text-evergreen text-lg font-bold my-6'>My Top {Math.min(5, topGifts.length)}</p>
+                  <div className='flex justify-evenly py-6 flex-wrap gap-4'>
+                    {topGifts.map((gift) => (
+                      <div key={gift._id.toString()} className="flex flex-col items-center">
+                        <div className="relative w-32 h-32 sm:w-36 sm:h-36 rounded-lg overflow-hidden">
+                          {gift.imageUrl ? (
+                            <Image
+                              src={gift.imageUrl}
+                              alt={gift.title}
+                              fill
+                              className="object-cover"
+                            />
+                          ) : (
+                            <div className="w-full h-full bg-gray-200 flex items-center justify-center">
+                              <FaGift className="text-gray-400 text-2xl" />
+                            </div>
+                          )}
+                        </div>
+                        <div className="text-xs text-gray-600 mt-2 text-center max-w-32 truncate">
+                          {gift.title}
+                        </div>
+                        <div className="text-xs text-gray-500">${gift.price}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                <div className='flex justify-evenly items-start pt-6 flex-wrap'>
+                  <div className='flex flex-col items-center' >
+                    <p className='text-xl '># of Gifts in List</p>
+                    <p className='text-4xl font-bold'>{giftList.length}</p>
+                  </div>
+                  <div className='flex flex-col items-center' >
+                    <p className='text-xl '>{nicenessPercentage}% Earned</p>
+                    <ImPieChart size={40} />
+                  </div>
+                  <Link href="/children/list">
+                    <Button className='bg-santa min-w-40 '><FaEdit/> Edit List</Button>
+                  </Link>
+                </div>
+              </>
+            ) : (
+              <>
+                <div className=" bg-white rounded-xl pb-5">
+                  <div className='flex flex-col items-center justify-center py-12'>
+                    <FaGift className="text-gray-300 text-6xl mb-4" />
+                    <p className='text-evergreen text-lg font-bold mb-2'>No gifts yet!</p>
+                    <p className='text-gray-600 text-sm'>Start building your Christmas list</p>
+                  </div>
+                </div>
+                <div className='flex justify-center items-center pt-6'>
+                  <Link href="/children/list">
+                    <Button className='bg-santa min-w-40'>
+                      <FaPlus className="mr-2" />
+                      Add Your First Gift
+                    </Button>
+                  </Link>
+                </div>
+              </>
+            )}
           </Card>
         </Cards>
         <Link href="/parent/dashboard">
-          <Button className='bg-frostyBlue max-w-full mt-6'><MdOutlineGroup/> Parent Portal</Button>
+          <Button className='bg-frostyBlue max-w-full my-6 text-white'><MdOutlineGroup/> Parent Portal</Button>
         </Link>
       </Container>
 

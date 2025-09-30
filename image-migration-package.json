@@ -1,0 +1,14 @@
+{
+  "name": "image-migration-script",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "migrate-images": "node migrate-images.js"
+  },
+  "dependencies": {
+    "@vercel/blob": "^0.23.4",
+    "mongodb": "^6.3.0",
+    "dotenv": "^16.3.1",
+    "node-fetch": "^3.3.2"
+  }
+}

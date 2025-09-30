@@ -1,7 +1,7 @@
 // /app/api/onboarding/parent/route.ts
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { connectMongo } from "@/lib/db";
+import { dbConnect } from "@/lib/db";
 import { Parent } from "@/models/Parent";
 import { User } from "@/models/User";
 import { auth } from "@/auth"; // next-auth helper (v5) to read server session
@@ -28,7 +28,7 @@ export async function POST(req: Request) {
   }
   const { isParent, magicBudgetCents = 0, giftSettings } = parsed.data;
 
-  await connectMongo();
+  await dbConnect();
   const user = await User.findById(session.user.id);
   if (!user) return NextResponse.json({ error: "User not found" }, { status: 404 });
 

@@ -1,7 +1,6 @@
 // src/components/Header.server.tsx
 import React from "react";
 import dynamic from "next/dynamic";
-import Button from "./ui/Button";
 import Image from "next/image";
 import Link from "next/link";
 // Load the client auth controls only on the client to avoid hydration issues
@@ -13,12 +12,13 @@ export default async function Header() {
     <header className="p-4 bg-white shadow-sm">
       <div className="grid gap-3">
         {/* Row 1: icon + company name */}
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-4 ">
         <Image
           src="/images/logo.svg"
           alt="Spirit of Santa"
           width={70}
           height={70}
+          className="w-16 sm:w-12 md:w-16 h-auto"
          
         />
           <Image
@@ -26,6 +26,7 @@ export default async function Header() {
           alt="Spirit of Santa"
           width={450}
           height={60}
+          className="w-64 md:w-80 lg:w-100 h-auto"
         />
         </div>
    

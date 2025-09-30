@@ -10,7 +10,7 @@ export async function GET(req: NextRequest) {
 
   const q = (req.nextUrl.searchParams.get("q") || "").trim();
   const genderRaw = (req.nextUrl.searchParams.get("gender") || "").toLowerCase();
-  const gender = ["boy", "girl", "neutral"].includes(genderRaw) ? (genderRaw as any) : undefined;
+  const gender = ["boy", "girl", "neutral"].includes(genderRaw) ? (genderRaw as "boy" | "girl" | "neutral") : undefined;
 
   const age = Number(req.nextUrl.searchParams.get("age") || "");
   const minPrice = Number(req.nextUrl.searchParams.get("minPrice") || "");
@@ -18,7 +18,7 @@ export async function GET(req: NextRequest) {
   const cursor = Number(req.nextUrl.searchParams.get("cursor") || "0"); // offset
   const limit = Math.max(6, Math.min(48, Number(req.nextUrl.searchParams.get("limit") || "24")));
 
-  const $and: any[] = [];
+  const $and: Record<string, unknown>[] = [];
   if (gender) $and.push({ gender });
   if (!Number.isNaN(age)) {
     $and.push({
@@ -55,7 +55,7 @@ export async function GET(req: NextRequest) {
         },
       ],
     }).select("title gender price retailer productUrl imageUrl brand model category score")
-      .sort({ score: { $meta: "textScore" }, updatedAt: -1 } as any);
+      .sort({ score: { $meta: "textScore" }, updatedAt: -1 });
   } else {
     query = query.sort({ updatedAt: -1 });
   }

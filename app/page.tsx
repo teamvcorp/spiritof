@@ -24,7 +24,7 @@ export default async function Home() {
   }
   return (<>
     
-    <div className="min-h-[100dvh] bg-[linear-gradient(to_bottom,_#37776c_0%,_#37776c_33%,_#0084B5_33%,_#0084B5_66%,_#EA1938_66%,_#EA1938_100%)] py-10 px-6 sm:px-8 md:px-0">
+    <div className="min-h-[100dvh] bg-[linear-gradient(to_bottom,_#37776c_0%,_#37776c_33%,_#EA1938_33%,_#EA1938_66%,_#0084B5_66%,_#0084B5_100%)] py-10 px-6 sm:px-8 md:px-0">
       <div className="mx-4 sm:mx-6 md:mx-0">
       <Container className="py-10 mb-10 text-center bg-white rounded-2xl text-evergreen px-4 sm:px-8">
         <Cards> 
@@ -89,7 +89,7 @@ export default async function Home() {
             />
             </div>
             <h2 >Naughty Nice Meter</h2>
-            <p className="mt-2 ">You can check your naughty nice meter everyday to see if you got your nice point for the day. If not, no sweat, you can do better tomorrow, but don't forget Christmas is coming. </p>
+            <p className="mt-2 ">You can check your naughty nice meter everyday to see if you got your nice point for the day. If not, no sweat, you can do better tomorrow, but don&rsquo;t forget Christmas is coming. </p>
           </Card>
           <Card className="text-center bg-evergreen border-0 text-white p-6 md:p-8">
              <div className="min-w-0 w-32 sm:w-40 md:w-[300px] mx-auto">

@@ -1,0 +1,35 @@
+name: Monthly Image Migration
+
+on:
+  schedule:
+    - cron: '0 2 1 * *'  # 1st day of month, 2 AM UTC
+  workflow_dispatch:      # Allow manual trigger
+
+jobs:
+  migrate-images:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+        
+    - name: Install dependencies
+      run: npm install
+      
+    - name: Run image migration
+      run: node migrate-images.js migrate
+      env:
+        MONGODB_URI: ${{ secrets.MONGODB_URI }}
+        BLOB_READ_WRITE_TOKEN: ${{ secrets.BLOB_READ_WRITE_TOKEN }}
+        
+    - name: Get final statistics
+      run: node migrate-images.js stats
+      env:
+        MONGODB_URI: ${{ secrets.MONGODB_URI }}
+        BLOB_READ_WRITE_TOKEN: ${{ secrets.BLOB_READ_WRITE_TOKEN }}
