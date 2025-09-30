@@ -236,7 +236,7 @@ export async function getGiftImages() {
   
   // Get all gifts that have images
   const giftsWithImages = await Gift.find({
-    'ids.imageUrl': { $exists: true, $ne: null, $ne: '' }
+    'ids.imageUrl': { $exists: true, $nin: [null, ''] }
   }).select('title ids.imageUrl ids.productUrl').lean();
   
   // Create a map of title -> imageUrl for quick lookup
