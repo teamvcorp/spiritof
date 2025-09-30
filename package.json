@@ -15,6 +15,7 @@
   },
   "dependencies": {
     "@stripe/stripe-js": "^7.9.0",
+    "@types/bcryptjs": "^2.4.6",
     "@types/lodash": "^4.17.20",
     "@types/qrcode": "^1.5.5",
     "@vercel/blob": "^2.0.0",

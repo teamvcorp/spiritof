@@ -4,6 +4,7 @@ import Image from "next/image";
 import Container from "@/components/ui/Container";
 import { Cards, Card } from "@/components/ui/Card";
 import Button from "@/components/ui/Button";
+import NaughtyNiceMeter from "@/components/child/NaughtyNiceMeter";
 import { FaThumbsUp, FaEdit, FaGift, FaPlus } from "react-icons/fa";
 import { ImMagicWand, ImEye, ImPieChart } from "react-icons/im";
 import { MdOutlineGroup } from "react-icons/md";
@@ -96,20 +97,8 @@ const {id: childId} = await params;
           </div>
             <div className='flex w-full md:w-auto flex-col sm:flex-row items-center justify-center gap-6 sm:gap-10'>
               <div className="relative">
-                <Image
-                  src="/images/meter.png"
-                  alt="Naughty Nice Meter"
-                  width={300}
-                  height={300}
-                   className="h-auto w-44 sm:w-56 md:w-72"
-                  sizes="(max-width: 640px) 11rem, (max-width: 768px) 14rem, 18rem"
-                  priority
-                />
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <div className="bg-white bg-opacity-90 rounded-full px-3 py-1">
-                    <span className="text-santa font-bold text-lg">{nicenessPercentage}% Nice</span>
-                  </div>
-                </div>
+                {/* Animated Naughty Nice Meter */}
+                <NaughtyNiceMeter percentage={nicenessPercentage} />
               </div>
               <div className='flex flex-col items-center gap-3 sm:gap-4'>
                 <h3 className='text-lg sm:text-xl'>Latest Vote</h3>

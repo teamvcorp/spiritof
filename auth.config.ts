@@ -3,7 +3,6 @@ import type { JWT } from "next-auth/jwt";
 import Google from "next-auth/providers/google";
 import Credentials from "next-auth/providers/credentials";
 import { NextRequest, NextResponse } from "next/server";
-import { z } from "zod";
 import { ensureUser } from "@/lib/auth/ensureUser";
 import { User } from "@/models/User";
 import { dbConnect } from "@/lib/db";
@@ -68,10 +67,14 @@ export const authConfig = {
       user?: NextAuthUser | undefined;
       account?: Account | null | undefined;
     }): Promise<AppJWT> {
-      // On first Google login we ensure a DB user, then read flags from DB.
+      // On first login (Google OR Credentials) we ensure a DB user, then read flags from DB.
       if (user?.email) {
         await dbConnect();
-        await ensureUser(user.email, user.name ?? undefined, user.image ?? undefined);
+        
+        // For Google OAuth, ensure user exists (credentials users already exist from signup)
+        if (account?.provider === "google") {
+          await ensureUser(user.email, user.name ?? undefined, user.image ?? undefined);
+        }
 
         const dbUser = await User.findOne({ email: user.email })
           .select("_id isParentOnboarded parentId")
@@ -133,16 +136,56 @@ export const authConfig = {
         email: { label: "Email", type: "email" },
         password: { label: "Password", type: "password" },
       },
-      async authorize(raw: unknown) {
-        const schema = z.object({
-          email: z.string().email(),
-          password: z.string().min(6),
-        });
-        const parsed = schema.safeParse(raw);
-        if (!parsed.success) return null;
+      async authorize(credentials) {
+        console.log("🔐 Credentials authorize called");
+        
+        if (!credentials?.email || !credentials?.password) {
+          console.log("❌ Missing email or password");
+          return null;
+        }
 
-        // TODO: look up user in your DB and return a NextAuth user object, or null
-        return null;
+        try {
+          await dbConnect();
+          console.log("📦 Database connected");
+          
+          const user = await User.findOne({ 
+            email: credentials.email,
+            authProvider: "credentials"
+          });
+
+          console.log("👤 User found:", !!user);
+
+          if (!user) {
+            console.log("❌ No user found with email:", credentials.email);
+            return null;
+          }
+
+          if (!user.password) {
+            console.log("❌ User has no password");
+            return null;
+          }
+
+          // Compare password
+          const isValid = await user.comparePassword(credentials.password as string);
+          console.log("🔑 Password valid:", isValid);
+          
+          if (!isValid) {
+            console.log("❌ Invalid password");
+            return null;
+          }
+
+          console.log("✅ Authentication successful for:", user.email);
+          
+          return {
+            id: String(user._id),
+            email: user.email,
+            name: user.name || null,
+            image: user.image || null,
+          };
+        } catch (error) {
+          console.error("💥 Auth error:", error);
+          return null;
+        }
       },
     }),
   ],

@@ -8,14 +8,16 @@ import { Types } from "mongoose";
 import { IParent } from "@/types/parentTypes";
 import Vote from "@/components/parents/Vote";
 import WalletTopup from "@/components/parents/WalletTopup";
+import AddChildForm from "@/components/parents/AddChildForm";
 import dynamic from "next/dynamic";
 import Image from "next/image";
+import Link from "next/link";
 
 // Dynamically import client component
 const QRShareButton = dynamic(() => import("@/components/parents/QRShareButton"));
 
 // Server actions
-async function createChild(formData: FormData) {
+async function createChildWrapper(formData: FormData) {
   "use server";
   const session = await auth();
   if (!session?.user?.id) return;
@@ -137,7 +139,15 @@ export default async function ParentDashboardPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold">Parent Dashboard</h1>
-        <div className="text-sm text-muted-foreground">Welcome{parent.name ? `, ${parent.name}` : ""}</div>
+        <div className="flex items-center gap-4">
+          <Link 
+            href="/parent/gift-approvals" 
+            className="inline-flex items-center rounded-md bg-santa text-white px-4 py-2 text-sm font-medium hover:bg-santa/90 transition-colors"
+          >
+            🎁 Gift Approvals
+          </Link>
+          <div className="text-sm text-muted-foreground">Welcome{parent.name ? `, ${parent.name}` : ""}</div>
+        </div>
       </div>
 
       {/* Summary cards */}
@@ -290,27 +300,33 @@ export default async function ParentDashboardPage() {
         )}
       </section>
 
-      {/* Add Child (ultra-min form) */}
-      <section className="rounded-lg border p-4">
-        <h2 className="text-lg font-semibold mb-3">Add Child</h2>
-        <form action={createChild} className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <div className="flex flex-col gap-1">
-            <label className="text-sm">Display Name</label>
-            <input name="displayName" required placeholder="e.g. Taylor" className="input" />
-          </div>
-          <div className="flex flex-col gap-1">
-            <label className="text-sm">Percent Allocation (0–100)</label>
-            <input name="percentAllocation" type="number" min={0} max={100} defaultValue={0} className="input" />
-          </div>
-          <div className="flex flex-col gap-1 sm:col-span-2">
-            <label className="text-sm">Avatar URL (optional)</label>
-            <input name="avatarUrl" placeholder="https://..." className="input" />
-          </div>
-          <div className="sm:col-span-2">
-            <button type="submit" className="btn">Add Child</button>
-          </div>
-        </form>
+      {/* Add Child Section */}
+      <section className="space-y-4">
+        <h2 className="text-2xl font-paytone-one text-santa">Add a New Child</h2>
+        
+        <div className="bg-gradient-to-br from-santa-50 via-evergreen-50 to-blueberry-50 rounded-2xl border-2 border-santa-200 overflow-hidden">
+          <div className="bg-white/60 backdrop-blur-sm p-6">
+            <div className="flex items-center justify-center mb-6">
+              <div className="text-6xl">👶</div>
+            </div>
+            
+            <AddChildForm onSubmit={createChildWrapper} />
 
+            {/* Tips Section */}
+            <div className="mt-6 bg-blueberry-50 rounded-lg p-4 border-l-4 border-blueberry-400">
+              <h5 className="text-sm font-medium text-blueberry-800 mb-2 flex items-center">
+                <span className="mr-2">💡</span>
+                Tips for Setting Up Your Child
+              </h5>
+              <ul className="text-xs text-blueberry-700 space-y-1">
+                <li>• You can always edit their information later</li>
+                <li>• Budget percentages should add up to 100% across all children</li>
+                <li>• Each child gets their own Christmas list and magic score</li>
+                <li>• Profile pictures make the experience more personal and fun!</li>
+              </ul>
+            </div>
+          </div>
+        </div>
       </section>
     </main>
   );

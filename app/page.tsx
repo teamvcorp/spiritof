@@ -4,6 +4,7 @@ import { Cards, Card } from "@/components/ui/Card";
 import Button from "@/components/ui/Button";
 import { FaArrowAltCircleRight } from "react-icons/fa";
 import Link from "next/link";
+import ChristmasCountdown from "@/components/feature/ChristmasCountdown";
 
 import { auth } from "@/auth";
 
@@ -21,7 +22,7 @@ export default async function Home() {
     if (!session) {
       // Not logged in - show login button
       return (
-        <Link href="/api/auth/signin">
+        <Link href="/auth">
           <Button className='bg-santa uppercase text-white mt-2 self-center md:self-start'>
             Login to Get Started<FaArrowAltCircleRight/>
           </Button>
@@ -50,6 +51,14 @@ export default async function Home() {
   return (<>
     
     <div className="min-h-[100dvh] bg-[linear-gradient(to_bottom,_#37776c_0%,_#37776c_33%,_#EA1938_33%,_#EA1938_66%,_#0084B5_66%,_#0084B5_100%)] py-10 px-6 sm:px-8 md:px-0">
+      
+      {/* Christmas Countdown Section */}
+      <div className="mx-4 sm:mx-6 md:mx-0 mb-10">
+        <Container className="py-6">
+          <ChristmasCountdown />
+        </Container>
+      </div>
+
       <div className="mx-4 sm:mx-6 md:mx-0">
       <Container className="py-10 mb-10 text-center bg-white rounded-2xl text-evergreen px-4 sm:px-8">
         <Cards> 

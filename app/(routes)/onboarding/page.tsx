@@ -2,13 +2,16 @@ import { auth } from "@/auth";
 import { redirect } from "next/navigation";
 import { dbConnect } from "@/lib/db";
 import { User } from "@/models/User";
-import {IUser} from "@/types/user";
 import { Parent } from "@/models/Parent";
-import { Types } from "mongoose";
 
 function parseIntField(v: FormDataEntryValue | null, def = 0) {
   const n = Number(v);
   return Number.isFinite(n) ? Math.max(0, Math.trunc(n)) : def;
+}
+
+function parseDollarToCents(v: FormDataEntryValue | null, def = 0) {
+  const dollars = Number(v);
+  return Number.isFinite(dollars) ? Math.max(0, Math.round(dollars * 100)) : def;
 }
 
 async function submitOnboarding(formData: FormData) {
@@ -17,14 +20,14 @@ async function submitOnboarding(formData: FormData) {
   if (!session?.user?.id) redirect("/login");
 
   await dbConnect();
-  const user = await User.findById(new Types.ObjectId(session.user.id));
+  const user = await User.findById(session.user.id);
   if (!user) redirect("/login");
 
   const isParent = String(formData.get("isParent") ?? "") === "on";
-  const magicBudgetCents = parseIntField(formData.get("magicBudgetCents"));
+  const magicBudgetCents = parseDollarToCents(formData.get("magicBudget"));
   const minGifts = parseIntField(formData.get("minGifts"), 1);
   const maxGifts = parseIntField(formData.get("maxGifts"), 5);
-  const perGiftCapCents = parseIntField(formData.get("perGiftCapCents"));
+  const perGiftCapCents = parseDollarToCents(formData.get("perGiftCap"));
 
   if (!isParent) {
     user.isParentOnboarded = true;
@@ -59,7 +62,7 @@ export default async function OnboardingPage() {
   if (!session?.user?.id) redirect("/");
 
   await dbConnect();
-  const user = await User.findById(new Types.ObjectId(session.user.id)).lean<IUser>();
+  const user = await User.findById(session.user.id).lean();
   if (user?.isParentOnboarded) redirect("/parent/dashboard");
 
   return (
@@ -77,9 +80,17 @@ export default async function OnboardingPage() {
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div className="flex flex-col gap-1">
-            <label className="text-sm">Monthly Magic Budget (cents)</label>
-            <input name="magicBudgetCents" type="number" min={0} defaultValue={0} className="w-full rounded-md border px-3 py-2 text-sm bg-background" />
-            <p className="text-xs text-muted-foreground">Store money in cents for accuracy.</p>
+            <label className="text-sm">Monthly Magic Budget ($)</label>
+            <input 
+              name="magicBudget" 
+              type="number" 
+              min={0} 
+              step="0.01" 
+              defaultValue={0} 
+              className="w-full rounded-md border px-3 py-2 text-sm bg-background" 
+              placeholder="25.00"
+            />
+            <p className="text-xs text-muted-foreground">Amount you want to spend monthly on magic points.</p>
           </div>
 
           <div className="flex flex-col gap-1">
@@ -93,9 +104,17 @@ export default async function OnboardingPage() {
           </div>
 
           <div className="flex flex-col gap-1 sm:col-span-2">
-            <label className="text-sm">Per-Gift Cap (cents)</label>
-            <input name="perGiftCapCents" type="number" min={0} defaultValue={0} className="w-full rounded-md border px-3 py-2 text-sm bg-background" />
-            <p className="text-xs text-muted-foreground">0 means no cap.</p>
+            <label className="text-sm">Per-Gift Cap ($)</label>
+            <input 
+              name="perGiftCap" 
+              type="number" 
+              min={0} 
+              step="0.01" 
+              defaultValue={0} 
+              className="w-full rounded-md border px-3 py-2 text-sm bg-background" 
+              placeholder="50.00"
+            />
+            <p className="text-xs text-muted-foreground">Maximum amount per gift. Leave 0 for no limit.</p>
           </div>
         </div>
 
