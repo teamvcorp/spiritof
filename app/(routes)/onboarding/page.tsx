@@ -62,20 +62,30 @@ async function submitOnboarding(formData: FormData) {
     throw new Error("Stripe customer ID required for parent creation");
   }
 
-  parent = await Parent.create({
-    userId: user._id,
-    name: user.name ?? "",
-    email: user.email,
-    magicBudgetCents,
-    giftSettings: { minGifts, maxGifts, perGiftCapCents },
-    stripeCustomerId, // Store the verified Stripe customer ID
-  });
+  try {
+    parent = await Parent.create({
+      userId: user._id,
+      name: user.name ?? "",
+      email: user.email,
+      magicBudgetCents,
+      giftSettings: { minGifts, maxGifts, perGiftCapCents },
+      stripeCustomerId, // Store the verified Stripe customer ID
+    });
 
-  user.parentId = new Types.ObjectId(parent._id.toString());
-  user.isParentOnboarded = true;
-  await user.save();
+    // Only mark as onboarded AFTER parent is successfully created
+    user.parentId = new Types.ObjectId(parent._id.toString());
+    user.isParentOnboarded = true;
+    await user.save();
 
-  redirect("/parent/dashboard");
+    console.log('✅ Parent created and user onboarded:', { parentId: parent._id, userId: user._id });
+    
+  } catch (error) {
+    console.error('❌ Failed to create parent:', error);
+    throw new Error('Failed to complete onboarding. Please try again.');
+  }
+
+  // Redirect through success page to ensure session refresh
+  redirect("/onboarding/success");
 }
 
 export default async function OnboardingPage({ 
@@ -88,7 +98,18 @@ export default async function OnboardingPage({
 
   await dbConnect();
   const user = await User.findById(session.user.id).lean();
-  if (user?.isParentOnboarded) redirect("/parent/dashboard");
+  
+  // Add debugging for production issues
+  console.log('🔍 Onboarding page accessed:', { 
+    userId: session.user.id, 
+    isOnboarded: user?.isParentOnboarded,
+    hasParentId: !!user?.parentId
+  });
+  
+  if (user?.isParentOnboarded) {
+    console.log('✅ User already onboarded, redirecting to dashboard');
+    redirect("/parent/dashboard");
+  }
 
   const { verified, customer_id, error } = await searchParams;
   const isVerified = verified === 'true' && customer_id;

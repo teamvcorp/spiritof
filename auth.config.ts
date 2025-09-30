@@ -37,9 +37,12 @@ export const authConfig = {
       auth: Session | null;
     }): boolean | Response | NextResponse | Promise<boolean | Response | NextResponse> {
       const sess = auth as AppSession | null;
+      const path = request.nextUrl.pathname;
+      
+      // Allow onboarding pages to always work
+      if (path.startsWith("/onboarding")) return true;
 
       // Treat both /dashboard and /parent as protected areas
-      const path = request.nextUrl.pathname;
       const isProtected = path.startsWith("/dashboard") || path.startsWith("/parent");
 
       if (!isProtected) return true;
@@ -47,10 +50,11 @@ export const authConfig = {
       const isLoggedIn = Boolean(sess?.user);
       if (!isLoggedIn) return false;
 
-      // Not onboarded? Send to onboarding.
+      // For protected routes, check onboarding status
+      // BUT don't redirect here - let the page handle it to avoid conflicts
       if (!sess?.isParentOnboarded) {
-        const url = new URL("/onboarding", request.url);
-        return NextResponse.redirect(url);
+        console.log('🚫 User not onboarded, middleware blocking access to:', path);
+        return false; // Block access, but don't redirect from middleware
       }
 
       return true;
@@ -87,15 +91,27 @@ export const authConfig = {
           token.parentId = dbUser.parentId ? String(dbUser.parentId) : null;
         }
       } else if (token.uid) {
-        // Subsequent requests: refresh flags
-        await dbConnect();
-        const dbUser = await User.findById(token.uid)
-          .select("isParentOnboarded parentId")
-          .lean<{ isParentOnboarded?: boolean; parentId?: Types.ObjectId | null }>();
+        // Subsequent requests: refresh flags from database
+        // This is crucial for onboarding status updates
+        try {
+          await dbConnect();
+          const dbUser = await User.findById(token.uid)
+            .select("isParentOnboarded parentId")
+            .lean<{ isParentOnboarded?: boolean; parentId?: Types.ObjectId | null }>();
 
-        if (dbUser) {
-          token.isParentOnboarded = !!dbUser.isParentOnboarded;
-          token.parentId = dbUser.parentId ? String(dbUser.parentId) : null;
+          if (dbUser) {
+            const wasOnboarded = token.isParentOnboarded;
+            token.isParentOnboarded = !!dbUser.isParentOnboarded;
+            token.parentId = dbUser.parentId ? String(dbUser.parentId) : null;
+            
+            // Log onboarding status changes for debugging
+            if (!wasOnboarded && token.isParentOnboarded) {
+              console.log('🎉 User onboarding status updated in JWT:', token.uid);
+            }
+          }
+        } catch (error) {
+          console.error('❌ Failed to refresh user data in JWT:', error);
+          // Keep existing token values on error
         }
       }
 

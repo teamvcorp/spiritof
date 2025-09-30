@@ -15,15 +15,27 @@ export default async function ParentDashboardPage() {
 
   await dbConnect();
   
-  // Check the database directly for onboarding status instead of relying on session
-  const user = await User.findById(session.user.id).select("isParentOnboarded").lean();
-  if (!user?.isParentOnboarded) {
+  // Check the database directly for onboarding status and parent existence
+  const user = await User.findById(session.user.id).select("isParentOnboarded parentId").lean();
+  if (!user?.isParentOnboarded || !user?.parentId) {
+    console.log('🔄 User not onboarded, redirecting to onboarding:', { 
+      userId: session.user.id, 
+      isOnboarded: user?.isParentOnboarded, 
+      hasParentId: !!user?.parentId 
+    });
     redirect("/onboarding");
   }
 
   const parent = await Parent.findOne({ userId: session.user.id }).lean();
-  if (!parent) redirect("/onboarding");
-  if (!parent) redirect("/onboarding");
+  if (!parent) {
+    console.log('❌ Parent not found, resetting onboarding status and redirecting');
+    // Reset onboarding status if parent is missing
+    await User.findByIdAndUpdate(session.user.id, { 
+      isParentOnboarded: false, 
+      parentId: null 
+    });
+    redirect("/onboarding");
+  }
 
   const cookieKey = `parent_pin_ok_${parent._id.toString()}`;
   const pinOk = (await cookies()).get(cookieKey)?.value === "1";
