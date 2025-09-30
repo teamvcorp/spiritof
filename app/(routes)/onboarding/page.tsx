@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { dbConnect } from "@/lib/db";
 import { User } from "@/models/User";
 import { Parent } from "@/models/Parent";
+import { Types } from "mongoose";
 
 function parseIntField(v: FormDataEntryValue | null, def = 0) {
   const n = Number(v);
@@ -50,7 +51,7 @@ async function submitOnboarding(formData: FormData) {
     giftSettings: { minGifts, maxGifts, perGiftCapCents },
   });
 
-  user.parentId = parent._id;
+  user.parentId = new Types.ObjectId(parent._id.toString());
   user.isParentOnboarded = true;
   await user.save();
 

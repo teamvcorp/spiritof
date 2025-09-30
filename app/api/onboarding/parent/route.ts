@@ -5,6 +5,7 @@ import { dbConnect } from "@/lib/db";
 import { Parent } from "@/models/Parent";
 import { User } from "@/models/User";
 import { auth } from "@/auth"; // next-auth helper (v5) to read server session
+import { Types } from "mongoose";
 
 const Body = z.object({
   isParent: z.boolean(),
@@ -54,7 +55,7 @@ export async function POST(req: Request) {
     // other defaults in schema will fill in
   });
 
-  user.parentId = parent._id;
+  user.parentId = new Types.ObjectId(parent._id.toString());
   user.isParentOnboarded = true;
   await user.save();
 
