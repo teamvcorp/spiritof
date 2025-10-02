@@ -14,18 +14,11 @@ import { redirect } from "next/navigation";
 import { dbConnect } from "@/lib/db";
 import { Parent } from "@/models/Parent";
 import { Child } from "@/models/Child";
-import { Gift } from "@/models/Gift";
 import { Types } from "mongoose";
 import type { IParent } from "@/types/parentTypes";
 import type { IChild } from "@/types/childType";
 
 interface PageProps { params: Promise<{ id: string }> }
-
-// Helper function to extract price from gift notes
-function extractPriceFromNotes(notes: string): number {
-  const priceMatch = notes.match(/Price: \$(\d+(?:\.\d{2})?)/);
-  return priceMatch ? parseFloat(priceMatch[1]) : 0;
-}
 
 export default async function ChildDashPage({ params }: PageProps) {
 
@@ -45,35 +38,42 @@ const {id: childId} = await params;
 
   const child = await Child
     .findOne({ _id: new Types.ObjectId(childId), parentId: parent._id })
+    .populate({
+      path: 'giftList',
+      model: 'MasterCatalog'
+    })
     .lean<IChild | null>();
   if (!child) redirect("/children");
 
-  // Get child's gift list (basic wish list items)
-  const gifts = await Gift.find({ childId: child._id })
-    .sort({ createdAt: -1 })
-    .lean();
-
-  // Convert gifts to display format
-  const giftList = gifts.map(gift => ({
+  // Get child's gift list from populated master catalog items
+  interface PopulatedGift {
+    _id: string;
+    title: string;
+    price?: number;
+    brand?: string;
+    retailer?: string;
+    blobUrl?: string;
+    imageUrl?: string;
+  }
+  
+  const populatedGifts = (child.giftList as unknown as PopulatedGift[]) || [];
+  const giftList = populatedGifts.map(gift => ({
     _id: gift._id,
     title: gift.title,
-    imageUrl: gift.ids?.imageUrl,
-    price: extractPriceFromNotes(gift.notes || ''),
-    brand: gift.ids?.brand,
-    retailer: gift.ids?.retailer,
+    imageUrl: gift.blobUrl || gift.imageUrl || "/images/christmasMagic.png",
+    price: gift.price || 0,
+    brand: gift.brand,
+    retailer: gift.retailer,
   }));
-
-  // Calculate total gift list budget
-  const totalGiftBudget = giftList.reduce((sum, gift) => sum + (gift.price || 0), 0);
 
   // Calculate magic points from neighbor donations (stored in cents) and parent votes (score365)
   const neighborMagicPoints = Math.floor((child.neighborBalanceCents || 0) / 100);
   const totalMagicPoints = (child.score365 || 0) + neighborMagicPoints;
 
-  // Calculate naughty/nice percentage
-  const nicenessPercentage = totalGiftBudget > 0 
-    ? Math.min(100, Math.round((totalMagicPoints / totalGiftBudget) * 100))
-    : totalMagicPoints > 0 ? 100 : 0;
+  // Calculate naughty/nice percentage based on magic score out of 365 days
+  // The score365 represents days of good behavior, max 365 for the full year
+  const baseScore = child.score365 || 0;
+  const nicenessPercentage = Math.min(100, Math.round((baseScore / 365) * 100));
 
   // Get top 5 gifts for display
   const topGifts = giftList.slice(0, 5);

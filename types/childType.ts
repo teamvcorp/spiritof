@@ -40,6 +40,9 @@ export interface IChild {
   neighborLedger: NeighborLedgerEntry[];
   donorTotals?: { count: number; totalCents: number };
 
+  // NEW: Gift list as ObjectId references to MasterCatalog
+  giftList: ObjectId[];
+
   createdAt?: Date;
   updatedAt?: Date;
 }

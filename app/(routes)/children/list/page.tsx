@@ -1,5 +1,4 @@
 import { dbConnect } from "@/lib/db";
-import { CatalogItem } from "@/models/CatalogItem";
 import { auth } from "@/auth";
 import { redirect } from "next/navigation";
 import { Parent } from "@/models/Parent";
@@ -30,34 +29,9 @@ export default async function ChildrenListPage() {
     name: child.displayName,
   }));
 
-  // prefetch trending toys for fast TTFB
-  const initialCatalogRaw = await CatalogItem.find({ gender: "neutral" })
-    .sort({ updatedAt: -1 })
-    .limit(24)
-    .select("title gender price retailer productUrl imageUrl brand model category")
-    .lean();
-
-  // Convert _id from ObjectId to string for type compatibility
-  const initialCatalog = initialCatalogRaw.map((item: Record<string, unknown>) => ({
-    ...item,
-    _id: String(item._id),
-  })) as Array<{
-    _id: string;
-    title: string;
-    brand?: string;
-    category?: string;
-    gender?: string;
-    price?: number;
-    retailer?: string;
-    productUrl?: string;
-    imageUrl?: string;
-    tags?: string[];
-  }>;
-
   return (
     <EnhancedChildGiftBuilder 
       initialChildren={childrenFormatted} 
-      initialCatalog={initialCatalog} 
     />
   );
 }

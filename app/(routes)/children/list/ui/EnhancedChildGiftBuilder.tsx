@@ -4,7 +4,7 @@ import React, { useState, useEffect, useMemo } from "react";
 import { FaSearch, FaFilter, FaTimes, FaHeart, FaFire, FaBolt, FaCheck, FaSpinner } from "react-icons/fa";
 import Button from "@/components/ui/Button";
 import Image from "next/image";
-import { addCatalogItemToGiftList, getChildGiftList, getGiftImages } from "../actions";
+import { addItemToChildGiftList, getChildExistingGifts } from "../actions-new";
 
 type ChildLite = { id: string; name: string };
 type CatalogItem = {
@@ -17,15 +17,15 @@ type CatalogItem = {
   retailer?: string;
   productUrl?: string;
   imageUrl?: string;
+  blobUrl?: string;
   tags?: string[];
   popularity?: number;
+  sourceType?: string;
+  isInCatalog?: boolean;
 };
-
-type SearchSource = "live" | "database" | "trending" | "curated";
 
 interface EnhancedChildGiftBuilderProps {
   initialChildren: ChildLite[];
-  initialCatalog: CatalogItem[];
 }
 
 const CATEGORIES = [
@@ -53,16 +53,14 @@ const PRICE_RANGES = [
 
 export default function EnhancedChildGiftBuilder({
   initialChildren,
-  initialCatalog,
 }: EnhancedChildGiftBuilderProps) {
   const [selectedChild, setSelectedChild] = useState<string>(initialChildren[0]?.id || "");
   const [query, setQuery] = useState("");
   const [gender, setGender] = useState<string>("neutral");
   const [category, setCategory] = useState<string>("");
   const [priceRange, setPriceRange] = useState<string>("");
-  const [source, setSource] = useState<SearchSource>("live");
   
-  const [items, setItems] = useState<CatalogItem[]>(initialCatalog);
+  const [items, setItems] = useState<CatalogItem[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [searchStats, setSearchStats] = useState<{
     total: number;
@@ -78,56 +76,14 @@ export default function EnhancedChildGiftBuilder({
   const [processingItems, setProcessingItems] = useState<Set<string>>(new Set());
   // Track successfully added items this session
   const [sessionAddedItems, setSessionAddedItems] = useState<Set<string>>(new Set());
-  // Track gift images from Gift collection
-  const [giftImages, setGiftImages] = useState<Record<string, string>>({});
-
-  // Load gift images on mount
-  useEffect(() => {
-    const loadGiftImages = async () => {
-      try {
-        const images = await getGiftImages();
-        setGiftImages(images);
-      } catch (error) {
-        console.error("Failed to load gift images:", error);
-      }
-    };
-    
-    loadGiftImages();
-  }, []);
-
-  // Get the best available image for a catalog item (Gift collection first, then fallback to catalog)
-  const getBestImage = (item: CatalogItem): string | undefined => {
-    // First, try to find image from Gift collection by title
-    const titleKey = item.title.toLowerCase().trim();
-    if (giftImages[titleKey]) {
-      return giftImages[titleKey];
-    }
-    
-    // Then try by product URL
-    if (item.productUrl && giftImages[item.productUrl]) {
-      return giftImages[item.productUrl];
-    }
-    
-    // Finally fallback to catalog imageUrl
-    return item.imageUrl;
-  };
 
   // Load existing gifts when child changes
   useEffect(() => {
     const loadExistingGifts = async () => {
       try {
-        const result = await getChildGiftList(selectedChild);
+        const result = await getChildExistingGifts(selectedChild);
         if (result.success) {
-          // Create a set of catalog item identifiers that are already in the gift list
-          const existingSet = new Set<string>();
-          result.gifts.forEach(gift => {
-            // Try to match by product URL or title
-            if (gift.ids?.productUrl) {
-              existingSet.add(gift.ids.productUrl);
-            }
-            existingSet.add(gift.title.toLowerCase().trim());
-          });
-          setExistingGifts(existingSet);
+          setExistingGifts(new Set(result.existingItems));
         }
       } catch (error) {
         console.error("Failed to load existing gifts:", error);
@@ -154,25 +110,21 @@ export default function EnhancedChildGiftBuilder({
     setProcessingItems(prev => new Set([...prev, item._id]));
 
     try {
-      let result;
-
-      // Check if this is a trending/curated item or a real database item
-      if (item._id.startsWith('trending_') || item._id.startsWith('curated_')) {
-        // Use the consolidated action with item data
-        result = await addCatalogItemToGiftList(selectedChild, item._id, {
-          title: item.title,
-          brand: item.brand,
-          category: item.category,
-          price: item.price,
-          retailer: item.retailer,
-          productUrl: item.productUrl,
-          imageUrl: item.imageUrl,
-          popularity: item.popularity,
-        });
-      } else {
-        // Use the consolidated action without item data
-        result = await addCatalogItemToGiftList(selectedChild, item._id);
-      }
+      // Use the new addItemToChildGiftList function
+      const result = await addItemToChildGiftList(selectedChild, {
+        title: item.title,
+        productUrl: item.productUrl || `https://www.google.com/search?q=${encodeURIComponent(item.title)}`,
+        brand: item.brand,
+        category: item.category,
+        gender: item.gender as "boy" | "girl" | "neutral",
+        price: item.price,
+        retailer: item.retailer,
+        imageUrl: item.imageUrl,
+        tags: item.tags,
+        popularity: item.popularity,
+        searchQuery: query,
+        sourceType: item.sourceType as "live_search" | "manual" | "curated" | "trending",
+      });
       
       if (result.success) {
         // Add to session tracking
@@ -204,32 +156,32 @@ export default function EnhancedChildGiftBuilder({
     return { minPrice: min, maxPrice: max };
   }, [priceRange]);
 
-  // Search function
-  const performSearch = async (searchQuery: string, searchGender: string, searchCategory: string, searchMinPrice?: number, searchMaxPrice?: number, searchSource: SearchSource = "live") => {
+  // Search function - Updated to use enhanced-v2 API
+  const performSearch = async (searchQuery: string, searchGender: string, searchCategory: string, searchMinPrice?: number, searchMaxPrice?: number) => {
     setIsLoading(true);
     try {
       const params = new URLSearchParams({
         q: searchQuery,
         gender: searchGender,
         limit: "24",
-        source: searchSource,
       });
       
       if (searchCategory) params.set("category", searchCategory);
       if (searchMinPrice) params.set("minPrice", searchMinPrice.toString());
       if (searchMaxPrice) params.set("maxPrice", searchMaxPrice.toString());
 
-      const response = await fetch(`/api/catalog/enhanced?${params}`);
+      // Use the new enhanced-v2 endpoint for better results
+      const response = await fetch(`/api/catalog/enhanced-v2?${params}`);
       const data = await response.json();
 
       if (response.ok) {
         setItems(data.items || []);
         setSearchStats({
           total: data.total || 0,
-          source: data.source || searchSource,
-          databaseCount: data.databaseCount,
-          curatedCount: data.curatedCount,
-          message: data.message,
+          source: data.source || "enhanced",
+          databaseCount: data.breakdown?.catalog || 0,
+          curatedCount: data.breakdown?.curated || 0,
+          message: data.message || `Found ${data.total} items`,
         });
       } else {
         console.error("Search failed:", data.error);
@@ -248,20 +200,18 @@ export default function EnhancedChildGiftBuilder({
   // Effect to trigger search when filters change
   useEffect(() => {
     const timeoutId = setTimeout(() => {
-      performSearch(query, gender, category, minPrice, maxPrice, source);
+      performSearch(query, gender, category, minPrice, maxPrice);
     }, 300);
 
     return () => clearTimeout(timeoutId);
-  }, [query, gender, category, minPrice, maxPrice, source]);
+  }, [query, gender, category, minPrice, maxPrice]);
 
   // Quick search functions
   const quickTrending = () => {
-    setSource("trending");
-    setQuery("");
+    setQuery("trending toys");
   };
 
   const quickCurated = (searchQuery: string) => {
-    setSource("curated");
     setQuery(searchQuery);
   };
 
@@ -270,7 +220,6 @@ export default function EnhancedChildGiftBuilder({
     setGender("neutral");
     setCategory("");
     setPriceRange("");
-    setSource("live");
   };
 
   return (
@@ -366,57 +315,8 @@ export default function EnhancedChildGiftBuilder({
             )}
           </div>
 
-          {/* Search Source Selector */}
-          <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Search Source
-            </label>
-            <div className="flex flex-wrap gap-2">
-              <button
-                onClick={() => setSource("live")}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                  source === "live"
-                    ? "bg-green-500 text-white"
-                    : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                }`}
-              >
-                🔍 Live Search (Real Products)
-              </button>
-              <button
-                onClick={() => setSource("database")}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                  source === "database"
-                    ? "bg-blue-500 text-white"
-                    : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                }`}
-              >
-                📦 Saved Catalog
-              </button>
-              <button
-                onClick={() => setSource("trending")}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                  source === "trending"
-                    ? "bg-orange-500 text-white"
-                    : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                }`}
-              >
-                🔥 Trending
-              </button>
-              <button
-                onClick={() => setSource("curated")}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                  source === "curated"
-                    ? "bg-purple-500 text-white"
-                    : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                }`}
-              >
-                ⭐ Curated
-              </button>
-            </div>
-          </div>
-
           {/* Filters */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Gender
@@ -465,21 +365,6 @@ export default function EnhancedChildGiftBuilder({
                 ))}
               </select>
             </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Source
-              </label>
-              <select
-                value={source}
-                onChange={(e) => setSource(e.target.value as SearchSource)}
-                className="w-full rounded-lg border px-3 py-2 focus:ring-santa focus:border-santa"
-              >
-                <option value="database">Database</option>
-                <option value="trending">Trending</option>
-                <option value="curated">Popular</option>
-              </select>
-            </div>
           </div>
 
           {/* Clear Filters */}
@@ -522,14 +407,8 @@ export default function EnhancedChildGiftBuilder({
         {/* Results Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           {items.map((item) => {
-            const bestImageUrl = getBestImage(item);
-            
-            // Debug logging for images
-            if (bestImageUrl) {
-              console.log('Item with image:', item.title, 'Best URL:', bestImageUrl);
-            } else {
-              console.log('Item without image:', item.title);
-            }
+            // Use blobUrl first, then imageUrl, then fallback
+            const bestImageUrl = item.blobUrl || item.imageUrl || "/images/christmasMagic.png";
             
             return (
             <div
@@ -538,51 +417,24 @@ export default function EnhancedChildGiftBuilder({
             >
               {/* Image */}
               <div className="h-48 bg-gray-100 flex items-center justify-center relative">
-                {bestImageUrl ? (
-                  <>
-                    <Image
-                      src={bestImageUrl}
-                      alt={item.title}
-                      width={300}
-                      height={200}
-                      className="h-full w-full object-cover"
-                      onError={(e) => {
-                        e.currentTarget.style.display = 'none';
-                        const fallback = e.currentTarget.parentElement?.querySelector('.fallback-img') as HTMLImageElement;
-                        if (fallback) {
-                          fallback.style.display = 'block';
-                        }
-                      }}
-                    />
-                    {/* Fallback img tag for domains not in Next.js config */}
-                    <Image
-                      src={bestImageUrl}
-                      alt={item.title}
-                      width={300}
-                      height={200}
-                      className="fallback-img h-full w-full object-cover absolute inset-0"
-                      style={{ display: 'none' }}
-                      unoptimized={true}
-                      onError={(e) => {
-                        e.currentTarget.style.display = 'none';
-                        const noImageDiv = e.currentTarget.parentElement?.querySelector('.no-image-fallback') as HTMLElement;
-                        if (noImageDiv) {
-                          noImageDiv.style.display = 'block';
-                        }
-                      }}
-                    />
-                    {/* Final fallback */}
-                    <div className="no-image-fallback text-gray-400 text-center absolute inset-0 flex items-center justify-center" style={{ display: 'none' }}>
-                      <div>
-                        <div className="text-4xl mb-2">🎁</div>
-                        <div className="text-sm">Image failed to load</div>
-                      </div>
-                    </div>
-                  </>
-                ) : (
-                  <div className="text-gray-400 text-center">
-                    <div className="text-4xl mb-2">🎁</div>
-                    <div className="text-sm">No image available</div>
+                <Image
+                  src={bestImageUrl}
+                  alt={item.title}
+                  width={300}
+                  height={200}
+                  className="h-full w-full object-cover"
+                  unoptimized={!item.blobUrl} // Only optimize blob URLs through Next.js
+                  onError={(e) => {
+                    // Fallback to default image on error
+                    e.currentTarget.src = "/images/christmasMagic.png";
+                  }}
+                />
+                {/* Source indicator */}
+                {item.sourceType && (
+                  <div className="absolute top-2 right-2 px-2 py-1 bg-black bg-opacity-60 text-white text-xs rounded">
+                    {item.sourceType === "master_catalog" ? "📦" : 
+                     item.sourceType === "curated" ? "⭐" : 
+                     item.sourceType === "trending" ? "🔥" : "🔍"}
                   </div>
                 )}
               </div>

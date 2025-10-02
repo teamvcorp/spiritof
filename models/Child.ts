@@ -17,8 +17,10 @@ const NeighborLedgerEntrySchema = new Schema(
   },
   { _id: true, timestamps: true }
 );
+
 export type ChildDoc = HydratedDocument<IChild> & ChildMethods;
 export type ChildModel = Model<IChild, object, ChildMethods>;
+
 const ChildSchema = new Schema<IChild>(
   {
     parentId: { type: Types.ObjectId, ref: "Parent", required: true, index: true },
@@ -37,13 +39,29 @@ const ChildSchema = new Schema<IChild>(
       count: { type: Number, default: 0, min: 0 },
       totalCents: { type: Number, default: 0, min: 0 },
     },
+
+    // NEW: Gift list as references to master catalog
+    giftList: { 
+      type: [{ type: Schema.Types.ObjectId, ref: "MasterCatalog" }],
+      default: [],
+      index: true
+    },
   },
   { timestamps: true }
 );
+
+// Legacy virtual for backward compatibility (if needed)
 ChildSchema.virtual("gifts", {
   ref: "Gift",
   localField: "_id",
   foreignField: "childId",
+});
+
+// NEW: Virtual for populated gift catalog items
+ChildSchema.virtual("catalogGifts", {
+  ref: "MasterCatalog",
+  localField: "giftList",
+  foreignField: "_id",
 });
 /** Tiny methods */
 ChildSchema.methods.recomputeNeighborBalance = function (this: HydratedDocument<IChild>) {
