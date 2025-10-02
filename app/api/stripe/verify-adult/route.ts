@@ -18,10 +18,10 @@ async function handleVerification() {
     // Add timeout wrapper for auth to prevent hanging
     const session = await Promise.race([
       auth(),
-      new Promise((_, reject) => 
+      new Promise<null>((_, reject) => 
         setTimeout(() => reject(new Error('Auth timeout after 5 seconds')), 5000)
       )
-    ]) as Awaited<ReturnType<typeof auth>>;
+    ]);
 
     if (!session?.user?.id) {
       console.warn('No session or user ID found', { 
@@ -40,14 +40,15 @@ async function handleVerification() {
       try {
         await dbConnect();
         
-        // Use parallel queries to reduce latency
-        [user, existingParent] = await Promise.all([
-          User.findById(session.user.id).lean(),
-          Parent.findOne({ 
-            email: user?.email || session.user.email, 
+        // First get the user, then search for existing parent
+        user = await User.findById(session.user.id).lean();
+        
+        if (user) {
+          existingParent = await Parent.findOne({ 
+            email: user.email, 
             stripeCustomerId: { $exists: true, $ne: null } 
-          }).lean()
-        ]);
+          }).lean();
+        }
         
         break; // Success, exit retry loop
       } catch (dbError) {
