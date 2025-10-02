@@ -90,7 +90,7 @@ MasterCatalogSchema.index({ gender: 1, category: 1 });
 MasterCatalogSchema.index({ price: 1 });
 MasterCatalogSchema.index({ retailer: 1 });
 MasterCatalogSchema.index({ isActive: 1, createdAt: -1 });
-MasterCatalogSchema.index({ productUrl: 1 }); // For deduplication
+// Note: productUrl index is automatically created by unique: true constraint
 
 export const MasterCatalog: MasterCatalogModel =
   (mongoose.models.MasterCatalog as MasterCatalogModel) ??

@@ -42,7 +42,7 @@ export async function enhancedProductSearch(
       price: toy.priceRange.min,
       retailer: "multiple",
       productUrl: `https://www.google.com/search?q=${encodeURIComponent(toy.title + " " + toy.brand)}`,
-      imageUrl: "/images/elfGift.png",
+      imageUrl: undefined, // No placeholder image - let frontend handle fallback
       tags: toy.keywords,
       popularity: toy.popularity,
       sourceType: "curated",
@@ -75,7 +75,7 @@ export async function enhancedProductSearch(
       price: toy.price,
       retailer: "multiple",
       productUrl: `https://www.google.com/search?q=${encodeURIComponent(toy.title)}`,
-      imageUrl: "/images/santa.png",
+      imageUrl: undefined, // No placeholder image - let frontend handle fallback
       tags: [toy.category, toy.brand.toLowerCase()],
       popularity: toy.popularity,
       sourceType: "trending",

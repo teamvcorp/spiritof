@@ -14,6 +14,7 @@ import { redirect } from "next/navigation";
 import { dbConnect } from "@/lib/db";
 import { Parent } from "@/models/Parent";
 import { Child } from "@/models/Child";
+import { MasterCatalog } from "@/models/MasterCatalog"; // Import MasterCatalog model
 import { Types } from "mongoose";
 import type { IParent } from "@/types/parentTypes";
 import type { IChild } from "@/types/childType";
@@ -40,7 +41,7 @@ const {id: childId} = await params;
     .findOne({ _id: new Types.ObjectId(childId), parentId: parent._id })
     .populate({
       path: 'giftList',
-      model: 'MasterCatalog'
+      model: MasterCatalog
     })
     .lean<IChild | null>();
   if (!child) redirect("/children");
@@ -184,9 +185,14 @@ const {id: childId} = await params;
                     <p className='text-xl '>{nicenessPercentage}% Earned</p>
                     <ImPieChart size={40} />
                   </div>
-                  <Link href="/children/list">
-                    <Button className='bg-santa min-w-40 '><FaEdit/> Edit List</Button>
-                  </Link>
+                  <div className="flex flex-col gap-2">
+                    <Link href="/children/list">
+                      <Button className='bg-santa min-w-40 '><FaPlus className="mr-1" /> Add Gifts</Button>
+                    </Link>
+                    <Link href={`/children/manage?child=${String(child._id)}`}>
+                      <Button className='bg-evergreen min-w-40 '><FaEdit className="mr-1" /> Manage List</Button>
+                    </Link>
+                  </div>
                 </div>
               </>
             ) : (

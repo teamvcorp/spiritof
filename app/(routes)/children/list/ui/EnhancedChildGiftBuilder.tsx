@@ -119,7 +119,7 @@ export default function EnhancedChildGiftBuilder({
         gender: item.gender as "boy" | "girl" | "neutral",
         price: item.price,
         retailer: item.retailer,
-        imageUrl: item.imageUrl,
+        imageUrl: item.imageUrl?.startsWith('/images/') ? undefined : item.imageUrl, // Skip placeholder images
         tags: item.tags,
         popularity: item.popularity,
         searchQuery: query,

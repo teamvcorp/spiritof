@@ -4,6 +4,7 @@ import { Types } from "mongoose";
 import { dbConnect } from "@/lib/db";
 import { Child } from "@/models/Child";
 import { Parent } from "@/models/Parent";
+import { MasterCatalog } from "@/models/MasterCatalog"; // eslint-disable-line @typescript-eslint/no-unused-vars -- Required for Mongoose model registration
 import { findOrCreateCatalogItem } from "@/lib/catalog-service";
 import { auth } from "@/auth";
 
@@ -138,12 +139,11 @@ export async function removeItemFromChildGiftList(
     throw new Error("Child not found or not authorized");
   }
 
-  // Remove from child's gift list
-  child.giftList = child.giftList?.filter(
-    id => id.toString() !== catalogItemId
-  ) || [];
-  
-  await child.save();
+  // Remove from child's gift list using Mongoose updateOne
+  await Child.updateOne(
+    { _id: child._id },
+    { $pull: { giftList: catalogItemId } }
+  );
 
   return {
     success: true,

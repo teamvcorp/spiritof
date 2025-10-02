@@ -3,6 +3,24 @@ import { MasterCatalog, type MasterCatalogItem } from "@/models/MasterCatalog";
 import { uploadImageToBlob } from "@/lib/image-service";
 
 /**
+ * Check if an image URL is external (not a local placeholder)
+ */
+function isExternalImageUrl(imageUrl: string): boolean {
+  // Skip local placeholder images
+  if (imageUrl.startsWith('/images/')) {
+    return false;
+  }
+  
+  // Check if it's a valid external URL
+  try {
+    const url = new URL(imageUrl);
+    return url.protocol === 'http:' || url.protocol === 'https:';
+  } catch {
+    return false;
+  }
+}
+
+/**
  * Find or create a catalog item, ensuring no duplicates based on productUrl
  */
 export async function findOrCreateCatalogItem(
@@ -78,8 +96,8 @@ export async function findOrCreateCatalogItem(
       lastValidatedAt: new Date(),
     };
 
-    // If image URL provided, try to upload to Vercel Blob
-    if (productData.imageUrl) {
+    // If image URL provided and it's a real external URL, try to upload to Vercel Blob
+    if (productData.imageUrl && isExternalImageUrl(productData.imageUrl)) {
       const filename = `${productData.title}-${productData.retailer || 'unknown'}`;
       const uploadResult = await uploadImageToBlob(productData.imageUrl, filename);
       

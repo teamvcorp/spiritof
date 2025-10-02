@@ -25,7 +25,23 @@ export default async function ChildrenPickerPage() {
 
   return (
     <main className="min-h-[80vh] flex flex-col items-center justify-center px-4  bg-evergreen ">
-      <h1 className="text-3xl sm:text-4xl font-semibold mb-8 text-white">Who is playing?</h1>
+      <h1 className="text-3xl sm:text-4xl font-semibold mb-4 text-white">Who is playing?</h1>
+      
+      {/* Quick Actions */}
+      <div className="mb-8 flex gap-4">
+        <Link 
+          href="/children/list"
+          className="bg-santa hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+        >
+          🎁 Add Gifts
+        </Link>
+        <Link 
+          href="/children/manage"
+          className="bg-berryPink hover:bg-pink-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+        >
+          📝 Manage Lists
+        </Link>
+      </div>
 
       {children.length === 0 ? (
         <div className="text-sm text-muted-foreground border rounded-lg p-6 text-white">
