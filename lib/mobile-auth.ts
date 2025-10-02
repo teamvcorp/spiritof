@@ -59,7 +59,7 @@ export class MobileAuthService {
 
     try {
       return jwt.verify(token, this.JWT_SECRET) as JWTPayload;
-    } catch (error) {
+    } catch {
       throw new Error('Invalid or expired token');
     }
   }
@@ -74,7 +74,7 @@ export class MobileAuthService {
 
     try {
       return jwt.verify(refreshToken, this.JWT_REFRESH_SECRET) as { userId: string };
-    } catch (error) {
+    } catch {
       throw new Error('Invalid or expired refresh token');
     }
   }
