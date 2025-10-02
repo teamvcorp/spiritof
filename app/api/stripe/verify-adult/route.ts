@@ -26,16 +26,23 @@ async function handleVerification() {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
+    console.log('🔍 Adult verification request:', { 
+      userId: session.user.id, 
+      email: user.email,
+      isOnboarded: user.isParentOnboarded 
+    });
+
     // Check if user already has a verified Stripe customer
     const existingParent = await Parent.findOne({ 
       email: user.email, 
       stripeCustomerId: { $exists: true, $ne: null } 
     });
     
-    if (existingParent) {
-      // Already verified, redirect to setup
+    if (existingParent && existingParent.stripeCustomerId) {
+      console.log('✅ Existing verified parent found, redirecting to onboarding setup');
+      // Already verified, redirect to setup with customer ID
       const baseUrl = process.env.NEXTAUTH_URL || process.env.VERCEL_URL || 'http://localhost:3000';
-      return NextResponse.redirect(new URL("/onboarding?verified=true", baseUrl));
+      return NextResponse.redirect(new URL(`/onboarding?verified=true&customer_id=${existingParent.stripeCustomerId}`, baseUrl));
     }
 
     // Create Stripe customer for age verification

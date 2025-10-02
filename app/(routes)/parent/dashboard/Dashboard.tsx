@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { dbConnect } from "@/lib/db";
 import { Parent } from "@/models/Parent";
 import { Child } from "@/models/Child";
+import { User } from "@/models/User";
 import { revalidatePath } from "next/cache";
 import { Types } from "mongoose";
 import { IParent } from "@/types/parentTypes";
@@ -24,7 +25,11 @@ async function createChildWrapper(formData: FormData) {
 
   await dbConnect();
 
-  const parent = await Parent.findOne({ userId: new Types.ObjectId(session.user.id) }).lean<IParent>();
+  // Get user's parentId first
+  const user = await User.findById(session.user.id).select("parentId").lean();
+  if (!user?.parentId) return;
+  
+  const parent = await Parent.findById(user.parentId).lean<IParent>();
   if (!parent) return;
 
   const displayName = String(formData.get("displayName") || "").trim();
@@ -58,8 +63,12 @@ export async function updateChild(formData: FormData) {
 
   await dbConnect();
 
+  // Get user's parentId first
+  const user = await User.findById(session.user.id).select("parentId").lean();
+  if (!user?.parentId) return;
+  
   // find the parent for this user
-  const parent = await Parent.findOne({ userId: new Types.ObjectId(session.user.id) });
+  const parent = await Parent.findById(user.parentId);
   if (!parent) return;
 
   const childId = String(formData.get("childId") ?? "");
@@ -100,7 +109,11 @@ async function deleteChild(formData: FormData) {
 
   await dbConnect();
 
-  const parent = await Parent.findOne({ userId: new Types.ObjectId(session.user.id) });
+  // Get user's parentId first
+  const user = await User.findById(session.user.id).select("parentId").lean();
+  if (!user?.parentId) return;
+  
+  const parent = await Parent.findById(user.parentId);
   if (!parent) return;
 
   const childId = String(formData.get("childId") || "");
@@ -129,7 +142,11 @@ export default async function ParentDashboardPage() {
 
   await dbConnect();
 
-  const parent = await Parent.findOne({ userId: new Types.ObjectId(session.user.id) }).lean();
+  // Get user's parentId first
+  const user = await User.findById(session.user.id).select("parentId").lean();
+  if (!user?.parentId) redirect("/onboarding");
+  
+  const parent = await Parent.findById(user.parentId).lean();
   if (!parent) redirect("/onboarding");
 
   const children = await Child.find({ parentId: parent._id }).lean();
