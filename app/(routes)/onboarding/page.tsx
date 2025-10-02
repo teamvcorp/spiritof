@@ -24,17 +24,9 @@ async function submitOnboarding(formData: FormData) {
   const user = await User.findById(session.user.id);
   if (!user) redirect("/auth");
 
-  console.log('🚀 Starting onboarding submission for user:', { 
-    userId: session.user.id, 
-    email: user.email,
-    currentlyOnboarded: user.isParentOnboarded,
-    hasParentId: !!user.parentId
-  });
-
   // Check if they've completed Stripe verification
   const verifiedParam = formData.get("stripeVerified");
   if (!verifiedParam) {
-    console.log('❌ No Stripe verification found, redirecting to verify');
     // Redirect to Stripe verification first
     redirect("/api/stripe/verify-adult");
     return;
@@ -46,16 +38,8 @@ async function submitOnboarding(formData: FormData) {
   const maxGifts = parseIntField(formData.get("maxGifts"), 5);
   const perGiftCapCents = parseDollarToCents(formData.get("perGiftCap"));
 
-  console.log('📊 Form data parsed:', { 
-    magicBudgetCents, 
-    minGifts, 
-    maxGifts, 
-    perGiftCapCents 
-  });
-
   // If already has a parent, just mark onboarded
   if (user.parentId) {
-    console.log('✅ User already has parentId, marking as onboarded');
     user.isParentOnboarded = true;
     await user.save();
     redirect("/parent/dashboard");
@@ -65,12 +49,8 @@ async function submitOnboarding(formData: FormData) {
   let parent = await Parent.findOne({ email: user.email });
   
   if (parent) {
-    console.log('✅ Parent already exists, linking user to existing parent:', { parentId: parent._id });
-    
-    // Try direct database update for existing parent case too
-    console.log('🔄 Using direct database update for existing parent link...');
-    
-    const directUpdateResult = await User.findByIdAndUpdate(
+    // Parent already exists, just link this user to it
+    await User.findByIdAndUpdate(
       session.user.id,
       { 
         $set: { 
@@ -78,32 +58,8 @@ async function submitOnboarding(formData: FormData) {
           isParentOnboarded: true 
         }
       },
-      { 
-        new: true, 
-        runValidators: true,
-        lean: false 
-      }
+      { new: true, runValidators: true }
     );
-    
-    console.log('✅ Direct update for existing parent completed:', {
-      updateSucceeded: !!directUpdateResult,
-      updatedParentId: directUpdateResult?.parentId?.toString(),
-      updatedIsOnboarded: directUpdateResult?.isParentOnboarded
-    });
-    
-    // Verify the direct update worked
-    const verifyUser = await User.findById(session.user.id).select("isParentOnboarded parentId").lean();
-    console.log('🔍 Database verification for existing parent direct update:', {
-      userId: session.user.id,
-      dbIsOnboarded: verifyUser?.isParentOnboarded,
-      dbHasParentId: !!verifyUser?.parentId,
-      dbParentIdValue: verifyUser?.parentId?.toString()
-    });
-    
-    if (!verifyUser?.isParentOnboarded) {
-      console.error('🚨 CRITICAL: Direct update for existing parent failed!');
-      throw new Error('Database update failed for existing parent link');
-    }
     
     redirect("/parent/dashboard");
   }
@@ -111,31 +67,24 @@ async function submitOnboarding(formData: FormData) {
   // Create new parent with Stripe customer ID from verification
   const stripeCustomerId = formData.get("stripeCustomerId")?.toString();
   if (!stripeCustomerId) {
-    console.log('❌ No Stripe customer ID found');
     throw new Error("Stripe customer ID required for parent creation");
   }
 
-  console.log('🆕 Creating new parent with Stripe customer:', stripeCustomerId);
-
   try {
-    // Use a more explicit transaction-like approach
+    // Create new parent
     parent = new Parent({
       userId: user._id,
       name: user.name ?? "",
       email: user.email,
       magicBudgetCents,
       giftSettings: { minGifts, maxGifts, perGiftCapCents },
-      stripeCustomerId, // Store the verified Stripe customer ID
+      stripeCustomerId,
     });
 
-    // Save parent first
     await parent.save();
-    console.log('✅ Parent created successfully:', { parentId: parent._id });
 
-    // Try direct database update instead of document save
-    console.log('🔄 Attempting direct database update for User model...');
-    
-    const directUpdateResult = await User.findByIdAndUpdate(
+    // Link user to parent
+    await User.findByIdAndUpdate(
       session.user.id,
       { 
         $set: { 
@@ -143,66 +92,23 @@ async function submitOnboarding(formData: FormData) {
           isParentOnboarded: true 
         }
       },
-      { 
-        new: true, 
-        runValidators: true,
-        lean: false 
-      }
+      { new: true, runValidators: true }
     );
     
-    console.log('✅ Direct database update result:', {
-      updateSucceeded: !!directUpdateResult,
-      updatedParentId: directUpdateResult?.parentId?.toString(),
-      updatedIsOnboarded: directUpdateResult?.isParentOnboarded,
-      userId: directUpdateResult?._id?.toString()
-    });
-
-    // Verify the direct update worked by re-querying the User model
-    const verifyUser = await User.findById(session.user.id).select("isParentOnboarded parentId").lean();
-    console.log('🔍 Database verification after direct update:', {
-      userId: session.user.id,
-      dbIsOnboarded: verifyUser?.isParentOnboarded,
-      dbHasParentId: !!verifyUser?.parentId,
-      dbParentIdValue: verifyUser?.parentId?.toString(),
-      directVsDb: {
-        directUpdateOnboarded: directUpdateResult?.isParentOnboarded,
-        dbOnboarded: verifyUser?.isParentOnboarded,
-        match: directUpdateResult?.isParentOnboarded === verifyUser?.isParentOnboarded
-      }
-    });
-    
-    if (!verifyUser?.isParentOnboarded) {
-      console.error('🚨 CRITICAL: Direct database update failed - isParentOnboarded is still false!');
-      console.error('📊 Debug info:', {
-        sessionUserId: session.user.id,
-        updateResult: directUpdateResult,
-        verificationQuery: verifyUser
-      });
-      throw new Error('Direct database update failed - onboarding status not persisted');
-    }
-    
   } catch (error) {
-    console.error('❌ Failed to create parent or update user:', error);
-    
-    // Log specific validation errors
-    if (error.name === 'ValidationError') {
-      console.error('🚫 Validation Error Details:', error.errors);
-    }
-    
+    console.error('Failed to create parent:', error);
     // Clean up parent if user update failed
     if (parent?._id) {
       try {
         await Parent.findByIdAndDelete(parent._id);
-        console.log('🧹 Cleaned up orphaned parent record');
       } catch (cleanupError) {
-        console.error('❌ Failed to cleanup parent:', cleanupError);
+        console.error('Failed to cleanup parent:', cleanupError);
       }
     }
-    throw new Error(`Failed to complete onboarding: ${error.message}`);
+    throw new Error(`Failed to complete onboarding: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 
   // Redirect through success page to ensure session refresh
-  console.log('🎯 Redirecting to success page');
   redirect("/onboarding/success");
 }
 
@@ -217,15 +123,7 @@ export default async function OnboardingPage({
   await dbConnect();
   const user = await User.findById(session.user.id).lean();
   
-  // Add debugging for production issues
-  console.log('🔍 Onboarding page accessed:', { 
-    userId: session.user.id, 
-    isOnboarded: user?.isParentOnboarded,
-    hasParentId: !!user?.parentId
-  });
-  
   if (user?.isParentOnboarded) {
-    console.log('✅ User already onboarded, redirecting to dashboard');
     redirect("/parent/dashboard");
   }
 

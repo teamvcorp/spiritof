@@ -53,7 +53,6 @@ export const authConfig = {
       // For protected routes, check onboarding status
       // BUT don't redirect here - let the page handle it to avoid conflicts
       if (!sess?.isParentOnboarded) {
-        console.log('🚫 User not onboarded, middleware blocking access to:', path);
         return false; // Block access, but don't redirect from middleware
       }
 
@@ -100,14 +99,8 @@ export const authConfig = {
             .lean<{ isParentOnboarded?: boolean; parentId?: Types.ObjectId | null }>();
 
           if (dbUser) {
-            const wasOnboarded = token.isParentOnboarded;
             token.isParentOnboarded = !!dbUser.isParentOnboarded;
             token.parentId = dbUser.parentId ? String(dbUser.parentId) : null;
-            
-            // Log onboarding status changes for debugging
-            if (!wasOnboarded && token.isParentOnboarded) {
-              console.log('🎉 User onboarding status updated in JWT:', token.uid);
-            }
           }
         } catch (error) {
           console.error('❌ Failed to refresh user data in JWT:', error);

@@ -18,21 +18,12 @@ export default async function ParentDashboardPage() {
   // Check the database directly for onboarding status and parent existence
   const user = await User.findById(session.user.id).select("isParentOnboarded parentId").lean();
   if (!user?.isParentOnboarded || !user?.parentId) {
-    console.log('🔄 User not onboarded, redirecting to onboarding:', { 
-      userId: session.user.id, 
-      isOnboarded: user?.isParentOnboarded, 
-      hasParentId: !!user?.parentId 
-    });
     redirect("/onboarding");
   }
 
   // Use the parentId from the user record, not userId lookup
   const parent = await Parent.findById(user.parentId).lean();
   if (!parent) {
-    console.log('❌ Parent not found by parentId, resetting onboarding status and redirecting:', {
-      userId: session.user.id,
-      parentId: user.parentId?.toString()
-    });
     // Reset onboarding status if parent is missing
     await User.findByIdAndUpdate(session.user.id, { 
       isParentOnboarded: false, 
