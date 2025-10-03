@@ -25,7 +25,12 @@ type AppSession = Session & {
 };
 
 export const authConfig = {
- 
+  pages: {
+    signIn: "/auth",
+    error: "/auth",
+  },
+  trustHost: true, // Important for Vercel deployment
+  secret: process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET,
 
   callbacks: {
     /** Gate protected routes and route new logins */
