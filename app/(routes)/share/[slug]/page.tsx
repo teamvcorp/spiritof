@@ -3,255 +3,173 @@ import { Child } from "@/models/Child";
 import { redirect } from "next/navigation";
 import type { IChild } from "@/types/childType";
 import Container from "@/components/ui/Container";
-import Button from "@/components/ui/Button";
 import Image from "next/image";
-import { FaHeart, FaGift, FaShare } from "react-icons/fa";
+import { FaShare, FaStar } from "react-icons/fa";
+import DonationForm from "./DonationForm";
 
 type PageProps = {
   params: Promise<{ slug: string }>;
+  searchParams: Promise<{ donation?: string; session_id?: string }>;
 };
 
-async function submitDonation(formData: FormData) {
-  "use server";
-  
-  const childId = String(formData.get("childId") ?? "");
-  const donationAmount = Number(formData.get("donationAmount") ?? 0);
-  const donorName = String(formData.get("donorName") ?? "").trim();
-  const donorEmail = String(formData.get("donorEmail") ?? "").trim();
-  const message = String(formData.get("message") ?? "").trim();
-
-  if (!childId || donationAmount < 1 || donationAmount > 100 || !donorName) {
-    return; // Add proper error handling later
-  }
-
-  await dbConnect();
-  const child = await Child.findById(childId);
-  if (!child || !child.donationsEnabled) return;
-
-  // For now, just add the magic points directly (in real app, this would involve Stripe)
-  const magicPointsToAdd = donationAmount; // 1:1 ratio for demo
-
-  // Add neighbor ledger entry using the method
-  const childDoc = child as unknown as { addNeighborLedgerEntry: (entry: { type: string; amountCents: number; fromName?: string; fromEmail?: string; message?: string; status?: string }) => void };
-  childDoc.addNeighborLedgerEntry({
-    type: "DONATION",
-    amountCents: donationAmount * 100, // Convert to cents
-    fromName: donorName,
-    fromEmail: donorEmail || undefined,
-    message: message || undefined,
-    status: "SUCCEEDED", // Demo mode - mark as succeeded immediately
-  });
-
-  // Update totals and magic score
-  child.donorTotals = child.donorTotals || { count: 0, totalCents: 0 };
-  child.donorTotals.count += 1;
-  child.donorTotals.totalCents += donationAmount * 100;
-  child.score365 = Math.min(365, child.score365 + magicPointsToAdd);
-
-  // Mark the ledger entry as succeeded (in real app, this would be after Stripe confirms)
-  const entries = child.neighborLedger as unknown as Array<{ status: string }>;
-  if (entries.length > 0) {
-    entries[entries.length - 1].status = "SUCCEEDED";
-  }
-
-  const childDoc2 = child as unknown as { recomputeNeighborBalance: () => void };
-  childDoc2.recomputeNeighborBalance();
-  await child.save();
-
-  redirect(`/share/${child.shareSlug}?success=true`);
-}
-
-export default async function SharePage({ params }: PageProps) {
+export default async function ShareChildPage({ params, searchParams }: PageProps) {
   const { slug } = await params;
+  const { donation } = await searchParams;
 
   await dbConnect();
   const child = await Child.findOne({ shareSlug: slug }).lean<IChild | null>();
-
-  if (!child || !child.donationsEnabled) {
-    return (
-      <main className="min-h-[100dvh] bg-gradient-to-b from-evergreen to-santa flex items-center justify-center p-4">
-        <Container>
-          <div className="max-w-md mx-auto bg-white rounded-2xl p-8 text-center">
-            <h1 className="text-2xl font-bold text-santa mb-4">Page Not Found</h1>
-            <p className="text-gray-600">This donation page is not available.</p>
-          </div>
-        </Container>
-      </main>
-    );
+  
+  if (!child) {
+    redirect("/");
   }
 
-  const donorCount = child.donorTotals?.count || 0;
-  const totalDonated = (child.donorTotals?.totalCents || 0) / 100;
+  // Calculate progress
   const magicPercentage = Math.round((child.score365 / 365) * 100);
+  const daysUntilChristmas = Math.max(0, 365 - child.score365);
 
   return (
     <main className="min-h-[100dvh] bg-gradient-to-b from-evergreen to-santa p-4">
       <Container className="py-8">
         <div className="max-w-2xl mx-auto">
-          <div className="text-center mb-8">
-            <div className="mb-4">
-              <Image
-                src="/images/santa.png"
-                alt="Spirit of Santa"
-                width={120}
-                height={120}
-                className="mx-auto"
-              />
+          
+          {/* Success Message */}
+          {donation === 'success' && (
+            <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg">
+              <h3 className="text-green-800 font-semibold">Thank you for your donation! 🎅</h3>
+              <p className="text-green-700 text-sm">
+                Your contribution has been added to {child.displayName}&apos;s Christmas magic!
+              </p>
             </div>
-            <h1 className="text-3xl font-bold text-white mb-2">Spirit of Santa</h1>
-            <p className="text-white/80 text-lg">Help {child.displayName} earn Christmas magic!</p>
-          </div>
+          )}
 
-          <div className="bg-white rounded-2xl p-6 shadow-lg mb-6">
-            <div className="text-center mb-6">
+          {/* Cancelled Message */}
+          {donation === 'cancelled' && (
+            <div className="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+              <h3 className="text-yellow-800 font-semibold">Donation Cancelled</h3>
+              <p className="text-yellow-700 text-sm">
+                No worries! You can still help {child.displayName} earn Christmas magic.
+              </p>
+            </div>
+          )}
+
+          {/* Main Card */}
+          <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
+            
+            {/* Header Section */}
+            <div className="bg-gradient-to-r from-santa to-evergreen text-white p-6 text-center">
               {child.avatarUrl ? (
-                <Image
-                  src={child.avatarUrl}
+                <Image 
+                  src={child.avatarUrl} 
                   alt={child.displayName}
-                  width={80}
-                  height={80}
-                  className="w-20 h-20 rounded-full mx-auto object-cover mb-4"
+                  width={100}
+                  height={100}
+                  className="w-24 h-24 rounded-full mx-auto mb-4 border-4 border-white"
                 />
               ) : (
-                <div className="w-20 h-20 rounded-full bg-evergreen text-white flex items-center justify-center text-2xl font-bold mx-auto mb-4">
-                  {child.displayName[0]?.toUpperCase()}
+                <div className="w-24 h-24 rounded-full bg-white/20 mx-auto mb-4 flex items-center justify-center text-3xl font-bold">
+                  {child.displayName[0]?.toUpperCase() || "?"}
                 </div>
               )}
-              <h2 className="text-2xl font-bold text-evergreen">{child.displayName}</h2>
-              <p className="text-gray-600">is working hard to be on Santa&apos;s nice list!</p>
-            </div>
-
-            {/* Magic Progress */}
-            <div className="mb-6">
-              <div className="flex justify-between items-center mb-2">
-                <span className="text-sm font-medium text-gray-700">Christmas Magic Progress</span>
-                <span className="text-sm text-gray-600">{child.score365}/365</span>
-              </div>
-              <div className="w-full bg-gray-200 rounded-full h-3">
-                <div 
-                  className="bg-gradient-to-r from-santa to-evergreen h-3 rounded-full transition-all duration-500" 
-                  style={{ width: `${Math.min(magicPercentage, 100)}%` }}
-                ></div>
-              </div>
-              <p className="text-xs text-gray-500 mt-1">{magicPercentage}% complete</p>
-            </div>
-
-            {/* Community Stats */}
-            <div className="grid grid-cols-2 gap-4 mb-6">
-              <div className="text-center p-3 bg-evergreen/10 rounded-lg">
-                <FaHeart className="text-santa text-xl mx-auto mb-1" />
-                <div className="text-lg font-bold text-evergreen">{donorCount}</div>
-                <div className="text-xs text-gray-600">Community Helpers</div>
-              </div>
-              <div className="text-center p-3 bg-santa/10 rounded-lg">
-                <FaGift className="text-evergreen text-xl mx-auto mb-1" />
-                <div className="text-lg font-bold text-santa">${totalDonated.toFixed(2)}</div>
-                <div className="text-xs text-gray-600">Magic Donated</div>
-              </div>
-            </div>
-          </div>
-
-          {/* Donation Form */}
-          <div className="bg-white rounded-2xl p-6 shadow-lg">
-            <h3 className="text-xl font-bold text-evergreen mb-4 text-center">
-              <FaHeart className="inline mr-2" />
-              Spread Christmas Magic
-            </h3>
-            
-            <form action={submitDonation} className="space-y-4">
-              <input type="hidden" name="childId" value={String(child._id)} />
               
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Your Name *
-                </label>
-                <input
-                  name="donorName"
-                  type="text"
-                  required
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-evergreen"
-                  placeholder="Enter your name"
-                />
+              <h1 className="text-2xl font-bold mb-2">{child.displayName}</h1>
+              <p className="text-white/90">is working hard to be on Santa&apos;s nice list!</p>
+            </div>
+
+            {/* Magic Progress Section */}
+            <div className="p-6">
+              <div className="text-center mb-6">
+                <div className="flex items-center justify-center gap-2 mb-3">
+                  <FaStar className="text-yellow-500" />
+                  <span className="text-lg font-semibold text-gray-700">Christmas Magic Progress</span>
+                  <FaStar className="text-yellow-500" />
+                </div>
+                
+                <div className="text-3xl font-bold text-evergreen mb-2">
+                  {child.score365}/365
+                </div>
+                
+                <div className="w-full bg-gray-200 rounded-full h-4 mb-3">
+                  <div 
+                    className="bg-gradient-to-r from-santa to-evergreen h-4 rounded-full transition-all duration-500" 
+                    style={{ width: `${Math.min(magicPercentage, 100)}%` }}
+                  ></div>
+                </div>
+                
+                <p className="text-gray-600">
+                  {magicPercentage}% of the way to Christmas! {daysUntilChristmas} days to go.
+                </p>
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Email (optional)
-                </label>
-                <input
-                  name="donorEmail"
-                  type="email"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-evergreen"
-                  placeholder="your@email.com"
-                />
+              {/* Community Stats */}
+              <div className="grid grid-cols-2 gap-4 mb-6">
+                <div className="text-center p-4 bg-gray-50 rounded-lg">
+                  <div className="text-2xl font-bold text-blueberry">
+                    ${((child.neighborBalanceCents || 0) / 100).toFixed(2)}
+                  </div>
+                  <div className="text-sm text-gray-600">Community Support</div>
+                </div>
+                <div className="text-center p-4 bg-gray-50 rounded-lg">
+                  <div className="text-2xl font-bold text-evergreen">
+                    {child.donorTotals?.count || 0}
+                  </div>
+                  <div className="text-sm text-gray-600">Supporters</div>
+                </div>
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Magic Amount ($1 = 1 magic point) *
-                </label>
-                <select
-                  name="donationAmount"
-                  required
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-evergreen"
-                >
-                  <option value="">Select amount</option>
-                  <option value="1">$1 - Small Magic</option>
-                  <option value="5">$5 - Good Magic</option>
-                  <option value="10">$10 - Great Magic</option>
-                  <option value="25">$25 - Amazing Magic</option>
-                  <option value="50">$50 - Incredible Magic</option>
-                </select>
+              {/* Donation Section */}
+              {child.donationsEnabled ? (
+                <div>
+                  <h3 className="text-lg font-semibold text-center mb-4 text-gray-800">
+                    Help {child.displayName} Earn Christmas Magic! 🎁
+                  </h3>
+                  <DonationForm 
+                    childId={child._id.toString()} 
+                    childName={child.displayName}
+                  />
+                </div>
+              ) : (
+                <div className="text-center p-4 bg-gray-50 rounded-lg">
+                  <p className="text-gray-600">
+                    Donations are currently disabled for {child.displayName}.
+                  </p>
+                </div>
+              )}
+
+              {/* Share Section */}
+              <div className="mt-6 pt-6 border-t border-gray-200">
+                <div className="text-center">
+                  <h4 className="font-semibold text-gray-800 mb-2">Spread the Christmas Spirit!</h4>
+                  <div className="flex justify-center gap-3">
+                    <button 
+                      onClick={() => {
+                        if (typeof window !== 'undefined' && navigator.share) {
+                          navigator.share({
+                            title: `Help ${child.displayName} earn Christmas magic!`,
+                            text: `${child.displayName} is working hard to be on Santa's nice list. Help spread some Christmas magic!`,
+                            url: window.location.href
+                          }).catch(() => {
+                            navigator.clipboard.writeText(window.location.href);
+                            alert('Link copied to clipboard!');
+                          });
+                        } else if (typeof window !== 'undefined') {
+                          navigator.clipboard.writeText(window.location.href);
+                          alert('Link copied to clipboard!');
+                        }
+                      }}
+                      className="inline-flex items-center gap-2 px-4 py-2 bg-blueberry text-white rounded-lg hover:bg-blue-600 transition-colors"
+                    >
+                      <FaShare className="text-sm" />
+                      Share
+                    </button>
+                  </div>
+                </div>
               </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Encouraging Message (optional)
-                </label>
-                <textarea
-                  name="message"
-                  rows={3}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-evergreen"
-                  placeholder="Write a nice message for the child..."
-                  maxLength={500}
-                />
-              </div>
-
-              <Button 
-                type="submit"
-                className="w-full bg-santa text-white py-3 text-lg font-semibold"
-              >
-                <FaGift className="mr-2" />
-                Give Christmas Magic
-              </Button>
-            </form>
-
-            <div className="mt-4 text-center">
-              <p className="text-xs text-gray-500">
-                This is a demo. In a real implementation, this would process payments securely.
-              </p>
             </div>
           </div>
 
-          {/* Share Section */}
-          <div className="bg-white rounded-2xl p-6 shadow-lg mt-6">
-            <h3 className="text-lg font-bold text-evergreen mb-4 text-center">
-              <FaShare className="inline mr-2" />
-              Share This Page
-            </h3>
-            <div className="text-center">
-              <p className="text-sm text-gray-600 mb-3">
-                Help {child.displayName} by sharing this page with others!
-              </p>
-              <div className="flex flex-col sm:flex-row gap-2 justify-center">
-                <Button className="bg-blueberry text-white text-sm">
-                  Share on Facebook
-                </Button>
-                <Button className="bg-evergreen text-white text-sm">
-                  Copy Link
-                </Button>
-              </div>
-            </div>
+          {/* Footer */}
+          <div className="text-center mt-6 text-white/80 text-sm">
+            <p>Powered by Spirit of Santa 🎅</p>
           </div>
         </div>
       </Container>

@@ -4,9 +4,10 @@ import React, { useState, useEffect, useMemo } from "react";
 import { FaSearch, FaFilter, FaTimes, FaHeart, FaFire, FaBolt, FaCheck, FaSpinner } from "react-icons/fa";
 import Button from "@/components/ui/Button";
 import Image from "next/image";
+import RequestNewItemButton from "@/components/catalog/RequestNewItemButton";
 import { addItemToChildGiftList, getChildExistingGifts } from "../actions-new";
 
-type ChildLite = { id: string; name: string };
+type ChildLite = { id: string; name: string; magicPoints?: number };
 type CatalogItem = {
   _id: string;
   title: string;
@@ -76,6 +77,8 @@ export default function EnhancedChildGiftBuilder({
   const [processingItems, setProcessingItems] = useState<Set<string>>(new Set());
   // Track successfully added items this session
   const [sessionAddedItems, setSessionAddedItems] = useState<Set<string>>(new Set());
+  // Track child magic points
+  const [childMagicPoints, setChildMagicPoints] = useState<number>(0);
 
   // Load existing gifts when child changes
   useEffect(() => {
@@ -84,6 +87,10 @@ export default function EnhancedChildGiftBuilder({
         const result = await getChildExistingGifts(selectedChild);
         if (result.success) {
           setExistingGifts(new Set(result.existingItems));
+          // Also get child's magic points if available
+          if (result.magicPoints !== undefined) {
+            setChildMagicPoints(result.magicPoints);
+          }
         }
       } catch (error) {
         console.error("Failed to load existing gifts:", error);
@@ -94,6 +101,21 @@ export default function EnhancedChildGiftBuilder({
       loadExistingGifts();
     }
   }, [selectedChild]);
+
+  const refreshChildData = () => {
+    // Refresh magic points after request
+    const loadData = async () => {
+      try {
+        const result = await getChildExistingGifts(selectedChild);
+        if (result.success && result.magicPoints !== undefined) {
+          setChildMagicPoints(result.magicPoints);
+        }
+      } catch (error) {
+        console.error("Failed to refresh child data:", error);
+      }
+    };
+    loadData();
+  };
 
   // Check if a catalog item is already in the child's list
   const isGiftInList = (item: CatalogItem) => {
@@ -258,6 +280,32 @@ export default function EnhancedChildGiftBuilder({
                 </option>
               ))}
             </select>
+          </div>
+        )}
+
+        {/* Request New Item Section */}
+        {selectedChild && (
+          <div className="bg-white rounded-xl p-4 mb-6 shadow-sm border">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-lg font-semibold text-gray-800">Can't find what you want?</h3>
+                <p className="text-sm text-gray-600">Request Santa to add a new item to the catalog</p>
+                {initialChildren.length === 1 && (
+                  <p className="text-sm text-evergreen font-medium mt-1">
+                    Building list for: {initialChildren[0].name}
+                  </p>
+                )}
+              </div>
+              <RequestNewItemButton
+                childId={selectedChild}
+                childName={initialChildren.find(c => c.id === selectedChild)?.name || ""}
+                magicPoints={childMagicPoints}
+                onRequestSent={refreshChildData}
+              />
+            </div>
+            <div className="mt-2 text-xs text-blue-600">
+              ✨ Magic Points: {childMagicPoints} (Need 5 to request new items)
+            </div>
           </div>
         )}
 

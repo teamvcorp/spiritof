@@ -1,47 +1,103 @@
 @import "tailwindcss";
 
-@theme inline {
-  /* call as varible here */
-  --color-santa: var(--santa);
-  --color-berryPink: var(--berryPink);
-  --color-frostyBlue: var(--frostyBlue);
-  --color-blueberry: var(--blueberry);
-  --color-mint: var(--mint);
-  --color-evergreen: var(--evergreen);
-}
-
 @layer base {
-  body { @apply text-evergreen antialiased; }
+  :root {
+    /* Christmas Color Palette */
+    --santa: #ea1938;
+    --berryPink: #ff6295;
+    --frostyBlue: #49c5fc;
+    --blueberry: #0084b5;
+    --mint: #46d597;
+    --evergreen: #37776c;
+  }
 
-  h1 { @apply text-4xl sm:text-4xl md:text-5xl font-bold leading-tight tracking-tight; }
-  h2 { @apply text-3xl sm:text-3xl font-semibold leading-snug; }
-  h3 { @apply text-2xl sm:text-2xl font-semibold; }
-  p  { @apply text-base sm:text-lg md:text-xl leading-relaxed; }
-  small { @apply text-sm leading-normal; }
+  body { 
+    color: #37776c; /* evergreen color */
+    font-family: Arial, Helvetica, sans-serif;
+  }
+
+  h1 { 
+    font-size: 2.25rem;
+    font-weight: 700;
+    line-height: 1.25;
+    letter-spacing: -0.025em;
+  }
+  
+  h2 { 
+    font-size: 1.875rem;
+    font-weight: 600;
+    line-height: 1.375;
+  }
+  
+  h3 { 
+    font-size: 1.5rem;
+    font-weight: 600;
+  }
+  
+  p {
+    font-size: 1rem;
+    line-height: 1.625;
+  }
+  
+  small { 
+    font-size: 0.875rem;
+    line-height: 1.25;
+  }
 }
 
-:root {
-  /* Color go here  */
-  --santa: #ea1938;
-  --berryPink: #ff6295;
-  --frostyBlue: #49c5fc;
-  --blueberry: #0084b5;
-  --mint: #46d597;
-  --evergreen: #37776c;
-}
+@layer utilities {
+  /* Custom Christmas colors */
+  .text-santa { color: #ea1938; }
+  .text-berryPink { color: #ff6295; }
+  .text-frostyBlue { color: #49c5fc; }
+  .text-blueberry { color: #0084b5; }
+  .text-mint { color: #46d597; }
+  .text-evergreen { color: #37776c; }
+  
+  .bg-santa { background-color: #ea1938; }
+  .bg-berryPink { background-color: #ff6295; }
+  .bg-frostyBlue { background-color: #49c5fc; }
+  .bg-blueberry { background-color: #0084b5; }
+  .bg-mint { background-color: #46d597; }
+  .bg-evergreen { background-color: #37776c; }
+  
+  .border-santa { border-color: #ea1938; }
+  .border-berryPink { border-color: #ff6295; }
+  .border-frostyBlue { border-color: #49c5fc; }
+  .border-blueberry { border-color: #0084b5; }
+  .border-mint { border-color: #46d597; }
+  .border-evergreen { border-color: #37776c; }
 
-
-@media (prefers-color-scheme: dark) {
-  :root {}
-}
-
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
-}
-
-/* Tailwind v3/v4 */
-.link-btn {
-  @apply inline-flex min-w-60 items-center gap-2 rounded-xl px-4 py-4 text-lg justify-center text-white transition-transform duration-300 ease-in-out hover:scale-110 active:scale-95 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-60 disabled:pointer-events-none;
+  /* Custom button class */
+  .link-btn {
+    display: inline-flex;
+    min-width: 15rem;
+    align-items: center;
+    gap: 0.5rem;
+    border-radius: 0.75rem;
+    padding: 1rem;
+    font-size: 1.125rem;
+    justify-content: center;
+    color: white;
+    transition: transform 300ms ease-in-out;
+  }
+  
+  .link-btn:hover {
+    transform: scale(1.1);
+  }
+  
+  .link-btn:active {
+    transform: scale(0.95);
+  }
+  
+  .link-btn:focus {
+    outline: 2px solid transparent;
+    outline-offset: 2px;
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.5);
+  }
+  
+  .link-btn:disabled {
+    opacity: 0.6;
+    pointer-events: none;
+  }
 }

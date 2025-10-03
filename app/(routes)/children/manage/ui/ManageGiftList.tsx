@@ -1,10 +1,9 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { FaTrash, FaEye, FaSpinner, FaImages } from "react-icons/fa";
+import { FaTrash, FaSpinner } from "react-icons/fa";
 import Button from "@/components/ui/Button";
 import Image from "next/image";
-import ImageViewer from "@/components/ui/ImageViewer";
 import { getChildGiftListNew, removeItemFromChildGiftList } from "../../list/actions-new";
 
 interface Gift {
@@ -33,8 +32,6 @@ export default function ManageGiftList({ childId, childName }: ManageGiftListPro
   const [gifts, setGifts] = useState<Gift[]>([]);
   const [loading, setLoading] = useState(true);
   const [removingItems, setRemovingItems] = useState<Set<string>>(new Set());
-  const [selectedGift, setSelectedGift] = useState<Gift | null>(null);
-  const [isViewerOpen, setIsViewerOpen] = useState(false);
 
   // Load the child's gift list
   useEffect(() => {
@@ -78,19 +75,6 @@ export default function ManageGiftList({ childId, childName }: ManageGiftListPro
         return newSet;
       });
     }
-  };
-
-  // Handle opening the image viewer
-  const handleViewImages = (gift: Gift) => {
-    setSelectedGift(gift);
-    setIsViewerOpen(true);
-  };
-
-  // Handle image uploaded to blob
-  const handleImageUploaded = (giftId: string, blobUrl: string) => {
-    setGifts(prev => prev.map(gift => 
-      gift._id === giftId ? { ...gift, blobUrl } : gift
-    ));
   };
 
   // Get the best image URL for display
@@ -191,36 +175,24 @@ export default function ManageGiftList({ childId, childName }: ManageGiftListPro
                 )}
 
                 {/* Actions */}
-                <div className="flex gap-2">
-                  <Button
-                    onClick={() => handleViewImages(gift)}
-                    className="flex-1 bg-blueberry text-white text-sm max-w-none"
-                  >
-                    <FaImages className="mr-1" />
-                    Images
-                  </Button>
-                  
-                  {gift.productUrl && (
-                    <Button
-                      onClick={() => { window.open(gift.productUrl, "_blank"); }}
-                      className="flex-1 bg-evergreen text-white text-sm max-w-none"
-                    >
-                      <FaEye className="mr-1" />
-                      View
-                    </Button>
-                  )}
-                  
+                <div className="flex justify-end">
                   <Button
                     onClick={() => handleRemoveGift(gift._id)}
                     disabled={removingItems.has(gift._id)}
-                    className={`bg-red-500 hover:bg-red-600 text-white text-sm px-3 max-w-none ${
+                    className={`bg-red-500 hover:bg-red-600 text-white text-sm px-4 py-2 max-w-none ${
                       removingItems.has(gift._id) ? "opacity-50 cursor-not-allowed" : ""
                     }`}
                   >
                     {removingItems.has(gift._id) ? (
-                      <FaSpinner className="animate-spin" />
+                      <>
+                        <FaSpinner className="animate-spin mr-1" />
+                        Removing...
+                      </>
                     ) : (
-                      <FaTrash />
+                      <>
+                        <FaTrash className="mr-1" />
+                        Remove
+                      </>
                     )}
                   </Button>
                 </div>
@@ -228,19 +200,6 @@ export default function ManageGiftList({ childId, childName }: ManageGiftListPro
             </div>
           ))}
         </div>
-      )}
-
-      {/* Image Viewer Modal */}
-      {selectedGift && (
-        <ImageViewer
-          gift={selectedGift}
-          isOpen={isViewerOpen}
-          onClose={() => {
-            setIsViewerOpen(false);
-            setSelectedGift(null);
-          }}
-          onImageUploaded={handleImageUploaded}
-        />
       )}
     </div>
   );

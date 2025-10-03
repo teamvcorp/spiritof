@@ -247,6 +247,7 @@ export async function getChildExistingGifts(childId: string) {
 
   return {
     success: true,
-    existingItems: Array.from(existingItems)
+    existingItems: Array.from(existingItems),
+    magicPoints: child.score365 || 0
   };
 }

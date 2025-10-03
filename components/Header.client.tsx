@@ -3,9 +3,10 @@
 
 import React, { useState } from "react";
 import { useSession, signIn, signOut } from "next-auth/react";
-import { FcGoogle } from "react-icons/fc";
+import { FaArrowAltCircleRight } from "react-icons/fa";
 import Button from "@/components/ui/Button";
 import Image from "next/image";
+import Link from "next/link";
 
 export default function HeaderAuth() {
   const { data: session, status } = useSession();
@@ -32,18 +33,40 @@ export default function HeaderAuth() {
   const fallbackInitial = session?.user?.name ? session.user.name[0].toUpperCase() : "U";
   const userName = session?.user?.name ?? "user";
 
-  return (
-    <div className="flex items-center gap-3">
-      {/* Loading state: icon-sized spinner */}
-      {loading || actionLoading ? (
-        <Button  loading aria-label="Auth loading" />
-      ) : session ? (
-        <>
+  // Smart call-to-action logic (same as homepage)
+  const getCallToAction = () => {
+    if (!session) {
+      // Not logged in - show login button with Christmas styling
+      return (
+        <Button
+          onClick={handleSignIn}
+          disabled={actionLoading}
+          className="bg-santa text-white uppercase text-sm px-4 py-2"
+          aria-label="Login to get started"
+        >
+          {actionLoading ? "Signing in..." : "Login to Get Started"}
+          <FaArrowAltCircleRight className="ml-1" />
+        </Button>
+      );
+    } else if (!session.isParentOnboarded) {
+      // Logged in but needs onboarding
+      return (
+        <Link href="/onboarding">
+          <Button className="bg-santa text-white uppercase text-sm px-4 py-2">
+            Complete Setup
+            <FaArrowAltCircleRight className="ml-1" />
+          </Button>
+        </Link>
+      );
+    } else {
+      // Fully set up - show user avatar and dashboard link
+      return (
+        <div className="flex items-center gap-3">
           {/* Avatar as an icon-button (click avatar to sign out) */}
           <Button
             onClick={handleSignOut}
             aria-label={`Sign out ${userName}`}
-            className="overflow-hidden" // ensure img fills circle
+            className="overflow-hidden p-1" // ensure img fills circle
           >
             {session.user?.image ? (
               <Image
@@ -51,29 +74,42 @@ export default function HeaderAuth() {
                 alt={session.user?.name ?? "User avatar"}
                 width={32}
                 height={32}
-                className="w-10 h-10 rounded-full"
+                className="w-8 h-8 rounded-full"
               />
             ) : (
-              <div className="w-full h-full flex items-center justify-center bg-gray-200 text-xs text-gray-700">
+              <div className="w-8 h-8 flex items-center justify-center bg-gray-200 text-xs text-gray-700 rounded-full">
                 {fallbackInitial}
               </div>
             )}
           </Button>
 
-          {/* Small textual sign out button */}
-          <Button className='bg-evergreen text-white' onClick={handleSignOut} aria-label="Sign out">
+          {/* Dashboard quick access */}
+          <Link href="/parent/dashboard">
+            <Button className="bg-evergreen text-white text-sm px-3 py-2">
+              Dashboard
+            </Button>
+          </Link>
+
+          {/* Small sign out button */}
+          <Button 
+            className="bg-gray-500 text-white text-sm px-3 py-2" 
+            onClick={handleSignOut} 
+            aria-label="Sign out"
+          >
             Sign out
           </Button>
-        </>
+        </div>
+      );
+    }
+  };
+
+  return (
+    <div className="flex items-center gap-3">
+      {/* Loading state: show spinner */}
+      {loading ? (
+        <Button loading aria-label="Auth loading" className="bg-santa text-white" />
       ) : (
-        /* Signed out: Google icon-only button */
-        <Button
-          onClick={handleSignIn}
-          aria-label="Sign in with Google"
-          title="Sign in with Google"
-        >
-          <FcGoogle className="w-10 h-10" aria-hidden />
-        </Button>
+        getCallToAction()
       )}
     </div>
   );

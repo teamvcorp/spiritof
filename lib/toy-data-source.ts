@@ -106,6 +106,86 @@ export const POPULAR_TOYS_2025: PopularToy[] = [
     }
   },
   {
+    title: "Barbie Fashionista Doll Collection",
+    brand: "Mattel", 
+    category: "dolls",
+    priceRange: { min: 8, max: 15 },
+    targetAge: { min: 3, max: 10 },
+    gender: "girl",
+    popularity: 92,
+    seasonal: false,
+    keywords: ["barbie", "fashionista", "doll", "clothes", "fashion"],
+    retailerInfo: {
+      walmart: { typical_price: 10.99 },
+      target: { typical_price: 11.99 },
+      amazon: { typical_price: 9.99 }
+    }
+  },
+  {
+    title: "Barbie Color Reveal Doll",
+    brand: "Mattel",
+    category: "dolls", 
+    priceRange: { min: 10, max: 18 },
+    targetAge: { min: 3, max: 8 },
+    gender: "girl",
+    popularity: 89,
+    seasonal: false,
+    keywords: ["barbie", "color reveal", "surprise", "transformation"],
+    retailerInfo: {
+      walmart: { typical_price: 12.99 },
+      target: { typical_price: 14.99 },
+      amazon: { typical_price: 11.99 }
+    }
+  },
+  {
+    title: "Barbie Malibu House Playset",
+    brand: "Mattel",
+    category: "dolls",
+    priceRange: { min: 40, max: 70 },
+    targetAge: { min: 3, max: 10 },
+    gender: "girl", 
+    popularity: 85,
+    seasonal: false,
+    keywords: ["barbie", "malibu", "house", "playset", "furniture"],
+    retailerInfo: {
+      walmart: { typical_price: 59.99 },
+      target: { typical_price: 64.99 },
+      amazon: { typical_price: 54.99 }
+    }
+  },
+  {
+    title: "Barbie Ken Doll",
+    brand: "Mattel",
+    category: "dolls",
+    priceRange: { min: 8, max: 15 },
+    targetAge: { min: 3, max: 10 },
+    gender: "girl",
+    popularity: 78,
+    seasonal: false,
+    keywords: ["barbie", "ken", "doll", "boyfriend", "male"],
+    retailerInfo: {
+      walmart: { typical_price: 10.99 },
+      target: { typical_price: 11.99 },
+      amazon: { typical_price: 9.99 }
+    }
+  },
+  {
+    title: "Barbie Extra Doll with Long Pink Hair",
+    brand: "Mattel",
+    category: "dolls",
+    priceRange: { min: 12, max: 20 },
+    targetAge: { min: 3, max: 10 },
+    gender: "girl",
+    popularity: 82,
+    seasonal: false,
+    keywords: ["barbie", "extra", "pink hair", "fashion", "accessories"],
+    retailerInfo: {
+      walmart: { typical_price: 14.99 },
+      target: { typical_price: 16.99 },
+      amazon: { typical_price: 13.99 }
+    }
+  },
+  {
     title: "Spider-Man Web Crawler Ultimate Action Figure",
     brand: "Hasbro",
     category: "action-figures",
@@ -153,6 +233,54 @@ export const POPULAR_TOYS_2025: PopularToy[] = [
       walmart: { typical_price: 349.99 },
       target: { typical_price: 349.99 },
       amazon: { typical_price: 349.99 }
+    }
+  },
+  {
+    title: "PlayStation 5 Console",
+    brand: "Sony",
+    category: "electronics",
+    priceRange: { min: 450, max: 600 },
+    targetAge: { min: 8, max: 18 },
+    gender: "neutral",
+    popularity: 98,
+    seasonal: true,
+    keywords: ["playstation", "ps5", "console", "gaming", "video games", "sony"],
+    retailerInfo: {
+      walmart: { typical_price: 499.99 },
+      target: { typical_price: 499.99 },
+      amazon: { typical_price: 499.99 }
+    }
+  },
+  {
+    title: "PlayStation DualSense Wireless Controller",
+    brand: "Sony",
+    category: "electronics",
+    priceRange: { min: 60, max: 80 },
+    targetAge: { min: 8, max: 18 },
+    gender: "neutral",
+    popularity: 90,
+    seasonal: false,
+    keywords: ["playstation", "dualsense", "controller", "wireless", "ps5", "gaming"],
+    retailerInfo: {
+      walmart: { typical_price: 69.99 },
+      target: { typical_price: 69.99 },
+      amazon: { typical_price: 64.99 }
+    }
+  },
+  {
+    title: "PlayStation Portal Remote Player",
+    brand: "Sony", 
+    category: "electronics",
+    priceRange: { min: 180, max: 220 },
+    targetAge: { min: 10, max: 18 },
+    gender: "neutral",
+    popularity: 85,
+    seasonal: false,
+    keywords: ["playstation", "portal", "remote", "handheld", "streaming", "ps5"],
+    retailerInfo: {
+      walmart: { typical_price: 199.99 },
+      target: { typical_price: 199.99 },
+      amazon: { typical_price: 189.99 }
     }
   },
   {
