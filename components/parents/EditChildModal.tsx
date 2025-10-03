@@ -22,6 +22,33 @@ export default function EditChildModal({ child, isOpen, onClose, onSubmit }: Edi
   const [percentAllocation, setPercentAllocation] = useState(child.percentAllocation);
   const [avatarUrl, setAvatarUrl] = useState(child.avatarUrl || "");
   const [donationsEnabled, setDonationsEnabled] = useState(child.donationsEnabled ?? true);
+  const [uploadingImage, setUploadingImage] = useState(false);
+
+  // Handle image upload
+  const handleImageUpload = async (file: File) => {
+    setUploadingImage(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const response = await fetch('/api/upload-image', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        setAvatarUrl(result.url);
+      } else {
+        alert('Failed to upload image');
+      }
+    } catch (error) {
+      console.error('Image upload error:', error);
+      alert('Failed to upload image');
+    } finally {
+      setUploadingImage(false);
+    }
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -64,9 +91,9 @@ export default function EditChildModal({ child, isOpen, onClose, onSubmit }: Edi
             </label>
             <div className="bg-gray-50 rounded-lg p-4 border-2 border-dashed border-gray-300">
               <ImageUpload
-                currentImageUrl={avatarUrl || undefined}
-                onImageUploaded={setAvatarUrl}
-                onImageRemoved={() => setAvatarUrl("")}
+                currentImage={avatarUrl}
+                onUpload={handleImageUpload}
+                uploading={uploadingImage}
               />
             </div>
           </div>

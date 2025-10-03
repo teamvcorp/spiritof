@@ -4,10 +4,19 @@ import { auth } from '@/auth';
 
 export async function POST(request: NextRequest) {
   try {
-    // Check authentication
-    const session = await auth();
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    // Check for admin password first (for catalog management)
+    const adminPassword = request.headers.get('X-Admin-Password');
+    const isAdmin = adminPassword === (process.env.ADMIN_PASSWORD || 'admin123');
+    
+    let userId = null;
+    
+    if (!isAdmin) {
+      // Check authentication for regular users
+      const session = await auth();
+      if (!session?.user?.id) {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      }
+      userId = session.user.id;
     }
 
     // Get the file from the request
@@ -31,7 +40,15 @@ export async function POST(request: NextRequest) {
     // Generate a unique filename
     const timestamp = Date.now();
     const fileExtension = file.name.split('.').pop() || 'jpg';
-    const filename = `child-profiles/${session.user.id}/${timestamp}.${fileExtension}`;
+    
+    let filename: string;
+    if (isAdmin) {
+      // Admin uploads for catalog items
+      filename = `catalog-items/${timestamp}.${fileExtension}`;
+    } else {
+      // User uploads for child profiles
+      filename = `child-profiles/${userId}/${timestamp}.${fileExtension}`;
+    }
 
     // Upload to Vercel Blob
     const blob = await put(filename, file, {

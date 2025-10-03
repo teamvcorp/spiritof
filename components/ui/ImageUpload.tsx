@@ -5,20 +5,21 @@ import Image from "next/image";
 import Button from "@/components/ui/Button";
 
 interface ImageUploadProps {
-  currentImageUrl?: string;
-  onImageUploaded: (url: string) => void;
-  onImageRemoved?: () => void;
+  currentImage?: string;
+  onUpload: (file: File) => void;
+  uploading?: boolean;
   className?: string;
+  isAdminMode?: boolean;
 }
 
 export default function ImageUpload({ 
-  currentImageUrl, 
-  onImageUploaded, 
-  onImageRemoved,
-  className = "" 
+  currentImage, 
+  onUpload, 
+  uploading = false,
+  className = "",
+  isAdminMode = false
 }: ImageUploadProps) {
-  const [uploading, setUploading] = useState(false);
-  const [previewUrl, setPreviewUrl] = useState<string | null>(currentImageUrl || null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(currentImage || null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -37,44 +38,21 @@ export default function ImageUpload({
       return;
     }
 
-    try {
-      setUploading(true);
+    // Create preview URL
+    const objectUrl = URL.createObjectURL(file);
+    setPreviewUrl(objectUrl);
 
-      // Create FormData
-      const formData = new FormData();
-      formData.append('file', file);
+    // Call the parent's upload handler
+    onUpload(file);
 
-      // Upload to our API endpoint
-      const response = await fetch('/api/upload-image', {
-        method: 'POST',
-        body: formData,
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to upload image');
-      }
-
-      const data = await response.json();
-      
-      if (data.url) {
-        setPreviewUrl(data.url);
-        onImageUploaded(data.url);
-      }
-    } catch (error) {
-      console.error('Upload error:', error);
-      alert('Failed to upload image. Please try again.');
-    } finally {
-      setUploading(false);
-      // Reset file input
-      if (fileInputRef.current) {
-        fileInputRef.current.value = '';
-      }
+    // Reset file input
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
     }
   };
 
   const handleRemoveImage = () => {
     setPreviewUrl(null);
-    onImageRemoved?.();
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
@@ -83,12 +61,14 @@ export default function ImageUpload({
   return (
     <div className={`space-y-4 ${className}`}>
       {/* Current/Preview Image */}
-      {previewUrl && (
+      {(previewUrl || currentImage) && (
         <div className="relative inline-block">
-          <div className="w-24 h-24 relative rounded-full overflow-hidden border-4 border-white shadow-lg">
+          <div className={`relative rounded overflow-hidden border shadow-lg ${
+            isAdminMode ? 'w-32 h-32' : 'w-24 h-24 rounded-full border-4 border-white'
+          }`}>
             <Image
-              src={previewUrl}
-              alt="Profile preview"
+              src={previewUrl || currentImage || ''}
+              alt="Image preview"
               fill
               className="object-cover"
             />
@@ -120,10 +100,10 @@ export default function ImageUpload({
             disabled={uploading}
             className="bg-blueberry hover:bg-blueberry-600 text-white text-sm"
           >
-            {uploading ? '📤 Uploading...' : previewUrl ? '📷 Change Photo' : '📷 Upload Photo'}
+            {uploading ? '📤 Uploading...' : (previewUrl || currentImage) ? '📷 Change Image' : '📷 Upload Image'}
           </Button>
           
-          {previewUrl && (
+          {(previewUrl || currentImage) && (
             <Button
               type="button"
               onClick={handleRemoveImage}
@@ -137,7 +117,7 @@ export default function ImageUpload({
         <div className="text-xs text-gray-500">
           <p>• Supports JPG, PNG, GIF up to 5MB</p>
           <p>• Images are securely stored on Vercel</p>
-          <p>• Square images work best for profiles</p>
+          {!isAdminMode && <p>• Square images work best for profiles</p>}
         </div>
       </div>
     </div>

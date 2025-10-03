@@ -11,7 +11,35 @@ interface AddChildFormProps {
 export default function AddChildForm({ onSubmit }: AddChildFormProps) {
   const [childName, setChildName] = useState("");
   const [percentAllocation, setPercentAllocation] = useState(0);
+  const [displayName, setDisplayName] = useState("");
   const [avatarUrl, setAvatarUrl] = useState("");
+  const [uploadingImage, setUploadingImage] = useState(false);
+
+  // Handle image upload
+  const handleImageUpload = async (file: File) => {
+    setUploadingImage(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const response = await fetch('/api/upload-image', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        setAvatarUrl(result.url);
+      } else {
+        alert('Failed to upload image');
+      }
+    } catch (error) {
+      console.error('Image upload error:', error);
+      alert('Failed to upload image');
+    } finally {
+      setUploadingImage(false);
+    }
+  };
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -75,9 +103,9 @@ export default function AddChildForm({ onSubmit }: AddChildFormProps) {
         </label>
         <div className="bg-white/60 rounded-lg p-4 border-2 border-dashed border-gray-300">
           <ImageUpload
-            currentImageUrl={avatarUrl || undefined}
-            onImageUploaded={setAvatarUrl}
-            onImageRemoved={() => setAvatarUrl("")}
+            currentImage={avatarUrl}
+            onUpload={handleImageUpload}
+            uploading={uploadingImage}
           />
         </div>
         <p className="text-xs text-gray-500">Upload a photo to personalize their profile</p>
@@ -116,10 +144,13 @@ export default function AddChildForm({ onSubmit }: AddChildFormProps) {
       <div className="flex justify-center pt-4">
         <button 
           type="submit" 
-          className="bg-gradient-to-r from-santa to-santa-600 hover:from-santa-600 hover:to-santa-700 text-white font-paytone-one px-8 py-4 rounded-xl shadow-lg hover:shadow-xl transform hover:scale-105 active:scale-95 transition-all duration-200 flex items-center space-x-2"
+          disabled={uploadingImage || !displayName.trim()}
+          className="bg-gradient-to-r from-santa to-santa-600 hover:from-santa-600 hover:to-santa-700 text-white font-paytone-one px-8 py-4 rounded-xl shadow-lg hover:shadow-xl transform hover:scale-105 active:scale-95 transition-all duration-200 flex items-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
         >
           <span className="text-xl">🎄</span>
-          <span>Add Child to Christmas List</span>
+          <span>
+            {uploadingImage ? "Uploading Image..." : "Add Child to Christmas List"}
+          </span>
           <span className="text-xl">✨</span>
         </button>
       </div>
