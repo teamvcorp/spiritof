@@ -13,15 +13,16 @@ type PageProps = {
 };
 
 export default async function ShareChildPage({ params, searchParams }: PageProps) {
-  const { slug } = await params;
-  const { donation } = await searchParams;
+  try {
+    const { slug } = await params;
+    const { donation } = await searchParams;
 
-  await dbConnect();
-  const child = await Child.findOne({ shareSlug: slug }).lean<IChild | null>();
-  
-  if (!child) {
-    redirect("/");
-  }
+    await dbConnect();
+    const child = await Child.findOne({ shareSlug: slug }).lean<IChild | null>();
+    
+    if (!child) {
+      redirect("/");
+    }
 
   // Calculate progress
   const magicPercentage = Math.round((child.score365 / 365) * 100);
@@ -175,4 +176,8 @@ export default async function ShareChildPage({ params, searchParams }: PageProps
       </Container>
     </main>
   );
+  } catch (error) {
+    console.error('Share page error:', error);
+    redirect("/");
+  }
 }
