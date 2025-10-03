@@ -155,6 +155,15 @@ async function handleVerification() {
       timestamp: new Date().toISOString()
     });
     
+    // In development or when debugging, show the actual error
+    if (process.env.NODE_ENV === 'development' || process.env.VERCEL_ENV === 'preview') {
+      return NextResponse.json({
+        error: 'Verification failed',
+        details: error instanceof Error ? error.message : 'Unknown error',
+        timestamp: new Date().toISOString()
+      }, { status: 500 });
+    }
+    
     const baseUrl = getBaseUrl();
     return NextResponse.redirect(new URL("/onboarding?error=verification_failed", baseUrl));
   }
