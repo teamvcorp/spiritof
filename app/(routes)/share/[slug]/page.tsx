@@ -4,8 +4,9 @@ import { redirect } from "next/navigation";
 import type { IChild } from "@/types/childType";
 import Container from "@/components/ui/Container";
 import Image from "next/image";
-import { FaShare, FaStar } from "react-icons/fa";
+import { FaStar } from "react-icons/fa";
 import DonationForm from "./DonationForm";
+import ShareButton from "./ShareButton";
 
 type PageProps = {
   params: Promise<{ slug: string }>;
@@ -141,27 +142,7 @@ export default async function ShareChildPage({ params, searchParams }: PageProps
                 <div className="text-center">
                   <h4 className="font-semibold text-gray-800 mb-2">Spread the Christmas Spirit!</h4>
                   <div className="flex justify-center gap-3">
-                    <button 
-                      onClick={() => {
-                        if (typeof window !== 'undefined' && navigator.share) {
-                          navigator.share({
-                            title: `Help ${child.displayName} earn Christmas magic!`,
-                            text: `${child.displayName} is working hard to be on Santa's nice list. Help spread some Christmas magic!`,
-                            url: window.location.href
-                          }).catch(() => {
-                            navigator.clipboard.writeText(window.location.href);
-                            alert('Link copied to clipboard!');
-                          });
-                        } else if (typeof window !== 'undefined') {
-                          navigator.clipboard.writeText(window.location.href);
-                          alert('Link copied to clipboard!');
-                        }
-                      }}
-                      className="inline-flex items-center gap-2 px-4 py-2 bg-blueberry text-white rounded-lg hover:bg-blue-600 transition-colors"
-                    >
-                      <FaShare className="text-sm" />
-                      Share
-                    </button>
+                    <ShareButton childName={child.displayName} />
                   </div>
                 </div>
               </div>
