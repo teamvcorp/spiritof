@@ -86,6 +86,8 @@ async function handleVerification() {
       throw new Error('Stripe configuration missing');
     }
 
+    console.log('🆕 New user needs age verification - proceeding with Stripe customer creation');
+
     // Add retry logic for Stripe operations
     let customer, checkoutSession;
     let stripeRetries = 2;
@@ -130,11 +132,26 @@ async function handleVerification() {
           locale: 'en',
         });
         console.log('✅ Checkout session created:', checkoutSession.id);
+        console.log('🔗 Checkout URL:', checkoutSession.url);
         
         break; // Success, exit retry loop
-      } catch (stripeError) {
+      } catch (stripeError: any) {
         stripeRetries--;
-        console.warn(`❌ Stripe operation failed, ${stripeRetries} retries left:`, stripeError);
+        console.error(`❌ Stripe operation failed, ${stripeRetries} retries left:`, {
+          message: stripeError?.message,
+          type: stripeError?.type,
+          code: stripeError?.code,
+          param: stripeError?.param,
+          stack: stripeError?.stack?.substring(0, 200)
+        });
+        
+        // If it's a specific Stripe error, don't retry certain types
+        if (stripeError?.type === 'StripeInvalidRequestError' || 
+            stripeError?.code === 'resource_missing' ||
+            stripeError?.code === 'api_key_expired') {
+          throw stripeError; // Don't retry these
+        }
+        
         if (stripeRetries === 0) throw stripeError;
         await new Promise(resolve => setTimeout(resolve, 2000)); // Wait 2s before retry
       }
@@ -155,11 +172,14 @@ async function handleVerification() {
       timestamp: new Date().toISOString()
     });
     
-    // In development or when debugging, show the actual error
-    if (process.env.NODE_ENV === 'development' || process.env.VERCEL_ENV === 'preview') {
+    // Temporary: Return JSON for debugging instead of redirect
+    // Remove this after we identify the issue
+    if (true) { // Always show debug for now
       return NextResponse.json({
         error: 'Verification failed',
         details: error instanceof Error ? error.message : 'Unknown error',
+        type: error instanceof Error ? error.constructor.name : 'Unknown',
+        stack: error instanceof Error ? error.stack?.substring(0, 500) : undefined,
         timestamp: new Date().toISOString()
       }, { status: 500 });
     }
@@ -171,9 +191,9 @@ async function handleVerification() {
 
 // Improved base URL determination with better environment detection
 function getBaseUrl(): string {
-  // Production environment
-  if (process.env.VERCEL_ENV === 'production') {
-    return process.env.NEXT_PUBLIC_APP_URL || 'https://www.spiritofsanta.club';
+  // Always use the production URL for production environment
+  if (process.env.VERCEL_ENV === 'production' || process.env.NODE_ENV === 'production') {
+    return 'https://www.spiritofsanta.club';
   }
   
   // Preview/staging environment
@@ -182,5 +202,5 @@ function getBaseUrl(): string {
   }
   
   // Development fallback
-  return process.env.NEXTAUTH_URL || 'http://localhost:3000';
+  return 'http://localhost:3000';
 }
