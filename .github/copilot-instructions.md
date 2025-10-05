@@ -66,10 +66,10 @@ OPENAI_API_KEY=        # For catalog generation
 
 ## Critical Integration Points
 
-### OpenAI Catalog Generation (`/admin/catalog/actions.ts`)
-- Multi-pass AI workflow: web search → JSON normalization
-- Target major retailers (Walmart, Target, Amazon) with domain validation
-- Gender-based product categorization with deduplication by URL
+### Master Catalog Management (`/admin/catalog-builder`)
+- Simplified gender-based toy browsing with manual catalog management
+- Direct upload and curation of gift items with image management
+- Toy request system allowing children to request new items for magic points
 
 ### Stripe Payment Integration
 - Parent wallet system with ledger-based balance tracking

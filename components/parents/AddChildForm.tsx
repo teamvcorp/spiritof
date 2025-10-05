@@ -11,9 +11,21 @@ interface AddChildFormProps {
 export default function AddChildForm({ onSubmit }: AddChildFormProps) {
   const [childName, setChildName] = useState("");
   const [percentAllocation, setPercentAllocation] = useState(0);
-  const [displayName, setDisplayName] = useState("");
   const [avatarUrl, setAvatarUrl] = useState("");
   const [uploadingImage, setUploadingImage] = useState(false);
+
+  // Validation helpers
+  const isNameValid = childName.trim().length > 0;
+  const isBudgetValid = percentAllocation > 0 && percentAllocation <= 100;
+  const isFormValid = isNameValid && isBudgetValid && !uploadingImage;
+
+  // Get validation message for button
+  const getValidationMessage = () => {
+    if (uploadingImage) return "Uploading Image...";
+    if (!isNameValid) return "Please enter child's name";
+    if (!isBudgetValid) return "Please set budget share (1-100%)";
+    return "Add Child to Christmas List";
+  };
 
   // Handle image upload
   const handleImageUpload = async (file: File) => {
@@ -65,14 +77,33 @@ export default function AddChildForm({ onSubmit }: AddChildFormProps) {
           <label className="flex items-center text-sm font-medium text-gray-700">
             <span className="text-santa mr-2">👤</span>
             Child&apos;s Name
+            <span className="text-santa ml-1">*</span>
           </label>
           <input 
             value={childName}
             onChange={(e) => setChildName(e.target.value)}
             required 
             placeholder="e.g. Sarah, Tommy, Alex..." 
-            className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-santa focus:border-santa bg-white/90 transition-all duration-200 placeholder-gray-400"
+            className={`w-full px-4 py-3 border-2 rounded-lg focus:outline-none focus:ring-2 bg-white/90 transition-all duration-200 placeholder-gray-400 ${
+              childName.length > 0 
+                ? isNameValid 
+                  ? 'border-green-300 focus:ring-green-500 focus:border-green-500' 
+                  : 'border-red-300 focus:ring-red-500 focus:border-red-500'
+                : 'border-gray-200 focus:ring-santa focus:border-santa'
+            }`}
           />
+          {childName.length > 0 && !isNameValid && (
+            <p className="text-xs text-red-600 flex items-center">
+              <span className="mr-1">⚠️</span>
+              Please enter a valid name
+            </p>
+          )}
+          {childName.length > 0 && isNameValid && (
+            <p className="text-xs text-green-600 flex items-center">
+              <span className="mr-1">✅</span>
+              Great choice!
+            </p>
+          )}
           <p className="text-xs text-gray-500">This is how their name will appear on their Christmas list</p>
         </div>
 
@@ -81,16 +112,35 @@ export default function AddChildForm({ onSubmit }: AddChildFormProps) {
           <label className="flex items-center text-sm font-medium text-gray-700">
             <span className="text-evergreen mr-2">💰</span>
             Budget Share (%)
+            <span className="text-santa ml-1">*</span>
           </label>
           <input 
             value={percentAllocation}
             onChange={(e) => setPercentAllocation(Number(e.target.value))}
             type="number" 
-            min={0} 
+            min={1} 
             max={100}
             placeholder="25"
-            className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-evergreen focus:border-evergreen bg-white/90 transition-all duration-200"
+            className={`w-full px-4 py-3 border-2 rounded-lg focus:outline-none focus:ring-2 bg-white/90 transition-all duration-200 ${
+              percentAllocation > 0 
+                ? isBudgetValid 
+                  ? 'border-green-300 focus:ring-green-500 focus:border-green-500' 
+                  : 'border-red-300 focus:ring-red-500 focus:border-red-500'
+                : 'border-gray-200 focus:ring-evergreen focus:border-evergreen'
+            }`}
           />
+          {percentAllocation > 0 && !isBudgetValid && (
+            <p className="text-xs text-red-600 flex items-center">
+              <span className="mr-1">⚠️</span>
+              Budget must be between 1% and 100%
+            </p>
+          )}
+          {percentAllocation > 0 && isBudgetValid && (
+            <p className="text-xs text-green-600 flex items-center">
+              <span className="mr-1">✅</span>
+              Perfect! ${percentAllocation}% allocated
+            </p>
+          )}
           <p className="text-xs text-gray-500">Percentage of your monthly magic budget for this child</p>
         </div>
       </div>
@@ -140,18 +190,44 @@ export default function AddChildForm({ onSubmit }: AddChildFormProps) {
         </div>
       </div>
 
+      {/* Validation Summary */}
+      {(!isFormValid && (childName.length > 0 || percentAllocation > 0)) && (
+        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+          <h4 className="text-sm font-medium text-yellow-800 mb-2 flex items-center">
+            <span className="mr-2">📝</span>
+            Please complete the required fields:
+          </h4>
+          <ul className="text-sm text-yellow-700 space-y-1">
+            {!isNameValid && (
+              <li className="flex items-center">
+                <span className="mr-2">•</span>
+                Enter your child's name
+              </li>
+            )}
+            {!isBudgetValid && (
+              <li className="flex items-center">
+                <span className="mr-2">•</span>
+                Set a budget share between 1% and 100%
+              </li>
+            )}
+          </ul>
+        </div>
+      )}
+
       {/* Submit Button */}
       <div className="flex justify-center pt-4">
         <button 
           type="submit" 
-          disabled={uploadingImage || !displayName.trim()}
-          className="bg-gradient-to-r from-santa to-santa-600 hover:from-santa-600 hover:to-santa-700 text-white font-paytone-one px-8 py-4 rounded-xl shadow-lg hover:shadow-xl transform hover:scale-105 active:scale-95 transition-all duration-200 flex items-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+          disabled={!isFormValid}
+          className={`font-paytone-one px-8 py-4 rounded-xl shadow-lg transition-all duration-200 flex items-center space-x-2 ${
+            isFormValid
+              ? 'bg-santa hover:bg-santa-600 text-white hover:shadow-xl transform hover:scale-105 active:scale-95'
+              : 'bg-gray-300 text-gray-400 cursor-not-allowed'
+          }`}
         >
-          <span className="text-xl">🎄</span>
-          <span>
-            {uploadingImage ? "Uploading Image..." : "Add Child to Christmas List"}
-          </span>
-          <span className="text-xl">✨</span>
+         
+          <span>{getValidationMessage()}</span>
+         
         </button>
       </div>
     </form>

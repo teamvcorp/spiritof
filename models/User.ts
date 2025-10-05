@@ -13,6 +13,7 @@ interface IUser {
   isParentOnboarded: boolean;
   createdAt?: Date;
   updatedAt?: Date;
+  admin?: boolean;
 }
 
 interface UserMethods {
@@ -27,6 +28,7 @@ const UserSchema = new Schema<IUser>({
   authProvider: { type: String, enum: ["google", "credentials"], default: "google" },
   parentId: { type: Types.ObjectId, ref: "Parent" },
   isParentOnboarded: { type: Boolean, default: false },
+  admin: { type: Boolean, default: false },
 }, { timestamps: true });
 
 // Hash password before saving

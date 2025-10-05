@@ -1,14 +1,14 @@
 "use client";
 
-import { useState } from 'react';
-import Button from '@/components/ui/Button';
-import { FaPlus, FaSpinner, FaCheckCircle, FaExclamationTriangle } from 'react-icons/fa';
+import React, { useState } from "react";
+import { FaPlus, FaSpinner, FaGift, FaCheckCircle, FaExclamationTriangle } from "react-icons/fa";
+import Button from "@/components/ui/Button";
 
-interface RequestNewItemButtonProps {
+interface RequestNewToyProps {
   childId: string;
   childName: string;
   magicPoints: number;
-  onRequestSent?: () => void;
+  onRequestSent: () => void;
 }
 
 interface ToastMessage {
@@ -16,12 +16,12 @@ interface ToastMessage {
   message: string;
 }
 
-export default function RequestNewItemButton({ 
-  childId, 
-  childName, 
+export default function RequestNewToy({
+  childId,
+  childName,
   magicPoints,
-  onRequestSent 
-}: RequestNewItemButtonProps) {
+  onRequestSent
+}: RequestNewToyProps) {
   const [showModal, setShowModal] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [toast, setToast] = useState<ToastMessage | null>(null);
@@ -30,6 +30,8 @@ export default function RequestNewItemButton({
     itemDescription: '',
     itemUrl: ''
   });
+
+  const canRequest = magicPoints >= 5;
 
   const showToast = (type: 'success' | 'error', message: string) => {
     setToast({ type, message });
@@ -64,7 +66,7 @@ export default function RequestNewItemButton({
         showToast('success', result.message || 'Your request has been sent to Santa! 🎅');
         setShowModal(false);
         setFormData({ itemTitle: '', itemDescription: '', itemUrl: '' });
-        onRequestSent?.();
+        onRequestSent();
       } else {
         showToast('error', result.error || 'Failed to send request');
       }
@@ -76,8 +78,6 @@ export default function RequestNewItemButton({
     }
   };
 
-  const canRequest = magicPoints >= 5;
-
   return (
     <>
       <Button
@@ -87,11 +87,12 @@ export default function RequestNewItemButton({
           canRequest 
             ? 'bg-santa text-white hover:bg-red-700' 
             : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-        } flex items-center gap-2`}
-        title={!canRequest ? 'You need 5 magic points to request a new item' : 'Request a new item from Santa (costs 5 magic points)'}
+        } flex items-center gap-2 px-6 py-3 max-w-none`}
+        title={!canRequest ? 'You need 5 magic points to request a new toy' : 'Request Santa to add a new toy (costs 5 magic points)'}
       >
         <FaPlus />
-        Request New Item {!canRequest && '(Need 5 ✨)'}
+        Request New Toy
+        {!canRequest && <span className="text-sm">(Need 5 ✨)</span>}
       </Button>
 
       {/* Toast Notification */}
@@ -120,31 +121,47 @@ export default function RequestNewItemButton({
 
       {showModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl max-w-md w-full p-6">
-            <h2 className="text-2xl font-bold text-evergreen mb-4">
-              🎅 Request New Item for {childName}
-            </h2>
+          <div className="bg-white rounded-xl max-w-md w-full p-6 max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-start mb-4">
+              <h2 className="text-2xl font-paytone-one text-santa mb-2">
+                🎅 Request New Toy for {childName}
+              </h2>
+              <button
+                onClick={() => setShowModal(false)}
+                className="text-gray-400 hover:text-gray-600 text-xl"
+              >
+                ✕
+              </button>
+            </div>
             
-            <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-              <p className="text-sm text-blue-800">
-                <strong>Cost:</strong> 5 magic points ✨
-              </p>
-              <p className="text-sm text-blue-700">
+            <div className="mb-6 p-4 bg-santa-50 border border-santa-200 rounded-lg">
+              <div className="flex items-center gap-2 mb-2">
+                <FaGift className="text-santa" />
+                <p className="text-sm font-medium text-santa-800">
+                  Cost: 5 magic points ✨
+                </p>
+              </div>
+              <p className="text-sm text-santa-700">
                 Your current magic points: <strong>{magicPoints} ✨</strong>
               </p>
+              {!canRequest && (
+                <p className="text-sm text-santa-600 mt-2">
+                  You need more magic points! Ask your parents to vote for you or do good deeds.
+                </p>
+              )}
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  What would you like? *
+                  What toy would you like? *
                 </label>
                 <input
                   type="text"
                   required
                   value={formData.itemTitle}
                   onChange={(e) => setFormData({...formData, itemTitle: e.target.value})}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-evergreen focus:border-transparent"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-santa focus:border-transparent"
                   placeholder="e.g., LEGO Hogwarts Castle"
                 />
               </div>
@@ -156,7 +173,7 @@ export default function RequestNewItemButton({
                 <textarea
                   value={formData.itemDescription}
                   onChange={(e) => setFormData({...formData, itemDescription: e.target.value})}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-evergreen focus:border-transparent"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-santa focus:border-transparent"
                   rows={3}
                   placeholder="Why do you want this? What would you do with it?"
                 />
@@ -164,13 +181,13 @@ export default function RequestNewItemButton({
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Link to the item (optional)
+                  Link to the toy (optional)
                 </label>
                 <input
                   type="url"
                   value={formData.itemUrl}
                   onChange={(e) => setFormData({...formData, itemUrl: e.target.value})}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-evergreen focus:border-transparent"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-santa focus:border-transparent"
                   placeholder="https://..."
                 />
               </div>
@@ -178,8 +195,12 @@ export default function RequestNewItemButton({
               <div className="flex gap-4 pt-4">
                 <Button
                   type="submit"
-                  disabled={isLoading}
-                  className="flex-1 bg-santa text-white hover:bg-red-700 flex items-center justify-center gap-2"
+                  disabled={isLoading || !canRequest}
+                  className={`flex-1 ${
+                    canRequest 
+                      ? 'bg-santa text-white hover:bg-red-700' 
+                      : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                  } flex items-center justify-center gap-2 max-w-none`}
                 >
                   {isLoading ? (
                     <>
@@ -188,6 +209,7 @@ export default function RequestNewItemButton({
                     </>
                   ) : (
                     <>
+                      <FaGift />
                       Send to Santa (5 ✨)
                     </>
                   )}
@@ -195,7 +217,7 @@ export default function RequestNewItemButton({
                 <Button
                   type="button"
                   onClick={() => setShowModal(false)}
-                  className="flex-1 bg-gray-500 text-white hover:bg-gray-600"
+                  className="flex-1 bg-gray-500 text-white hover:bg-gray-600 max-w-none"
                 >
                   Cancel
                 </Button>

@@ -16,8 +16,8 @@ export default async function AuthPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-evergreen via-santa to-blueberry py-20 px-4">
-      <Container className="max-w-lg">
+    <div className="min-h-screen bg-frostyBlue py-20 px-4">
+      <Container size='xl'>
         <AuthOptions />
       </Container>
     </div>

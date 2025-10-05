@@ -6,12 +6,14 @@ declare module "next-auth" {
     user: {
       id?: string;
       role?: string;
+      admin?: boolean;
     } & DefaultSession["user"];
     accessToken?: string;
 
     /** App-specific flags */
     isParentOnboarded?: boolean;
     parentId?: string | null;
+    admin?: boolean;
   }
 }
 
@@ -24,5 +26,6 @@ declare module "next-auth/jwt" {
     /** App-specific flags */
     isParentOnboarded?: boolean;
     parentId?: string | null;
+    admin?: boolean;
   }
 }

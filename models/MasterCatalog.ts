@@ -7,6 +7,7 @@ export interface MasterCatalogItem {
   title: string;
   brand?: string;
   category?: string;
+  description?: string;
   gender: CatalogGender;
   ageMin?: number;
   ageMax?: number;
@@ -51,6 +52,7 @@ const MasterCatalogSchema = new Schema<MasterCatalogItem, MasterCatalogModel, No
   title: { type: String, required: true, trim: true, maxlength: 200 },
   brand: { type: String, trim: true },
   category: { type: String, trim: true },
+  description: { type: String, trim: true, maxlength: 1000 },
   gender: { type: String, enum: ["boy", "girl", "neutral"], required: true, index: true },
   ageMin: Number,
   ageMax: Number,

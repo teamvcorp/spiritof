@@ -3,7 +3,7 @@ import { auth } from "@/auth";
 import { redirect } from "next/navigation";
 import { Parent } from "@/models/Parent";
 import { Child } from "@/models/Child";
-import EnhancedChildGiftBuilder from "./ui/EnhancedChildGiftBuilder";
+import SimpleGiftBuilder from "./ui/SimpleGiftBuilder";
 import type { IChild } from "@/types/childType";
 
 export default async function ChildrenListPage() {
@@ -21,16 +21,18 @@ export default async function ChildrenListPage() {
   }
 
   const children = await Child.find({ parentId: parent._id })
-    .select("_id displayName")
+    .select("_id displayName avatarUrl score365")
     .lean<IChild[]>();
 
   const childrenFormatted = children.map(child => ({
     id: child._id.toString(),
     name: child.displayName,
+    avatarUrl: child.avatarUrl,
+    magicPoints: child.score365 || 0,
   }));
 
   return (
-    <EnhancedChildGiftBuilder 
+    <SimpleGiftBuilder 
       initialChildren={childrenFormatted} 
     />
   );

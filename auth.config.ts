@@ -15,13 +15,15 @@ type AppJWT = JWT & {
   accessToken?: string;
   isParentOnboarded?: boolean;
   parentId?: string | null;
+  admin?: boolean;
 };
 
 type AppSession = Session & {
-  user?: { id?: string; role?: string };
+  user?: { id?: string; role?: string; admin?: boolean };
   accessToken?: string;
   isParentOnboarded?: boolean;
   parentId?: string | null;
+  admin?: boolean;
 };
 
 export const authConfig = {
@@ -85,14 +87,15 @@ export const authConfig = {
         }
 
         const dbUser = await User.findOne({ email: user.email })
-          .select("_id isParentOnboarded parentId")
-          .lean<{ _id: Types.ObjectId; isParentOnboarded?: boolean; parentId?: Types.ObjectId | null }>();
+          .select("_id isParentOnboarded parentId admin")
+          .lean<{ _id: Types.ObjectId; isParentOnboarded?: boolean; parentId?: Types.ObjectId | null; admin?: boolean }>();
 
         if (dbUser) {
           token.uid = String(dbUser._id);
           token.role = "user";
           token.isParentOnboarded = !!dbUser.isParentOnboarded;
           token.parentId = dbUser.parentId ? String(dbUser.parentId) : null;
+          token.admin = !!dbUser.admin;
         }
       } else if (token.uid) {
         // Subsequent requests: refresh flags from database
@@ -100,12 +103,13 @@ export const authConfig = {
         try {
           await dbConnect();
           const dbUser = await User.findById(token.uid)
-            .select("isParentOnboarded parentId")
-            .lean<{ isParentOnboarded?: boolean; parentId?: Types.ObjectId | null }>();
+            .select("isParentOnboarded parentId admin")
+            .lean<{ isParentOnboarded?: boolean; parentId?: Types.ObjectId | null; admin?: boolean }>();
 
           if (dbUser) {
             token.isParentOnboarded = !!dbUser.isParentOnboarded;
             token.parentId = dbUser.parentId ? String(dbUser.parentId) : null;
+            token.admin = !!dbUser.admin;
           }
         } catch (error) {
           console.error('❌ Failed to refresh user data in JWT:', error);
@@ -129,10 +133,12 @@ export const authConfig = {
         ...session.user,
         id: token.uid,
         role: token.role,
+        admin: token.admin,
       };
       session.accessToken = token.accessToken;
       session.isParentOnboarded = token.isParentOnboarded ?? false;
       session.parentId = token.parentId ?? null;
+      session.admin = token.admin ?? false;
       return session;
     },
   },

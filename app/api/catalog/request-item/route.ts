@@ -3,11 +3,12 @@ import { auth } from '@/auth';
 import { dbConnect } from '@/lib/db';
 import { Child } from '@/models/Child';
 import { Parent } from '@/models/Parent';
+import { ToyRequest } from '@/models/ToyRequest';
 
 export async function POST(request: NextRequest) {
   const session = await auth();
   
-  if (!session?.parentId) {
+  if (!session?.user?.id) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
@@ -22,16 +23,16 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    // Find the child and parent
+    // Find the parent by userId and the child
+    const parent = await Parent.findOne({ userId: session.user.id });
     const child = await Child.findById(childId);
-    const parent = await Parent.findById(session.parentId);
 
     if (!child || !parent) {
       return NextResponse.json({ error: 'Child or parent not found' }, { status: 404 });
     }
 
     // Check if child belongs to this parent
-    if (!parent.children.includes(childId)) {
+    if (child.parentId.toString() !== parent._id.toString()) {
       return NextResponse.json({ error: 'Unauthorized access to child' }, { status: 403 });
     }
 
@@ -46,25 +47,27 @@ export async function POST(request: NextRequest) {
 
     // Deduct 5 magic points
     child.score365 -= 5;
-    
-    // Add a simple note to track the request (optional)
-    // This could be expanded to a proper ledger system later
-    
     await child.save();
 
-    // Send email to "Santa" (admin)
-    const requestData = {
+    // Save the request to database
+    const toyRequest = await ToyRequest.create({
+      childId: child._id,
       childName: child.displayName,
+      parentId: parent._id,
+      parentEmail: session.user?.email,
       itemTitle,
       itemDescription: itemDescription || '',
       itemUrl: itemUrl || '',
-      requestedAt: new Date(),
-      parentEmail: session.user?.email
-    };
+      magicPointsUsed: 5,
+      status: 'PENDING'
+    });
 
-    // You can implement email sending here using your preferred service
-    // For now, we'll just log it
-    console.log('🎅 New Item Request for Santa:', requestData);
+    console.log('🎅 New Toy Request Saved:', {
+      requestId: toyRequest._id,
+      childName: child.displayName,
+      itemTitle,
+      requestedAt: toyRequest.requestedAt
+    });
 
     // TODO: Implement actual email sending
     // await sendEmailToSanta(requestData);
@@ -73,7 +76,8 @@ export async function POST(request: NextRequest) {
       success: true,
       message: 'Your request has been sent to Santa! 🎅',
       remainingMagicPoints: child.score365,
-      pointsUsed: 5
+      pointsUsed: 5,
+      requestId: toyRequest._id
     });
 
   } catch (error) {

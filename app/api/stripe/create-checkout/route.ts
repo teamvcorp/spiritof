@@ -40,6 +40,25 @@ export async function POST(req: NextRequest) {
 
     // Create or get Stripe customer
     let stripeCustomerId = parent.stripeCustomerId;
+    
+    // Check if existing customer ID is valid for current mode (test/live)
+    if (stripeCustomerId) {
+      try {
+        await stripe.customers.retrieve(stripeCustomerId);
+      } catch (error: any) {
+        // If customer doesn't exist in current mode (test/live mismatch), clear it
+        if (error.code === 'resource_missing') {
+          console.log(`Clearing invalid Stripe customer ID: ${stripeCustomerId} (mode mismatch)`);
+          stripeCustomerId = undefined;
+          parent.stripeCustomerId = undefined;
+          await parent.save();
+        } else {
+          throw error; // Re-throw other Stripe errors
+        }
+      }
+    }
+    
+    // Create new customer if needed
     if (!stripeCustomerId) {
       const customer = await stripe.customers.create({
         email: parent.email,
