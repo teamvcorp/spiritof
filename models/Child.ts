@@ -46,6 +46,10 @@ const ChildSchema = new Schema<IChild>(
       default: [],
       index: true
     },
+    
+    // Gift list locking (when finalized)
+    giftListLocked: { type: Boolean, default: false },
+    giftListLockedAt: { type: Date },
   },
   { timestamps: true }
 );

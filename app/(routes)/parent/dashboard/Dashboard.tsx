@@ -10,11 +10,13 @@ import { IParent } from "@/types/parentTypes";
 import Vote from "@/components/parents/Vote";
 import WalletTopup from "@/components/parents/WalletTopup";
 import AddChildForm from "@/components/parents/AddChildForm";
+import ChristmasFinalization from "@/components/parents/ChristmasFinalization";
+import DashboardClient from "./DashboardClient";
 import dynamic from "next/dynamic";
 import Image from "next/image";
 import Link from "next/link";
 
-// Dynamically import client component
+// Dynamically import client components
 const QRShareButton = dynamic(() => import("@/components/parents/QRShareButton"));
 
 // Server actions
@@ -153,19 +155,11 @@ export default async function ParentDashboardPage() {
 
   return (
     <main className="mx-auto max-w-5xl px-4 py-8 space-y-8">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold">Parent Dashboard</h1>
-        <div className="flex items-center gap-4">
-          <Link 
-            href="/parent/gift-approvals" 
-            className="inline-flex items-center rounded-md bg-santa text-white px-4 py-2 text-sm font-medium hover:bg-santa/90 transition-colors"
-          >
-            🎁 Gift Approvals
-          </Link>
-          <div className="text-sm text-muted-foreground">Welcome{parent.name ? `, ${parent.name}` : ""}</div>
-        </div>
-      </div>
+      {/* Client-side Christmas Setup and Header */}
+      <DashboardClient 
+        parentId={parent._id.toString()} 
+        hasChristmasSetup={!!parent.christmasSettings?.setupCompleted}
+      />
 
       {/* Summary cards */}
       <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -191,6 +185,22 @@ export default async function ParentDashboardPage() {
         <h2 className="text-xl font-semibold mb-3">Wallet Management</h2>
         <WalletTopup currentBalance={parent.walletBalanceCents ?? 0} />
       </section>
+
+      {/* Christmas List Finalization */}
+      {parent.christmasSettings?.setupCompleted && (
+        <section>
+          <h2 className="text-xl font-semibold mb-3">Christmas List Finalization</h2>
+          <ChristmasFinalization
+            isFinalized={!!parent.christmasSettings?.listsFinalized}
+            finalizedAt={parent.christmasSettings?.listsFinalizedAt?.toISOString()}
+            listLockDate={parent.christmasSettings?.listLockDate}
+            onFinalizationComplete={async () => {
+              "use server";
+              revalidatePath("/parent/dashboard");
+            }}
+          />
+        </section>
+      )}
 
       {/* Children list */}
       <section className="space-y-3">

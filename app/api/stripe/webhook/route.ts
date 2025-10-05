@@ -31,6 +31,11 @@ export async function POST(req: NextRequest) {
         await handleCheckoutCompleted(event.data.object as Stripe.Checkout.Session);
         break;
       
+      case 'setup_intent.succeeded':
+        console.log(`🔐 Processing setup intent succeeded`);
+        await handleSetupIntentSucceeded(event.data.object as Stripe.SetupIntent);
+        break;
+      
       case 'payment_intent.succeeded':
         console.log(`✅ Processing payment succeeded`);
         await handlePaymentSucceeded(event.data.object as Stripe.PaymentIntent);
@@ -150,14 +155,100 @@ async function handleDonation(session: Stripe.Checkout.Session) {
   }
 }
 
+async function handleSetupIntentSucceeded(setupIntent: Stripe.SetupIntent) {
+  console.log(`🔐 Setup intent succeeded: ${setupIntent.id}`);
+  
+  const customerId = setupIntent.customer as string;
+  const paymentMethodId = setupIntent.payment_method as string;
+  
+  if (!customerId || !paymentMethodId) {
+    console.log(`❌ Setup intent missing customer (${customerId}) or payment method (${paymentMethodId})`);
+    return;
+  }
+  
+  try {
+    // Find parent by Stripe customer ID
+    const parent = await Parent.findOne({ stripeCustomerId: customerId });
+    if (!parent) {
+      console.log(`❌ Parent not found for customer: ${customerId}`);
+      return;
+    }
+    
+    // Set as default payment method for the customer
+    await stripe.customers.update(customerId, {
+      invoice_settings: {
+        default_payment_method: paymentMethodId,
+      },
+    });
+    
+    // Update parent record
+    parent.stripeDefaultPaymentMethodId = paymentMethodId;
+    await parent.save();
+    
+    console.log(`✅ Payment method set for parent ${parent._id}: ${paymentMethodId}`);
+  } catch (error) {
+    console.error(`❌ Error processing setup intent: ${error}`);
+  }
+}
+
 async function handlePaymentSucceeded(paymentIntent: Stripe.PaymentIntent) {
-  // Additional handling if needed - the checkout.session.completed usually covers this
   console.log(`Payment succeeded: ${paymentIntent.id}`);
+  
+  // Handle Christmas finalization payments
+  if (paymentIntent.metadata?.type === 'christmas_finalization') {
+    const parentId = paymentIntent.metadata.parentId;
+    
+    if (parentId) {
+      try {
+        const parent = await Parent.findById(parentId);
+        if (parent) {
+          // Update the ledger entry status
+          const pendingEntry = parent.walletLedger.find(entry => 
+            entry.stripePaymentIntentId === paymentIntent.id && entry.status === 'PENDING'
+          );
+          
+          if (pendingEntry) {
+            pendingEntry.status = 'SUCCEEDED';
+            parent.recomputeWalletBalance();
+            await parent.save();
+            console.log(`✅ Christmas finalization payment succeeded for parent ${parentId}`);
+          }
+        }
+      } catch (error) {
+        console.error(`❌ Error processing finalization payment: ${error}`);
+      }
+    }
+  }
 }
 
 async function handlePaymentFailed(paymentIntent: Stripe.PaymentIntent) {
   // Mark any related ledger entries as failed
   const checkoutSessionId = paymentIntent.metadata?.checkout_session_id;
+  
+  // Handle Christmas finalization payment failures
+  if (paymentIntent.metadata?.type === 'christmas_finalization') {
+    const parentId = paymentIntent.metadata.parentId;
+    
+    if (parentId) {
+      try {
+        const parent = await Parent.findById(parentId);
+        if (parent) {
+          const pendingEntry = parent.walletLedger.find(entry => 
+            entry.stripePaymentIntentId === paymentIntent.id && entry.status === 'PENDING'
+          );
+          
+          if (pendingEntry) {
+            pendingEntry.status = 'FAILED';
+            await parent.save();
+            console.log(`❌ Christmas finalization payment failed for parent ${parentId}`);
+          }
+        }
+      } catch (error) {
+        console.error(`❌ Error processing finalization payment failure: ${error}`);
+      }
+    }
+    return;
+  }
   
   if (checkoutSessionId) {
     // Find and mark failed entries in both Parent and Child collections

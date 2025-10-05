@@ -42,6 +42,10 @@ export interface IChild {
 
   // NEW: Gift list as ObjectId references to MasterCatalog
   giftList: ObjectId[];
+  
+  // Gift list locking
+  giftListLocked?: boolean;
+  giftListLockedAt?: Date;
 
   createdAt?: Date;
   updatedAt?: Date;

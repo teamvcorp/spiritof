@@ -11,6 +11,76 @@ const GiftSettingsSchema = new Schema(
     { _id: false }
 );
 
+const ChristmasSettingsSchema = new Schema(
+    {
+        // Budget & Payment
+        monthlyBudgetGoal: { type: Number, default: 200, min: 0 },
+        autoContributeAmount: { type: Number, default: 50, min: 0 },
+        enableAutoContribute: { type: Boolean, default: false },
+        
+        // Timeline Settings
+        listLockDate: { type: String }, // YYYY-MM-DD format
+        finalPaymentDate: { type: String },
+        
+        // Sharing & Gifts
+        allowFriendGifts: { type: Boolean, default: true },
+        maxFriendGiftValue: { type: Number, default: 25, min: 0 },
+        allowEarlyGifts: { type: Boolean, default: false },
+        
+        // Shipping Address
+        shippingAddress: {
+            recipientName: { type: String },
+            street: { type: String },
+            apartment: { type: String },
+            city: { type: String },
+            state: { type: String },
+            zipCode: { type: String },
+            country: { type: String, default: "US" },
+            isDefault: { type: Boolean, default: true },
+        },
+        
+        // Payment Method
+        hasPaymentMethod: { type: Boolean, default: false },
+        paymentMethodLast4: { type: String },
+        
+        // Notifications
+        reminderEmails: { type: Boolean, default: true },
+        weeklyBudgetUpdates: { type: Boolean, default: true },
+        listLockReminders: { type: Boolean, default: true },
+        
+        // Setup tracking
+        setupCompleted: { type: Boolean, default: false },
+        setupCompletedAt: { type: Date },
+        
+        // List Finalization
+        listsFinalized: { type: Boolean, default: false },
+        listsFinalizedAt: { type: Date },
+        totalGiftCostCents: { type: Number, default: 0 },
+        finalizedChildrenData: [{
+            childId: { type: Types.ObjectId, ref: "Child" },
+            childName: String,
+            giftCount: Number,
+            giftCostCents: Number,
+            gifts: [{
+                id: { type: Types.ObjectId, ref: "MasterCatalog" },
+                name: String,
+                price: Number
+            }]
+        }],
+        
+        // Logistics & Fulfillment
+        shipmentApproved: { type: Boolean, default: false },
+        shipmentApprovedAt: { type: Date },
+        shipmentApprovedBy: { type: String }, // Admin user ID
+        shipped: { type: Boolean, default: false },
+        shippedAt: { type: Date },
+        shippedBy: { type: String }, // Admin user ID
+        trackingNumber: { type: String },
+        carrier: { type: String },
+    },
+    { _id: false }
+);
+
 const WalletLedgerEntrySchema = new Schema(
     {
         type: { type: String, enum: ["TOP_UP", "REFUND", "ADJUSTMENT"], required: true },
@@ -51,6 +121,7 @@ const ParentSchema = new Schema<IParent>(
 
         // settings
         giftSettings: { type: GiftSettingsSchema, default: () => ({}) },
+        christmasSettings: { type: ChristmasSettingsSchema },
         pinIsSet: { type: Boolean, default: false },
         pinCode: { type: String }, 
 
