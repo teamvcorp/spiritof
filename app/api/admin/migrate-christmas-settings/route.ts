@@ -37,6 +37,12 @@ export async function POST(req: NextRequest) {
 
     for (const parent of parentsToMigrate) {
       try {
+        // Ensure christmasSettings exists
+        if (!parent.christmasSettings) {
+          console.log(`⚠️ Skipping parent ${parent._id} - no Christmas settings`);
+          continue;
+        }
+
         // Add missing finalization fields with proper defaults
         if (!parent.christmasSettings.hasOwnProperty('listsFinalized')) {
           parent.christmasSettings.listsFinalized = false;
