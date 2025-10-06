@@ -59,9 +59,7 @@ export default function PageTransitionSnow({
   return (
     <>
       {/* Page content */}
-      <div className={`transition-opacity duration-${transitionDuration} ${isTransitioning ? 'opacity-95' : 'opacity-100'}`}>
-        {children}
-      </div>
+      {children}
 
       {/* Snow effect during transitions */}
       {showSnow && snowEnabled && (
@@ -70,17 +68,6 @@ export default function PageTransitionSnow({
           snowflakeCount={settings.snowflakeCount}
           maxGroundHeight={settings.maxGroundHeight}
           fallSpeedMultiplier={settings.fallSpeedMultiplier}
-        />
-      )}
-
-      {/* Optional transition overlay */}
-      {isTransitioning && (
-        <div 
-          className="fixed inset-0 bg-black bg-opacity-10 pointer-events-none z-20 transition-opacity"
-          style={{
-            opacity: isTransitioning ? 1 : 0,
-            transitionDuration: `${transitionDuration}ms`
-          }}
         />
       )}
     </>
