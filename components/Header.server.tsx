@@ -64,13 +64,13 @@ export default async function Header() {
                 The List
               </Link>
          
-          </div>
-
           {/* Right: user avatar + auth controls */}
           <div className="ml-4 flex items-center gap-3">
             {/* client-only interactive sign in/out */}
             <HeaderAuth />
           </div>
+          </div>
+
         </div>
       </div>
     </header>

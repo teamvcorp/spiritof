@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { dbConnect } from "@/lib/db";
 import { User } from "@/models/User";
 import { z } from "zod";
+import { notifyNewUser } from "@/lib/admin-notifications";
 
 const SignupSchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -41,6 +42,19 @@ export async function POST(req: NextRequest) {
       authProvider: "credentials",
       isParentOnboarded: false,
     });
+
+    // Send notification for new user registration (email/password)
+    try {
+      await notifyNewUser(
+        name,
+        email,
+        'credentials'
+      );
+      console.log('📧 Admin notification sent for new credentials user');
+    } catch (emailError) {
+      console.error('❌ Failed to send new user notification:', emailError);
+      // Don't fail user creation if email fails
+    }
 
     return NextResponse.json({ 
       success: true,

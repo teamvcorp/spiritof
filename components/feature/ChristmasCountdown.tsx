@@ -56,9 +56,9 @@ export default function ChristmasCountdown() {
     return (
       <div className="text-center bg-gradient-to-r from-santa via-evergreen to-blueberry text-white py-8 px-6 rounded-2xl">
         <div className="flex items-center justify-center mb-4">
-          <span className="text-4xl mr-3">🎄</span>
-          <h2 className="text-2xl md:text-3xl font-paytone-one">Countdown to Christmas</h2>
-          <span className="text-4xl ml-3">🎅</span>
+          
+          <h2 className="text-4xl md:text-3xl font-paytone-one">Countdown to Christmas</h2>
+        
         </div>
         <div className="text-lg">Loading...</div>
       </div>
@@ -84,27 +84,27 @@ export default function ChristmasCountdown() {
   }
 
   return (
-    <div className="text-center bg-gradient-to-r from-santa via-evergreen to-blueberry text-white py-8 px-6 rounded-2xl">
+    <div className="text-center bg-white border-8 border-dotted border-santa backdrop-blur-sm text-evergreen py-8 px-6 rounded-2xl">
       <div className="flex items-center justify-center mb-4">
-        <span className="text-4xl mr-3">🎄</span>
-        <h2 className="text-2xl md:text-3xl font-paytone-one">Countdown to Christmas</h2>
-        <span className="text-4xl ml-3">🎅</span>
+        
+        <h2 className="text-4xl text-santa md:text-3xl uppercase font-paytone-one">Countdown to Christmas</h2>
+       
       </div>
       
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
-        <div className="bg-white/20 backdrop-blur-sm rounded-lg p-4">
+        <div className="bg-[rgba(70,213,151,0.3)] backdrop-blur-sm rounded-lg p-4">
           <div className="text-3xl md:text-4xl font-bold">{timeLeft.days}</div>
           <div className="text-sm md:text-base opacity-90">Days</div>
         </div>
-        <div className="bg-white/20 backdrop-blur-sm rounded-lg p-4">
+        <div className="bg-[rgba(70,213,151,0.3)] backdrop-blur-sm rounded-lg p-4">
           <div className="text-3xl md:text-4xl font-bold">{timeLeft.hours}</div>
           <div className="text-sm md:text-base opacity-90">Hours</div>
         </div>
-        <div className="bg-white/20 backdrop-blur-sm rounded-lg p-4">
+        <div className="bg-[rgba(70,213,151,0.3)] backdrop-blur-sm rounded-lg p-4">
           <div className="text-3xl md:text-4xl font-bold">{timeLeft.minutes}</div>
           <div className="text-sm md:text-base opacity-90">Minutes</div>
         </div>
-        <div className="bg-white/20 backdrop-blur-sm rounded-lg p-4">
+        <div className="bg-[rgba(70,213,151,0.3)] backdrop-blur-sm rounded-lg p-4">
           <div className="text-3xl md:text-4xl font-bold">{timeLeft.seconds}</div>
           <div className="text-sm md:text-base opacity-90">Seconds</div>
         </div>
@@ -112,7 +112,7 @@ export default function ChristmasCountdown() {
       
       <p className="text-lg md:text-xl opacity-90">
         {timeLeft.days > 30 
-          ? "Start collecting Christmas Magic! ⭐" 
+          ? "⭐ Start collecting Christmas Magic! ⭐" 
           : timeLeft.days > 7 
           ? "Christmas is almost here! 🎁" 
           : "Final countdown to Christmas! 🚀"

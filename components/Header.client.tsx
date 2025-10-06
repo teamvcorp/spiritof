@@ -41,7 +41,7 @@ export default function HeaderAuth() {
         <Button
           onClick={handleSignIn}
           disabled={actionLoading}
-          className="bg-santa text-white uppercase text-sm px-4 py-2"
+          className="bg-mint link-btn-sm"
           aria-label="Login to get started"
         >
           {actionLoading ? "Signing in..." : "Login"}

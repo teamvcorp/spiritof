@@ -4,6 +4,7 @@ import { dbConnect } from '@/lib/db';
 import { Child } from '@/models/Child';
 import { Parent } from '@/models/Parent';
 import { MasterCatalog } from '@/models/MasterCatalog';
+import { notifySpecialRequest } from '@/lib/admin-notifications';
 
 export async function POST(request: NextRequest) {
   try {
@@ -113,6 +114,20 @@ export async function POST(request: NextRequest) {
     }
 
     await child.save();
+
+    // Send admin notification for logistics
+    try {
+      await notifySpecialRequest(
+        'friend_gift',
+        child.displayName,
+        gift.title,
+        session.user?.email || ''
+      );
+      console.log('📧 Admin notification sent for friend gift request');
+    } catch (emailError) {
+      console.error('❌ Failed to send admin notification:', emailError);
+      // Don't fail the request if email fails
+    }
 
     // Calculate remaining total points for response
     const newNeighborMagicPoints = Math.floor((child.neighborBalanceCents || 0) / 100);

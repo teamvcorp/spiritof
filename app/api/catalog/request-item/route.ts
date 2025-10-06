@@ -4,6 +4,7 @@ import { dbConnect } from '@/lib/db';
 import { Child } from '@/models/Child';
 import { Parent } from '@/models/Parent';
 import { ToyRequest } from '@/models/ToyRequest';
+import { notifyToyRequest } from '@/lib/admin-notifications';
 
 export async function POST(request: NextRequest) {
   const session = await auth();
@@ -69,8 +70,19 @@ export async function POST(request: NextRequest) {
       requestedAt: toyRequest.requestedAt
     });
 
-    // TODO: Implement actual email sending
-    // await sendEmailToSanta(requestData);
+    // Send admin notification email
+    try {
+      await notifyToyRequest(
+        child.displayName,
+        itemTitle,
+        session.user?.email || '',
+        toyRequest._id.toString()
+      );
+      console.log('📧 Admin notification sent for toy request');
+    } catch (emailError) {
+      console.error('❌ Failed to send admin notification:', emailError);
+      // Don't fail the request if email fails
+    }
 
     return NextResponse.json({
       success: true,

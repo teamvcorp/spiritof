@@ -52,7 +52,7 @@ export default function Footer({
   const year = new Date().getFullYear();
 
   return (
-    <footer role="contentinfo" className={cn("border-t bg-surface text-fg", className)}>
+    <footer role="contentinfo" className={cn(" bg-santa text-white", className)}>
       <Container py="lg" px="md">
         {/* Top: columns */}
         <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-4">

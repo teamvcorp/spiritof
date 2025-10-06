@@ -89,6 +89,7 @@
   
   .link-btn:hover {
     transform: scale(1.1);
+    cursor: pointer;
   }
   
   .link-btn:active {
@@ -105,7 +106,39 @@
     opacity: 0.6;
     pointer-events: none;
   }
+/* same as link-btn with a smaller scale on hover */
+  .link-btn-sm {
+    display: inline-flex;
+    min-width: 15rem;
+    align-items: center;
+    gap: 0.5rem;
+    border-radius: 0.75rem;
+    padding: 1rem;
+    font-size: 1.125rem;
+    justify-content: center;
+    color: white;
+    transition: transform 300ms ease-in-out;
+  }
 
+    .link-btn-sm:hover {
+    transform: scale(1.02);
+    cursor: pointer;
+  }
+  
+  .link-btn-sm:active {
+    transform: scale(1.01);
+  }
+  
+  .link-btn-sm:focus {
+    outline: 2px solid transparent;
+    outline-offset: 2px;
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.5);
+  }
+  
+  .link-btn-sm:disabled {
+    opacity: 0.6;
+    pointer-events: none;
+  }
   /* Toast notification animation */
   .animate-slide-in {
     animation: slideIn 0.3s ease-out;

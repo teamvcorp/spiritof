@@ -3,6 +3,7 @@ import { auth } from '@/auth';
 import { dbConnect } from '@/lib/db';
 import { ToyRequest } from '@/models/ToyRequest';
 import { MasterCatalog } from '@/models/MasterCatalog';
+import { notifyAdminAction } from '@/lib/admin-notifications';
 
 export async function GET(request: NextRequest) {
   try {
@@ -135,6 +136,30 @@ export async function PUT(request: NextRequest) {
 
       default:
         return NextResponse.json({ error: 'Invalid action' }, { status: 400 });
+    }
+
+    // Send notification about admin action
+    try {
+      const actionLabels = {
+        'APPROVE': 'Approved',
+        'REJECT': 'Rejected', 
+        'ADD_TO_CATALOG': 'Added to Catalog'
+      };
+      
+      await notifyAdminAction(
+        `Toy Request ${actionLabels[action as keyof typeof actionLabels]}`,
+        `Admin ${actionLabels[action as keyof typeof actionLabels].toLowerCase()} toy request "${toyRequest.itemTitle}" from child ${toyRequest.childName}.`,
+        action === 'REJECT' ? 'high' : 'medium',
+        {
+          'Child': toyRequest.childName,
+          'Item Title': toyRequest.itemTitle,
+          'Action': actionLabels[action as keyof typeof actionLabels],
+          'Admin': session.user.email || 'Unknown',
+          'Review Notes': reviewNotes || 'None'
+        }
+      );
+    } catch (emailError) {
+      console.error('❌ Failed to send admin action notification:', emailError);
     }
 
     return NextResponse.json({

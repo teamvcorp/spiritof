@@ -53,7 +53,7 @@ export function Card<T extends React.ElementType = "div">({
       className={cn(
         "sos-card rounded-2xl  bg-surface p-5 ",
         // layout behavior
-        "flex-1 basis-[28rem] max-w-full sm:max-w-[50%]",
+        "flex-1 basis-[28rem] max-w-full",
         // when this card is the only child of its parent, take full width
         "[&:only-child]:max-w-full",
         interactive && "transition hover:shadow-md hover:-translate-y-0.5",

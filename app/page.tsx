@@ -23,8 +23,8 @@ export default async function Home() {
       // Not logged in - show login button
       return (
         <Link href="/auth">
-          <Button className='bg-santa uppercase text-white mt-2 self-center md:self-start'>
-            Login to Get Started<FaArrowAltCircleRight/>
+          <Button className='bg-santa link-btn '>
+             Get Started<FaArrowAltCircleRight/>
           </Button>
         </Link>
       );
@@ -50,7 +50,7 @@ export default async function Home() {
   };
   return (<>
     
-    <div className="min-h-[100dvh] bg-[linear-gradient(to_bottom,_#37776c_0%,_#37776c_33%,_#EA1938_33%,_#EA1938_66%,_#0084B5_66%,_#0084B5_100%)] py-10 px-6 sm:px-8 md:px-0">
+    <div className="min-h-[100dvh] bg-[linear-gradient(to_bottom,_#37776c_0%,_#37776c_33%,_#EA1938_33%,_#EA1938_66%,_#0084B5_66%,_#0084B5_100%)] py-10 px-6 sm:px-8 md:px-4">
       
       {/* Christmas Countdown Section */}
       <div className="mx-4 sm:mx-6 md:mx-0 mb-10">
@@ -64,21 +64,21 @@ export default async function Home() {
         <Cards> 
           <Card className='flex flex-col md:flex-row flex-wrap items-center gap-6 md:gap-8 mx-0 md:mx-10'>
             <div className="flex flex-col items-center md:items-start md:justify-center gap-y-6 min-w-0 flex-1 text-center md:text-left">
-            <h1 className="text-santa">Welcome to Spirit of Santa</h1>
-            <p className="mt-3 text-evergreen w-full md:w-2/3 md:mx-0 mx-auto"> Find out if you have been naughty or nice with the Spirit of Santa Naughty/Nice Meter! Once you’ve checked your holiday status, 
+            <h1 className="text-santa md:text-5xl text-4xl lg:text-5xl">Welcome to Spirit of Santa</h1>
+            <p className="mt-3 text-evergreen w-full lg:text-lg md:min-w-2/3 md:mx-0 mx-auto"> Find out if you have been naughty or nice with the Spirit of Santa Naughty/Nice Meter! Once you’ve checked your holiday status, 
             it’s time to dream big! Make your very own Christmas list for Santa himself. Be kind and spread holiday cheer to collect Christmas magic that you can use to unlock FREE 
             stuff! It’s the most magical way to celebrate Christmas because who doesn’t love a little extra holiday magic?
             </p>
             {getCallToAction()}
             </div>
-            <div className="min-w-0 shrink w-40 sm:w-56 md:w-full md:max-w-[300px]">
+            <div className="">
                <Image
               src="/images/santa.png"
               alt="Spirit of Santa"
               width={300}
               height={300}
              sizes="(max-width: 640px) 10rem, (max-width: 768px) 14rem, 300px"
-            className="w-full h-auto"
+            className="hidden lg:block md:block md:w-[150px] lg:w-[300px] h-auto"
             />
 
             </div>
@@ -111,14 +111,14 @@ export default async function Home() {
         </Cards>
         <Cards className="mt-10 mb-10 ">
           <Card className="flex flex-col justify-between text-center bg-blueberry border-0 text-white p-6 md:p-8">
-            <div className="min-w-0 w-32 sm:w-40 md:w-[300px] mx-auto">
+            <div className="w-full mx-auto flex justify-center ">
             <Image
               src="/images/meter.png"
               alt="Spirit of Santa"
               width={300}
               height={300}
                sizes="(max-width: 640px) 8rem, (max-width: 768px) 10rem, 300px"
-            className="w-full h-auto"
+            className="md:w-[150px] lg:w-[300px] h-auto self-center"
             
             />
             </div>

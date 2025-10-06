@@ -14,7 +14,6 @@ import ChristmasFinalization from "@/components/parents/ChristmasFinalization";
 import { WelcomePacketButton } from "@/components/parents/WelcomePacketButton";
 import { hasCompletedWelcomePacket, generateUniqueShareSlug, clampInt } from "@/lib/welcome-packet-helpers";
 import DashboardClient from "./DashboardClient";
-import PaymentDebug from "@/components/debug/PaymentDebug";
 import dynamic from "next/dynamic";
 import Image from "next/image";
 import Link from "next/link";
@@ -222,9 +221,6 @@ export default async function ParentDashboardPage({ searchParams }: DashboardPro
 
   return (
     <main className="mx-auto max-w-5xl px-4 py-8 space-y-8">
-      {/* Debug component - remove in production */}
-      <PaymentDebug searchParams={searchParams} />
-      
       {/* Client-side Christmas Setup and Header */}
       <DashboardClient 
         parentId={parent._id.toString()} 

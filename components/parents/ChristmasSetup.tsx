@@ -211,7 +211,7 @@ export default function ChristmasSetup({ isOpen, onClose, parentId }: ChristmasS
       case 1:
         return (
           <div className="space-y-6">
-            <div className="text-center bg-gradient-to-br from-santa-50 to-evergreen-50 rounded-2xl p-6 border-2 border-santa-200">
+            <div className="text-center  rounded-2xl p-6 border-2 ">
               <div className="text-6xl mb-4">💰</div>
               <h3 className="text-2xl font-paytone-one text-santa-600 mb-2">Budget & Auto-Contribute</h3>
               <p className="text-gray-700 font-medium">Set your Christmas budget goals and automatic contributions</p>
@@ -650,8 +650,8 @@ export default function ChristmasSetup({ isOpen, onClose, parentId }: ChristmasS
   };
 
   return (
-    <div className="fixed inset-0 bg-gradient-to-br from-santa-900/80 via-evergreen-900/80 to-blueberry-900/80 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-      <Card className="w-full max-w-2xl max-h-[90vh] overflow-y-auto bg-gradient-to-br from-white via-santa-50/30 to-evergreen-50/30 border-2 border-santa-200 shadow-2xl">
+    <div className="fixed inset-0 backdrop-blur-sm flex items-center justify-center p-20 z-50 ">
+      <Card className="w-full max-w-2xl max-h-[90vh] overflow-y-auto bg-santa border-2 border-santa-200 shadow-2xl">
         <div className="p-6 bg-white/90 backdrop-blur-sm rounded-lg">
           {/* Header */}
           <div className="flex justify-between items-center mb-6">

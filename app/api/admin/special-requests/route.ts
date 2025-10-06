@@ -5,6 +5,7 @@ import { User } from "@/models/User";
 import { Parent } from "@/models/Parent";
 import { Child } from "@/models/Child";
 import { Types } from "mongoose";
+import { notifyAdminAction } from "@/lib/admin-notifications";
 
 export async function GET() {
   try {
@@ -174,6 +175,24 @@ export async function POST(req: NextRequest) {
     }
 
     await child.save();
+
+    // Send notification about admin action
+    try {
+      const requestTypeName = requestType === 'early_gift' ? 'Early Gift' : 'Friend Gift';
+      await notifyAdminAction(
+        `${requestTypeName} Request ${action === 'approve' ? 'Approved' : 'Denied'}`,
+        `Admin ${action}d a ${requestTypeName.toLowerCase()} request for child ${child.displayName}.`,
+        action === 'deny' ? 'high' : 'medium',
+        {
+          'Child': child.displayName,
+          'Request Type': requestTypeName,
+          'Action': action.charAt(0).toUpperCase() + action.slice(1),
+          'Admin': session.user?.email || 'Unknown'
+        }
+      );
+    } catch (emailError) {
+      console.error('❌ Failed to send admin action notification:', emailError);
+    }
 
     return NextResponse.json({ 
       success: true, 
