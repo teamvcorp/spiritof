@@ -63,7 +63,7 @@ export async function POST(req: NextRequest) {
       childId,
       today,
       voteLedger: parent.voteLedger,
-      lastVoteForChild: parent.voteLedger?.get(childId)
+      lastVoteForChild: parent.voteLedger?.[String(childId)]
     });
     
     if (!parentDoc.canVoteToday(childId, today)) {

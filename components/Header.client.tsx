@@ -44,7 +44,7 @@ export default function HeaderAuth() {
           className="bg-santa text-white uppercase text-sm px-4 py-2"
           aria-label="Login to get started"
         >
-          {actionLoading ? "Signing in..." : "Login to Get Started"}
+          {actionLoading ? "Signing in..." : "Login"}
           <FaArrowAltCircleRight className="ml-1" />
         </Button>
       );
