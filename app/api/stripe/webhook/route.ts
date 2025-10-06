@@ -66,6 +66,10 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
     await handleWalletTopup(session);
   } else if (metadata.type === 'donation') {
     await handleDonation(session);
+  } else if (metadata.type === 'welcome_packet') {
+    await handleWelcomePacketOrder(session);
+  } else if (metadata.type === 'child_welcome_packet') {
+    await handleChildWelcomePacketOrder(session);
   }
 }
 
@@ -152,6 +156,126 @@ async function handleDonation(session: Stripe.Checkout.Session) {
     await child.save();
     
     console.log(`Donation processed: Child ${childId}, Amount: $${amount / 100}, Magic: +${magicPointsToAdd}`);
+  }
+}
+
+async function handleWelcomePacketOrder(session: Stripe.Checkout.Session) {
+  const { metadata } = session;
+  const parentId = metadata?.parentId;
+  const totalAmount = parseInt(metadata?.totalAmount || '0');
+  
+  console.log(`🎁 Webhook: Processing welcome packet order - Parent: ${parentId}, Amount: $${totalAmount}, Session: ${session.id}`);
+  
+  if (!parentId || !totalAmount) {
+    console.log(`❌ Webhook: Missing parentId (${parentId}) or totalAmount (${totalAmount})`);
+    return;
+  }
+
+  const parent = await Parent.findById(parentId);
+  if (!parent) {
+    console.log(`❌ Webhook: Parent not found: ${parentId}`);
+    return;
+  }
+
+  // Find the pending welcome packet order and mark as completed
+  const pendingOrder = parent.welcomePacketOrders?.find(
+    order => order.stripeSessionId === session.id && order.status === 'pending'
+  );
+
+  if (pendingOrder) {
+    console.log(`✅ Webhook: Found pending welcome packet order, updating to completed`);
+    
+    // Update order status
+    pendingOrder.status = 'completed';
+    
+    // Store shipping address from the session
+    const shippingDetails = (session as any).shipping_details;
+    if (shippingDetails?.address) {
+      const address = shippingDetails.address;
+      pendingOrder.shippingAddress = {
+        recipientName: shippingDetails.name || '',
+        street: address.line1 || '',
+        apartment: address.line2 || '',
+        city: address.city || '',
+        state: address.state || '',
+        zipCode: address.postal_code || '',
+        country: address.country || ''
+      };
+    }
+    
+    await parent.save();
+    
+    console.log(`🎉 Webhook: Welcome packet order completed successfully - Parent ${parentId}, Amount: $${totalAmount}`);
+  } else {
+    console.log(`❌ Webhook: No pending welcome packet order found for session ${session.id}`);
+    console.log(`📋 Webhook: Available orders:`, parent.welcomePacketOrders?.map(order => ({ 
+      sessionId: order.stripeSessionId, 
+      status: order.status,
+      amount: order.totalAmount 
+    })));
+  }
+}
+
+async function handleChildWelcomePacketOrder(session: Stripe.Checkout.Session) {
+  const { metadata } = session;
+  const parentId = metadata?.parentId;
+  const childId = metadata?.childId;
+  const childName = metadata?.childName;
+  const totalAmount = parseInt(metadata?.totalAmount || '0');
+  
+  console.log(`🎁 Webhook: Processing child welcome packet order - Parent: ${parentId}, Child: ${childName}, Amount: $${totalAmount}, Session: ${session.id}`);
+  
+  if (!parentId || !childId || !totalAmount) {
+    console.log(`❌ Webhook: Missing parentId (${parentId}), childId (${childId}), or totalAmount (${totalAmount})`);
+    return;
+  }
+
+  const parent = await Parent.findById(parentId);
+  if (!parent) {
+    console.log(`❌ Webhook: Parent not found: ${parentId}`);
+    return;
+  }
+
+  // Find the pending welcome packet order for this child
+  const pendingOrder = parent.welcomePacketOrders?.find(
+    order => order.stripeSessionId === session.id && 
+             order.status === 'pending' && 
+             order.childId?.toString() === childId
+  );
+
+  if (pendingOrder) {
+    console.log(`✅ Webhook: Found pending child welcome packet order, updating to completed`);
+    
+    // Update order status
+    pendingOrder.status = 'completed';
+    
+    // Store shipping address from the session
+    const shippingDetails = (session as any).shipping_details;
+    if (shippingDetails?.address) {
+      const address = shippingDetails.address;
+      pendingOrder.shippingAddress = {
+        recipientName: shippingDetails.name || '',
+        street: address.line1 || '',
+        apartment: address.line2 || '',
+        city: address.city || '',
+        state: address.state || '',
+        zipCode: address.postal_code || '',
+        country: address.country || ''
+      };
+    }
+    
+    await parent.save();
+    
+    console.log(`🎉 Webhook: Child welcome packet order completed successfully - Parent ${parentId}, Child: ${childName}, Amount: $${totalAmount}`);
+  } else {
+    console.log(`❌ Webhook: No pending child welcome packet order found for session ${session.id} and child ${childId}`);
+    console.log(`📋 Webhook: Available orders:`, parent.welcomePacketOrders?.map(order => ({ 
+      sessionId: order.stripeSessionId, 
+      status: order.status,
+      childId: order.childId?.toString(),
+      childName: order.childName,
+      amount: order.totalAmount 
+    })));
   }
 }
 

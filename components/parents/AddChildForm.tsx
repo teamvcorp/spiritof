@@ -5,7 +5,12 @@ import Image from "next/image";
 import ImageUpload from "@/components/ui/ImageUpload";
 
 interface AddChildFormProps {
-  onSubmit: (formData: FormData) => void;
+  onSubmit: (formData: FormData) => Promise<{ 
+    success?: boolean; 
+    requiresPayment?: boolean; 
+    error?: string; 
+    message?: string; 
+  } | void>;
 }
 
 export default function AddChildForm({ onSubmit }: AddChildFormProps) {
@@ -61,12 +66,43 @@ export default function AddChildForm({ onSubmit }: AddChildFormProps) {
     formData.append('percentAllocation', percentAllocation.toString());
     formData.append('avatarUrl', avatarUrl);
     
-    onSubmit(formData);
+    const result = await onSubmit(formData);
     
-    // Reset form
-    setChildName("");
-    setPercentAllocation(0);
-    setAvatarUrl("");
+    // Check if this child requires payment (additional child)
+    if (result?.requiresPayment) {
+      // Make the payment-required API call
+      try {
+        const response = await fetch('/api/parent/add-child-with-welcome-packet', {
+          method: 'POST',
+          body: formData,
+        });
+        
+        const paymentResult = await response.json();
+        
+        if (!response.ok) {
+          console.error("Failed to create child with welcome packet:", paymentResult.error);
+          alert('Failed to set up welcome packet for this child. Please try again.');
+          return;
+        }
+        
+        // Redirect to Stripe checkout for the welcome packet payment
+        if (paymentResult.checkoutUrl) {
+          window.location.href = paymentResult.checkoutUrl;
+          return;
+        }
+      } catch (error) {
+        console.error('Error setting up welcome packet payment:', error);
+        alert('Failed to set up welcome packet payment. Please try again.');
+        return;
+      }
+    }
+    
+    // For first child or successful creation, reset form
+    if (result?.success) {
+      setChildName("");
+      setPercentAllocation(0);
+      setAvatarUrl("");
+    }
   };
 
   return (

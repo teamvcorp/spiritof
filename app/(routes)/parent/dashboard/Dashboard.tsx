@@ -9,8 +9,10 @@ import { Types } from "mongoose";
 import { IParent } from "@/types/parentTypes";
 import Vote from "@/components/parents/Vote";
 import WalletTopup from "@/components/parents/WalletTopup";
-import AddChildForm from "@/components/parents/AddChildForm";
+import AddChildFormWrapper from "@/components/parents/AddChildFormWrapper.client";
 import ChristmasFinalization from "@/components/parents/ChristmasFinalization";
+import { WelcomePacketButton } from "@/components/parents/WelcomePacketButton";
+import { hasCompletedWelcomePacket, generateShareSlug, clampInt } from "@/lib/welcome-packet-helpers";
 import DashboardClient from "./DashboardClient";
 import dynamic from "next/dynamic";
 import Image from "next/image";
@@ -23,26 +25,45 @@ const QRShareButton = dynamic(() => import("@/components/parents/QRShareButton")
 async function createChildWrapper(formData: FormData) {
   "use server";
   const session = await auth();
-  if (!session?.user?.id) return;
+  if (!session?.user?.id) return { error: "Not authenticated" };
 
   await dbConnect();
 
   // Get user's parentId first
   const user = await User.findById(session.user.id).select("parentId").lean();
-  if (!user?.parentId) return;
+  if (!user?.parentId) return { error: "No parent found" };
   
-  const parent = await Parent.findById(user.parentId).lean<IParent>();
-  if (!parent) return;
+  const parent = await Parent.findById(user.parentId);
+  if (!parent) return { error: "Parent not found" };
+
+  // Check if welcome packet has been completed before allowing child creation
+  const hasWelcomePacket = await hasCompletedWelcomePacket(parent._id.toString());
+  if (!hasWelcomePacket) {
+    return { error: "Welcome packet must be completed before adding children" };
+  }
 
   const displayName = String(formData.get("displayName") || "").trim();
   const percentAllocation = Number(formData.get("percentAllocation") || 0);
   const avatarUrl = String(formData.get("avatarUrl") || "").trim() || undefined;
 
-  if (!displayName) return;
+  if (!displayName) return { error: "Display name is required" };
 
   const shareSlug = generateShareSlug();
 
-  await Child.create({
+  // Check if this parent already has children (meaning this is an additional child)
+  const existingChildren = await Child.find({ parentId: parent._id });
+  const hasCompletedOrder = parent.welcomePacketOrders?.some(order => order.status === 'completed');
+  
+  if (hasCompletedOrder && existingChildren.length > 0) {
+    // For additional children, return a special response that triggers payment flow
+    return { 
+      requiresPayment: true,
+      message: "This child requires a welcome packet purchase. You'll be redirected to payment."
+    };
+  }
+
+  // For the first child, create normally (welcome packet already handled in setup)
+  const newChild = await Child.create({
     parentId: parent._id,
     displayName,
     avatarUrl,
@@ -54,7 +75,31 @@ async function createChildWrapper(formData: FormData) {
     neighborLedger: [],
   });
 
+  // Create a new welcome packet order for this child based on the original order
+  const originalOrder = parent.welcomePacketOrders?.find(order => order.status === 'completed');
+  if (originalOrder) {
+    // Create a new welcome packet order marked as completed (no payment required for first child)
+    if (!parent.welcomePacketOrders) {
+      parent.welcomePacketOrders = [];
+    }
+
+    parent.welcomePacketOrders.push({
+      stripeSessionId: `auto_${newChild._id}_${Date.now()}`,
+      selectedItems: originalOrder.selectedItems || [],
+      totalAmount: originalOrder.totalAmount || 10,
+      status: 'completed', // Auto-complete for first child
+      shippingAddress: originalOrder.shippingAddress,
+      shipped: false,
+      createdAt: new Date(),
+      childId: newChild._id,
+      childName: displayName
+    });
+
+    await parent.save();
+  }
+
   revalidatePath("/parent/dashboard");
+  return { success: true };
 }
 
 // Server actions (edit & delete)
@@ -125,18 +170,6 @@ async function deleteChild(formData: FormData) {
   revalidatePath("/parent/dashboard");
 }
 
-// Helpers
-function clampInt(n: number, min = 0, max = 100) {
-  if (Number.isNaN(n)) return min;
-  return Math.max(min, Math.min(max, Math.round(n)));
-}
-
-function generateShareSlug() {
-  // short, opaque; adjust length if desired
-  const rand = Array.from({ length: 8 }, () => Math.floor(Math.random() * 36).toString(36)).join("");
-  return rand.toUpperCase();
-}
-
 // Page
 export default async function ParentDashboardPage() {
   const session = await auth();
@@ -152,6 +185,9 @@ export default async function ParentDashboardPage() {
   if (!parent) redirect("/onboarding");
 
   const children = await Child.find({ parentId: parent._id }).lean();
+  
+  // Check if welcome packet has been completed
+  const hasWelcomePacket = await hasCompletedWelcomePacket(parent._id.toString());
 
   return (
     <main className="mx-auto max-w-5xl px-4 py-8 space-y-8">
@@ -327,33 +363,45 @@ export default async function ParentDashboardPage() {
         )}
       </section>
 
-      {/* Add Child Section */}
+      {/* Welcome Packet & Add Child Section */}
       <section className="space-y-4">
-        <h2 className="text-2xl font-paytone-one text-santa">Add a New Child</h2>
-        
-        <div className="bg-gradient-to-br from-santa-50 via-evergreen-50 to-blueberry-50 rounded-2xl border-2 border-santa-200 overflow-hidden">
-          <div className="bg-white/60 backdrop-blur-sm p-6">
-            <div className="flex items-center justify-center mb-6">
-              <div className="text-6xl">👶</div>
-            </div>
+        {!hasWelcomePacket ? (
+          <div>
+            <h2 className="text-2xl font-paytone-one text-santa mb-4">Welcome Packet Setup</h2>
+            <WelcomePacketButton 
+              hasCompletedWelcomePacket={hasWelcomePacket}
+              className="mb-6"
+            />
+          </div>
+        ) : (
+          <div>
+            <h2 className="text-2xl font-paytone-one text-santa">Add a New Child</h2>
             
-            <AddChildForm onSubmit={createChildWrapper} />
+            <div className="bg-gradient-to-br from-santa-50 via-evergreen-50 to-blueberry-50 rounded-2xl border-2 border-santa-200 overflow-hidden">
+              <div className="bg-white/60 backdrop-blur-sm p-6">
+                <div className="flex items-center justify-center mb-6">
+                  <div className="text-6xl">👶</div>
+                </div>
+                
+                <AddChildFormWrapper createChildAction={createChildWrapper} />
 
-            {/* Tips Section */}
-            <div className="mt-6 bg-blueberry-50 rounded-lg p-4 border-l-4 border-blueberry-400">
-              <h5 className="text-sm font-medium text-blueberry-800 mb-2 flex items-center">
-                <span className="mr-2">💡</span>
-                Tips for Setting Up Your Child
-              </h5>
-              <ul className="text-xs text-blueberry-700 space-y-1">
-                <li>• You can always edit their information later</li>
-                <li>• Budget percentages should add up to 100% across all children</li>
-                <li>• Each child gets their own Christmas list and magic score</li>
-                <li>• Profile pictures make the experience more personal and fun!</li>
-              </ul>
+                {/* Tips Section */}
+                <div className="mt-6 bg-blueberry-50 rounded-lg p-4 border-l-4 border-blueberry-400">
+                  <h5 className="text-sm font-medium text-blueberry-800 mb-2 flex items-center">
+                    <span className="mr-2">💡</span>
+                    Tips for Setting Up Your Child
+                  </h5>
+                  <ul className="text-xs text-blueberry-700 space-y-1">
+                    <li>• You can always edit their information later</li>
+                    <li>• Budget percentages should add up to 100% across all children</li>
+                    <li>• Each child gets their own Christmas list and magic score</li>
+                    <li>• Profile pictures make the experience more personal and fun!</li>
+                  </ul>
+                </div>
+              </div>
             </div>
           </div>
-        </div>
+        )}
       </section>
     </main>
   );

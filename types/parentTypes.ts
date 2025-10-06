@@ -106,6 +106,30 @@ export interface WalletLedgerEntry {
     updatedAt?: Date;
 }
 
+export interface WelcomePacketOrder {
+    _id?: ObjectId;
+    stripeSessionId: string;
+    selectedItems: string[];     // Array of item IDs
+    totalAmount: number;
+    status: "pending" | "completed" | "failed";
+    shippingAddress?: {
+        recipientName?: string;
+        street?: string;
+        apartment?: string;
+        city?: string;
+        state?: string;
+        zipCode?: string;
+        country?: string;
+    };
+    shipped?: boolean;
+    shippedAt?: Date;
+    trackingNumber?: string;
+    childId?: ObjectId;          // Associate with specific child
+    childName?: string;          // Store child name for admin reference
+    createdAt?: Date;
+    updatedAt?: Date;
+}
+
 export interface IParent {
     _id: ObjectId;
     name: string;
@@ -117,6 +141,9 @@ export interface IParent {
     magicBudgetCents: number;       // monthly target budget
     walletBalanceCents: number;     // cached balance derived from walletLedger
     walletLedger: WalletLedgerEntry[];
+
+    // welcome packets
+    welcomePacketOrders?: WelcomePacketOrder[];
 
     // stripe
     stripeCustomerId?: string;

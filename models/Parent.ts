@@ -94,6 +94,30 @@ const WalletLedgerEntrySchema = new Schema(
     },
     { _id: true, timestamps: true }
 );
+
+const WelcomePacketOrderSchema = new Schema(
+    {
+        stripeSessionId: { type: String, required: true },
+        selectedItems: [{ type: String }], // Array of item IDs
+        totalAmount: { type: Number, required: true },
+        status: { type: String, enum: ["pending", "completed", "failed"], default: "pending" },
+        shippingAddress: {
+            recipientName: { type: String },
+            street: { type: String },
+            apartment: { type: String },
+            city: { type: String },
+            state: { type: String },
+            zipCode: { type: String },
+            country: { type: String }
+        },
+        shipped: { type: Boolean, default: false },
+        shippedAt: { type: Date },
+        trackingNumber: { type: String },
+        childId: { type: Types.ObjectId, ref: "Child" }, // Associate with specific child
+        childName: { type: String } // Store child name for admin reference
+    },
+    { _id: true, timestamps: true }
+);
 export type ParentDoc = HydratedDocument<IParent> & ParentMethods;
 export type ParentModel = Model<IParent, object, ParentMethods>;
 const ParentSchema = new Schema<IParent>(
@@ -111,6 +135,9 @@ const ParentSchema = new Schema<IParent>(
         // wallet
         walletBalanceCents: { type: Number, required: true, default: 0 }, // keep in sync from ledger
         walletLedger: { type: [WalletLedgerEntrySchema], default: [] },
+
+        // welcome packets
+        welcomePacketOrders: { type: [WelcomePacketOrderSchema], default: [] },
 
         // stripe
         stripeCustomerId: { type: String, index: true },

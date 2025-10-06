@@ -37,15 +37,15 @@ export function AuthOptions() {
     <Container size="full">
 
     <Card className="max-w-2xl mx-auto p-8 bg-white rounded-2xl shadow-md">
-      <h2 className="text-2xl font-paytone-one text-center mb-6 text-santa">
+      <h2 className="text-xl font-paytone-one text-center mb-6 text-santa lg:text-3xl">
         Get Started with Spirit of Santa
       </h2>
-      <div className='flex justify-center items-center gap-8 lg:flex-row lg:items-start lg:justify-between'>
+      <div className='flex justify-center items-center gap-8 lg:flex-row lg:justify-between'>
       
-      <div className="flex flex-col  w-full max-w-sm space-y-3">
+      <div className="flex flex-col items-center justify-center w-full max-w-sm space-y-3">
         <Button
           onClick={() => signIn("google")}
-          className="self-center w-full bg-white hover:bg-gray-50 text-gray-700 border border-gray-300 flex items-center justify-center gap-3"
+          className=" w-full bg-white text-xs hover:bg-gray-50 text-gray-700 border border-gray-300 flex items-center justify-center gap-3 lg:text-lg"
         >
           <FaGoogle className="text-red-500" />
           Continue with Google
@@ -62,7 +62,7 @@ export function AuthOptions() {
 
         <Button
           onClick={() => setShowEmailAuth(true)}
-          className="self-center w-full bg-santa hover:bg-santa/90 text-white flex items-center justify-center gap-3"
+          className="w-full text-xs lg:text-lg bg-santa hover:bg-santa/90 text-white flex items-center justify-center gap-3"
         >
           <FaEnvelope />
           Continue with Email
@@ -72,10 +72,10 @@ export function AuthOptions() {
             <Image
               src="/images/santa.png"
               alt="Spirit of Santa"
-              width={250}
-              height={250}
-             sizes="(max-width: 1024px) 50vw, 250px"
-            className="w-[220px] sm:w-[260px] md:w-[250px] h-auto"
+              width={100}
+              height={100}
+             sizes="(max-width: 100px) "
+            className="w-[100px] md:w-[150px] lg:w-[200px] h-auto"
             />
 </div>
       <p className="mt-6 text-xs text-gray-500 text-center">
