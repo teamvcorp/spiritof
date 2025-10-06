@@ -44,7 +44,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Validate gift has required fields
-    if (!gift.price || (!gift.imageUrl && !gift.blobUrl)) {
+    if (!gift.price || !gift.imageUrl) {
       return NextResponse.json({ error: 'Gift missing required data' }, { status: 400 });
     }
 
@@ -72,7 +72,7 @@ export async function POST(request: NextRequest) {
       giftId,
       giftTitle: gift.title,
       giftPrice: gift.price,
-      giftImageUrl: gift.imageUrl || gift.blobUrl,
+      giftImageUrl: gift.imageUrl || "/images/christmasMagic.png",
       friendName,
       friendAddress,
       message,

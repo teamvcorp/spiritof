@@ -76,7 +76,7 @@ export async function POST(request: NextRequest) {
       giftId,
       giftTitle: gift.title,
       giftPrice: gift.price,
-      giftImageUrl: gift.imageUrl || gift.blobUrl,
+      giftImageUrl: gift.imageUrl || "/images/christmasMagic.png",
       reason,
       requestedPoints,
       requestedAt: new Date(),

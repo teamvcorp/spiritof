@@ -55,7 +55,7 @@ export default async function FriendGiftsPage({ params }: PageProps) {
   const giftList = allGifts.map(gift => ({
     _id: gift._id.toString(),
     title: gift.title,
-    imageUrl: gift.blobUrl || gift.imageUrl || "/images/christmasMagic.png",
+    imageUrl: gift.imageUrl || "/images/christmasMagic.png",
     price: gift.price || 0,
     brand: gift.brand,
     retailer: gift.retailer,
