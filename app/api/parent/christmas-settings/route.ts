@@ -18,9 +18,20 @@ export async function GET() {
       return NextResponse.json({ error: "Parent not found" }, { status: 404 });
     }
 
-    // Check payment method status
+    // Check payment method status and get address from welcome packet if available
     let hasPaymentMethod = false;
     let paymentMethodLast4 = undefined;
+    let welcomePacketAddress = null;
+
+    // Try to get address from completed welcome packet order
+    if (parent.welcomePacketOrders && parent.welcomePacketOrders.length > 0) {
+      const completedOrder = parent.welcomePacketOrders.find(order => 
+        order.status === 'completed' && order.shippingAddress
+      );
+      if (completedOrder?.shippingAddress) {
+        welcomePacketAddress = completedOrder.shippingAddress;
+      }
+    }
 
     if (parent.stripeCustomerId) {
       try {
@@ -70,6 +81,8 @@ export async function GET() {
     return NextResponse.json({
       success: true,
       settings: settings || {},
+      parentName: parent.name, // Include parent name for auto-population
+      welcomePacketAddress, // Include welcome packet address for auto-population
     });
 
   } catch (error) {
@@ -91,10 +104,11 @@ export async function POST(request: NextRequest) {
     const settings = await request.json();
 
     // Validate required fields
-    if (!settings.shippingAddress?.street || !settings.shippingAddress?.city || 
-        !settings.shippingAddress?.state || !settings.shippingAddress?.zipCode) {
+    if (!settings.shippingAddress?.recipientName || !settings.shippingAddress?.street || 
+        !settings.shippingAddress?.city || !settings.shippingAddress?.state || 
+        !settings.shippingAddress?.zipCode) {
       return NextResponse.json(
-        { error: "Complete shipping address is required" },
+        { error: "Complete shipping address is required (recipient name, street, city, state, and ZIP code)" },
         { status: 400 }
       );
     }

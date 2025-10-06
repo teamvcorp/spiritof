@@ -102,7 +102,7 @@ export default function ChristmasFinalization({
         <div className="flex items-center mb-4">
           <FaCheck className="text-green-600 text-2xl mr-3" />
           <div>
-            <h3 className="text-lg font-semibold text-green-800">
+            <h3 className="text-lg  text-evergreen">
               Christmas Lists Finalized
             </h3>
             <p className="text-green-600 text-sm">

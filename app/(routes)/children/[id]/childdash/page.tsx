@@ -110,9 +110,6 @@ const {id: childId} = await params;
               <div className='flex flex-col items-center gap-3 sm:gap-4'>
                 <h3 className='text-lg sm:text-xl'>Latest Vote</h3>
                 <FaThumbsUp className="shrink-0" size={36} />
-                <Link href={`/children/${String(child._id)}/child`}>
-                  <Button className='bg-evergreen min-w-36 sm:min-w-40'><ImEye className="mr-2"  />Details</Button>
-                </Link>
               </div>
             </div>
           </Card>

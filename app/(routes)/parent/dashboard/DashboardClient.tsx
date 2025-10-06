@@ -34,7 +34,7 @@ export default function DashboardClient({ parentId, hasChristmasSetup, searchPar
     if (payment === 'success' && sessionId) {
       message = {
         type: 'success',
-        message: '💰 Payment completed successfully! Your wallet has been topped up and welcome packet order is being processed.'
+        message: ' Payment completed successfully! Your wallet has been topped up and welcome packet order is being processed.'
       };
     } else if (payment === 'cancelled') {
       message = {
@@ -46,7 +46,7 @@ export default function DashboardClient({ parentId, hasChristmasSetup, searchPar
     else if (welcomePacket === 'success') {
       message = {
         type: 'success',
-        message: '🎁 Welcome packet order completed successfully! Your package will be prepared and shipped within 3-5 business days.'
+        message: 'Welcome packet order completed successfully! Your package will be prepared and shipped within 3-5 business days.'
       };
     } else if (welcomePacket === 'cancelled') {
       message = {
@@ -104,14 +104,14 @@ export default function DashboardClient({ parentId, hasChristmasSetup, searchPar
             }`}
           >
             <FaCalendarAlt className="mr-2" />
-            {hasChristmasSetup ? "🎄 Christmas Settings" : "🎅 Setup Christmas"}
+            {hasChristmasSetup ? "Christmas Settings" : "Setup Christmas"}
           </Button>
         </div>
       </div>
 
       {/* Setup Reminder Card (if not completed) */}
       {!hasChristmasSetup && (
-        <div className="bg-gradient-to-r from-santa-50 to-evergreen-50 border-2 border-santa-200 rounded-xl p-6 mb-6">
+        <div className=" border-2 border-santa-200 rounded-xl p-6 mb-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center">
               <div className="text-4xl mr-4">🎅</div>

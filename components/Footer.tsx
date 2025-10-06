@@ -52,45 +52,31 @@ export default function Footer({
   const year = new Date().getFullYear();
 
   return (
-    <footer role="contentinfo" className={cn(" bg-santa text-white", className)}>
-      <Container py="lg" px="md">
-        {/* Top: columns */}
-        <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-4">
-          <div>
-            <a href={brandHref} className="text-lg font-semibold text-fg hover:opacity-90">
+    <footer role="contentinfo" className={cn("fixed bottom-0 left-0 right-0 bg-santa text-white z-30 border-t-4 border-white shadow-lg", className)}>
+      <Container py="sm" px="md">
+        {/* Compact footer for fixed positioning */}
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+          {/* Brand */}
+          <div className="flex items-center gap-4">
+            <a href={brandHref} className="text-lg font-semibold text-white hover:opacity-90">
               {brandName}
             </a>
-            <p className="mt-2 max-w-prose text-sm text-muted">
+            <span className="hidden sm:block text-sm text-white/80">
               Making holiday magic simpler for families.
-            </p>
+            </span>
           </div>
 
-          {columns.map((col) => (
-            <nav key={col.title} aria-label={col.title} className="space-y-3">
-              <div className="text-sm font-medium text-fg/80">{col.title}</div>
-              <ul className="space-y-2">
-                {col.links.map((l) => (
-                  <li key={l.href}>
-                    <a href={l.href} className="text-sm text-muted hover:text-fg">
-                      {l.label}
-                    </a>
-                  </li>
-                ))}
-              </ul>
-            </nav>
-          ))}
-        </div>
-
-        {/* Bottom: fine print */}
-        <div className="mt-10 flex flex-col items-start justify-between gap-4 border-t pt-6 text-sm text-muted sm:flex-row">
-          <div>
-            © {year} {brandName}. All rights reserved.
+          {/* Quick Links */}
+          <div className="flex flex-wrap gap-x-6 gap-y-2 text-sm">
+            <a href="/children/list" className="text-white/80 hover:text-white">Christmas Lists</a>
+            <a href="/parent/dashboard" className="text-white/80 hover:text-white">Dashboard</a>
+            <a href="/privacy" className="text-white/80 hover:text-white">Privacy</a>
+            <a href="/terms" className="text-white/80 hover:text-white">Terms</a>
           </div>
-          <div className="flex flex-wrap gap-x-6 gap-y-2">
-            <a href="/privacy" className="hover:text-fg">Privacy Policy</a>
-            <a href="/terms" className="hover:text-fg">Terms of Service</a>
-            <a href="/contact" className="hover:text-fg">Contact</a>
-            {finePrint}
+
+          {/* Copyright */}
+          <div className="text-sm text-white/80">
+            © {year} {brandName}
           </div>
         </div>
       </Container>

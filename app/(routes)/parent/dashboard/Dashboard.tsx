@@ -411,7 +411,7 @@ export default async function ParentDashboardPage({ searchParams }: DashboardPro
             <div className="bg-gradient-to-br from-santa-50 via-evergreen-50 to-blueberry-50 rounded-2xl border-2 border-santa-200 overflow-hidden">
               <div className="bg-white/60 backdrop-blur-sm p-6">
                 <div className="flex items-center justify-center mb-6">
-                  <div className="text-6xl">👶</div>
+                 
                 </div>
                 
                 <AddChildFormWrapper createChildAction={createChildWrapper} />

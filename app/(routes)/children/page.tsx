@@ -25,24 +25,8 @@ export default async function ChildrenPickerPage() {
 
   return (
     <main className="min-h-[80vh] flex flex-col items-center justify-center px-4  bg-evergreen ">
-      <h1 className="text-3xl sm:text-4xl font-semibold mb-4 text-white">Who is playing?</h1>
+      <h1 className="text-3xl sm:text-4xl font-semibold mb-8 text-white">🎄 Choose Your Little Elf 🎄</h1>
       
-      {/* Quick Actions */}
-      <div className="mb-8 flex gap-4">
-        <Link 
-          href="/children/list"
-          className="bg-santa hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
-        >
-          🎁 Add Gifts
-        </Link>
-        <Link 
-          href="/children/manage"
-          className="bg-berryPink hover:bg-pink-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
-        >
-          📝 Manage Lists
-        </Link>
-      </div>
-
       {children.length === 0 ? (
         <div className="text-sm text-muted-foreground border rounded-lg p-6 text-white">
           No children found yet. Add children from your <Link href="/parent/dashboard" className="underline">Parent Dashboard</Link>.
@@ -54,7 +38,7 @@ export default async function ChildrenPickerPage() {
             return (
               <li key={id} className="flex flex-col items-center gap-3">
                 <Link href={`/children/${id}/childdash`} className="group focus:outline-none">
-                  <div className="h-28 w-28 sm:h-32 sm:w-32 rounded-lg overflow-hidden ring-2 ring-transparent group-hover:ring-primary transition shadow-md bg-white text-santa">
+                  <div className="h-28 w-28 sm:h-32 sm:w-32 rounded-full overflow-hidden ring-2 ring-transparent group-hover:ring-primary transition-all duration-200 transform hover:scale-110 shadow-md bg-white text-santa">
                     {c.avatarUrl ? (
                       <img src={c.avatarUrl} alt={c.displayName} className="h-full w-full object-cover" />
                     ) : (
