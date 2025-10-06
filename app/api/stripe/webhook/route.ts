@@ -25,6 +25,20 @@ export async function POST(req: NextRequest) {
   try {
     console.log(`🎯 Webhook received: ${event.type}`);
     
+    // Silent events - informational only, no action needed
+    const silentEvents = [
+      'charge.updated',
+      'charge.succeeded',
+      'payment_method.attached',
+      'customer.updated',
+      'invoice.payment_succeeded'
+    ];
+    
+    if (silentEvents.includes(event.type)) {
+      console.log(`ℹ️  Silent event (no action needed): ${event.type}`);
+      return NextResponse.json({ received: true });
+    }
+    
     switch (event.type) {
       case 'checkout.session.completed':
         console.log(`💳 Processing checkout completed`);

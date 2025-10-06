@@ -42,20 +42,20 @@ export function WelcomePacketButton({ hasCompletedWelcomePacket, className }: We
   }
 
   return (
-    <div className={`p-6 bg-gradient-to-r from-santa-50 to-berryPink-50 border border-santa-200 rounded-xl ${className}`}>
-      <div className="text-center">
+    <div className={`p-6 rounded-xl ${className}`}>
+      <div className="text-center flex flex-col items-center">
         <div className="text-4xl mb-3">🎁</div>
         <h3 className="text-xl font-paytone-one text-santa-700 mb-2">
           Welcome Packet Required
         </h3>
-        <p className="text-gray-700 mb-4">
+        <p className="text-gray-700 mb-4 w-3/4 my-5 ">
           Before adding children, you need to set up a welcome packet. Your child will receive a personalized welcome letter and instructions in the mail.
         </p>
         <Button
           onClick={() => setShowSetup(true)}
-          className="bg-gradient-to-r from-santa-500 to-santa-600 hover:from-santa-600 hover:to-santa-700 text-white font-semibold"
+          className="link-btn santa-btn"
         >
-          🎁 Set Up Welcome Packet - $10+
+          Set Up
         </Button>
         <p className="text-sm text-gray-500 mt-2">
           $10 enrollment fee + optional add-ons

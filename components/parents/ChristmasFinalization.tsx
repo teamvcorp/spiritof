@@ -111,7 +111,7 @@ export default function ChristmasFinalization({
           </div>
         </div>
         
-        <div className="space-y-2 text-sm text-green-700">
+        <div className="space-y-2 text-sm gray-box">
           <p>✅ All gift lists have been locked and submitted for fulfillment</p>
           <p>✅ Payment has been processed for the total gift cost</p>
           <p>✅ Your order is now in the logistics queue for shipment approval</p>
@@ -239,14 +239,14 @@ export default function ChristmasFinalization({
           </div>
         )}
 
-        <div className="flex space-x-3">
+        <div className="flex justify-center  space-x-6">
           {!showConfirmation ? (
             <Button
               onClick={() => setShowConfirmation(true)}
               disabled={!canFinalize() || loading}
-              className="bg-santa hover:bg-red-700 text-white"
+              className="bg-santa link-btn hover:bg-[#CC001E]"
             >
-              <FaGift className="mr-2" />
+             
               {isBeforeLockDate() ? "Finalize Early" : "Finalize Now"}
             </Button>
           ) : (
@@ -254,7 +254,7 @@ export default function ChristmasFinalization({
               <Button
                 onClick={handleFinalizeLists}
                 disabled={loading}
-                className="bg-red-600 hover:bg-red-700 text-white"
+                className="link-btn evergreen-btn"
               >
                 {loading ? "Processing..." : "Confirm Finalization"}
               </Button>
@@ -264,7 +264,7 @@ export default function ChristmasFinalization({
                   setError(null);
                 }}
                 disabled={loading}
-                className="bg-gray-500 hover:bg-gray-600 text-white"
+                className="link-btn santa-btn"
               >
                 Cancel
               </Button>

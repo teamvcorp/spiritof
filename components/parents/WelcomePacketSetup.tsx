@@ -141,27 +141,27 @@ export function WelcomePacketSetup({ onComplete, onCancel }: WelcomePacketSetupP
   };
 
   const renderProgressBar = () => (
-    <div className="mb-8">
-      <div className="flex items-center justify-between mb-4">
+    <div className="mb-8 flex flex-col items-center">
+      <div className="flex items-center justify-between mb-4 w-3/4">
         {['welcome', 'items', 'review', 'processing'].map((step, index) => {
           const stepNum = index + 1;
           const isActive = getStepNumber(currentStep) === stepNum;
           const isCompleted = getStepNumber(currentStep) > stepNum;
           
           return (
-            <div key={step} className="flex items-center">
+            <div key={step} className="flex items-center justify-center">
               <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold transition-all duration-300 ${
                 isActive 
-                  ? 'bg-santa-500 text-white ring-4 ring-santa-200 scale-110' 
+                  ? 'bg-frostyBlue text-white ring-4 ring-santa-200 scale-110' 
                   : isCompleted 
-                    ? 'bg-evergreen-500 text-white' 
+                    ? 'bg-gray-200 text-white' 
                     : 'bg-gray-200 text-gray-600'
               }`}>
                 {isCompleted ? '✓' : stepNum}
               </div>
               {index < 3 && (
                 <div className={`w-16 h-1 mx-2 transition-all duration-300 ${
-                  isCompleted ? 'bg-evergreen-300' : 'bg-gray-200'
+                  isCompleted ? 'bg-gray-200' : 'bg-gray-200'
                 }`} />
               )}
             </div>
@@ -198,12 +198,12 @@ export function WelcomePacketSetup({ onComplete, onCancel }: WelcomePacketSetupP
         </p>
       </div>
       
-      <Card className="max-w-xl mx-auto bg-gradient-to-r from-santa-50 to-evergreen-50 border-2 border-santa-200">
+      <Card className="max-w-xl mx-auto gray-box">
         <div className="p-6">
           <div className="flex items-center justify-between">
-            <div className="text-left">
+            <div className="text-left ">
               <h3 className="text-xl font-semibold text-santa-700 mb-2">
-                📮 Welcome Letter Package
+                Welcome Letter Package
               </h3>
               <p className="text-gray-600 text-sm">
                 • Personalized welcome letter<br/>
@@ -220,8 +220,8 @@ export function WelcomePacketSetup({ onComplete, onCancel }: WelcomePacketSetupP
         </div>
       </Card>
 
-      <div className="bg-blueberry-50 rounded-lg p-4 max-w-xl mx-auto">
-        <p className="text-sm text-blueberry-800">
+      <div className=" p-4 max-w-xl mx-auto">
+        <p className="text-sm text-evergreen">
           <span className="font-semibold">📦 Shipping:</span> Your welcome packet will be prepared and mailed within 3-5 business days
         </p>
       </div>
@@ -231,8 +231,8 @@ export function WelcomePacketSetup({ onComplete, onCancel }: WelcomePacketSetupP
   const renderItemsStep = () => (
     <div className="space-y-6">
       <div className="text-center">
-        <h2 className="text-2xl font-paytone-one text-evergreen-600 mb-2">
-          🎄 Make It Extra Special
+        <h2 className="text-2xl font-paytone-one text-evergreen mb-2">
+          Make It Extra Special
         </h2>
         <p className="text-gray-600 max-w-xl mx-auto">
           Choose from our festive add-ons to make your child's welcome packet even more magical!
@@ -247,9 +247,9 @@ export function WelcomePacketSetup({ onComplete, onCancel }: WelcomePacketSetupP
           return (
             <Card 
               key={item.id}
-              className={`cursor-pointer transition-all duration-300 hover:shadow-xl hover:scale-105 ${
+              className={`cursor-pointer transition-all duration-300 border border-gray-200 hover:shadow-xl hover:scale-105 ${
                 isSelected 
-                  ? 'border-evergreen-400 bg-evergreen-50 shadow-lg ring-2 ring-evergreen-200' 
+                  ? 'shadow-lg ring-2' 
                   : 'border-gray-200 hover:border-evergreen-300'
               }`}
               onClick={() => toggleItem(item.id)}
@@ -274,7 +274,7 @@ export function WelcomePacketSetup({ onComplete, onCancel }: WelcomePacketSetupP
                   </div>
                   <div className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 ${
                     isSelected 
-                      ? 'bg-evergreen-500 text-white' 
+                      ? 'bg-evergreen text-white' 
                       : 'bg-gray-100 text-gray-600'
                   }`}>
                     {isSelected ? '✓ Added' : 'Add to Order'}
@@ -391,11 +391,11 @@ export function WelcomePacketSetup({ onComplete, onCancel }: WelcomePacketSetupP
   );
 
   return (
-    <Container className="max-w-6xl mx-auto p-6 min-h-screen bg-gradient-to-br from-red-50 via-green-50 to-blue-50">
+    <Container className="max-w-6xl mx-auto p-6 min-h-screen ">
       <div className="bg-white rounded-3xl shadow-2xl overflow-hidden">
-        <div className="bg-gradient-to-r from-santa-500 to-evergreen-500 p-6 text-white text-center">
-          <h1 className="text-3xl font-paytone-one mb-2">
-            🎄 Welcome Packet Setup
+        <div className="p-6 text-white text-center">
+          <h1 className="text-3xl font-paytone-one mb-2 text-santa">
+            Welcome Packet Setup
           </h1>
           <p className="text-santa-100">
             Let's create something magical for your child!
@@ -425,7 +425,7 @@ export function WelcomePacketSetup({ onComplete, onCancel }: WelcomePacketSetupP
               <Button
                 onClick={nextStep}
                 disabled={isProcessing}
-                className="bg-gradient-to-r from-santa-500 to-santa-600 hover:from-santa-600 hover:to-santa-700 text-white font-semibold px-8"
+                className="bg-blueberry hover:from-santa-600 hover:to-santa-700 text-white font-semibold px-8"
               >
                 {currentStep === 'review' ? (
                   <>🎁 Complete Order - ${calculateTotal()}</>

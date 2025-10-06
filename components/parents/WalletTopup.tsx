@@ -95,8 +95,8 @@ export default function WalletTopup({ currentBalance }: WalletTopupProps) {
       </div>
 
       <div className="text-xs text-center text-gray-500">
-        <p>💳 Secure payment powered by Stripe</p>
-        <p>💰 $1 = 1 vote for your children&apos;s magic score</p>
+        <p>Secure payment powered by Stripe</p>
+        <p>$1 = 1 vote for your children&apos;s magic score</p>
       </div>
 
       <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">

@@ -47,7 +47,7 @@ const WELCOME_PACKET_ITEMS: WelcomePacketItem[] = [
   }
 ];
 
-const ENROLLMENT_FEE = 10;
+const ENROLLMENT_FEE = 5;
 const ENROLLMENT_PRODUCT_ID = 'prod_TBOjbHfeic8jZb';
 
 export async function POST(req: NextRequest) {

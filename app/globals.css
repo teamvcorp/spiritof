@@ -47,8 +47,16 @@
     line-height: 1.25;
   }
 }
+/* bg-gray-100 rounded-xl p-4 border border-gray-200 shadow-sm */
 
+.gray-box {
+  background-color: #f3f4f6 ;
+  border-radius: 0.75rem;
+  padding: 1rem;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
 
+}
 
 @layer utilities {
   /* Custom Christmas colors */
@@ -88,7 +96,7 @@
   }
   
   .link-btn:hover {
-    transform: scale(1.1);
+    transform: scale(1.05);
     cursor: pointer;
   }
   
@@ -106,6 +114,22 @@
     opacity: 0.6;
     pointer-events: none;
   }
+/* button colors with hover */
+.santa-btn {
+  background-color: #ea1938;
+  color: white;
+}
+.santa-btn:hover {
+  background-color: #CC001E;
+}
+.evergreen-btn {
+  background-color: #37776c;
+  color: white;
+}
+.evergreen-btn:hover {
+  background-color: #1E534A;
+}
+
 /* same as link-btn with a smaller scale on hover */
   .link-btn-sm {
     display: inline-flex;
