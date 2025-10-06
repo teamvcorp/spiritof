@@ -23,6 +23,36 @@ export interface ChildMethods {
   addNeighborLedgerEntry(entry: Omit<NeighborLedgerEntry, "_id" | "createdAt" | "updatedAt" | "currency" | "status">): NeighborLedgerEntry;
 }
 
+export interface EarlyGiftRequest {
+  _id?: ObjectId;
+  giftId: ObjectId;
+  giftTitle: string;
+  giftPrice: number;
+  giftImageUrl: string;
+  reason: string;
+  requestedPoints: number;
+  requestedAt: Date;
+  status: "pending" | "approved" | "denied";
+  parentResponse?: string;
+  respondedAt?: Date;
+}
+
+export interface FriendGiftRequest {
+  _id?: ObjectId;
+  giftId: ObjectId;
+  giftTitle: string;
+  giftPrice: number;
+  giftImageUrl: string;
+  friendName: string;
+  friendAddress: string;
+  message: string;
+  requestedPoints: number;
+  requestedAt: Date;
+  status: "pending" | "approved" | "denied";
+  parentResponse?: string;
+  respondedAt?: Date;
+}
+
 export interface IChild {
   _id: ObjectId;
   parentId: ObjectId;
@@ -46,6 +76,12 @@ export interface IChild {
   // Gift list locking
   giftListLocked?: boolean;
   giftListLockedAt?: Date;
+
+  // Early gift requests
+  earlyGiftRequests?: EarlyGiftRequest[];
+
+  // Friend gift requests
+  friendGiftRequests?: FriendGiftRequest[];
 
   createdAt?: Date;
   updatedAt?: Date;

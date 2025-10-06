@@ -50,6 +50,36 @@ const ChildSchema = new Schema<IChild>(
     // Gift list locking (when finalized)
     giftListLocked: { type: Boolean, default: false },
     giftListLockedAt: { type: Date },
+
+    // Early gift requests
+    earlyGiftRequests: [{
+      giftId: { type: Types.ObjectId, ref: "CatalogItem" },
+      giftTitle: { type: String },
+      giftPrice: { type: Number },
+      giftImageUrl: { type: String },
+      reason: { type: String, maxlength: 500 },
+      requestedPoints: { type: Number },
+      requestedAt: { type: Date, default: Date.now },
+      status: { type: String, enum: ["pending", "approved", "denied"], default: "pending" },
+      parentResponse: { type: String, maxlength: 300 },
+      respondedAt: { type: Date }
+    }],
+
+    // Friend gift requests
+    friendGiftRequests: [{
+      giftId: { type: Types.ObjectId, ref: "CatalogItem" },
+      giftTitle: { type: String },
+      giftPrice: { type: Number },
+      giftImageUrl: { type: String },
+      friendName: { type: String },
+      friendAddress: { type: String },
+      message: { type: String, maxlength: 200 },
+      requestedPoints: { type: Number },
+      requestedAt: { type: Date, default: Date.now },
+      status: { type: String, enum: ["pending", "approved", "denied"], default: "pending" },
+      parentResponse: { type: String, maxlength: 300 },
+      respondedAt: { type: Date }
+    }],
   },
   { timestamps: true }
 );

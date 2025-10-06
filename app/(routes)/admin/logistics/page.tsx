@@ -2,7 +2,7 @@ import { auth } from "@/auth";
 import { redirect } from "next/navigation";
 import { dbConnect } from "@/lib/db";
 import { User } from "@/models/User";
-import LogisticsManager from "@/components/admin/LogisticsManager";
+import LogisticsTabs from "@/components/admin/LogisticsTabs";
 
 export default async function AdminLogisticsPage() {
   const session = await auth();
@@ -24,11 +24,11 @@ export default async function AdminLogisticsPage() {
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900 mb-2">Christmas Logistics</h1>
         <p className="text-gray-600">
-          Manage fully paid Christmas lists ready for shipment and fulfillment.
+          Manage Christmas orders, special requests, and fulfillment operations.
         </p>
       </div>
       
-      <LogisticsManager />
+      <LogisticsTabs />
     </div>
   );
 }

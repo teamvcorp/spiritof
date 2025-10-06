@@ -12,8 +12,9 @@ import WalletTopup from "@/components/parents/WalletTopup";
 import AddChildFormWrapper from "@/components/parents/AddChildFormWrapper.client";
 import ChristmasFinalization from "@/components/parents/ChristmasFinalization";
 import { WelcomePacketButton } from "@/components/parents/WelcomePacketButton";
-import { hasCompletedWelcomePacket, generateShareSlug, clampInt } from "@/lib/welcome-packet-helpers";
+import { hasCompletedWelcomePacket, generateUniqueShareSlug, clampInt } from "@/lib/welcome-packet-helpers";
 import DashboardClient from "./DashboardClient";
+import PaymentDebug from "@/components/debug/PaymentDebug";
 import dynamic from "next/dynamic";
 import Image from "next/image";
 import Link from "next/link";
@@ -48,7 +49,7 @@ async function createChildWrapper(formData: FormData) {
 
   if (!displayName) return { error: "Display name is required" };
 
-  const shareSlug = generateShareSlug();
+  const shareSlug = await generateUniqueShareSlug();
 
   // Check if this parent already has children (meaning this is an additional child)
   const existingChildren = await Child.find({ parentId: parent._id });
@@ -63,17 +64,39 @@ async function createChildWrapper(formData: FormData) {
   }
 
   // For the first child, create normally (welcome packet already handled in setup)
-  const newChild = await Child.create({
-    parentId: parent._id,
-    displayName,
-    avatarUrl,
-    percentAllocation: clampInt(percentAllocation, 0, 100),
-    score365: 0,
-    donationsEnabled: true,
-    shareSlug,
-    neighborBalanceCents: 0,
-    neighborLedger: [],
-  });
+  let newChild;
+  try {
+    newChild = await Child.create({
+      parentId: parent._id,
+      displayName,
+      avatarUrl,
+      percentAllocation: clampInt(percentAllocation, 0, 100),
+      score365: 0,
+      donationsEnabled: true,
+      shareSlug,
+      neighborBalanceCents: 0,
+      neighborLedger: [],
+    });
+  } catch (error: any) {
+    // Handle the extremely rare case where collision occurs between check and create
+    if (error.code === 11000 && error.message.includes('shareSlug')) {
+      console.warn('⚠️ Rare shareSlug collision during create, retrying...');
+      const retrySlug = await generateUniqueShareSlug();
+      newChild = await Child.create({
+        parentId: parent._id,
+        displayName,
+        avatarUrl,
+        percentAllocation: clampInt(percentAllocation, 0, 100),
+        score365: 0,
+        donationsEnabled: true,
+        shareSlug: retrySlug,
+        neighborBalanceCents: 0,
+        neighborLedger: [],
+      });
+    } else {
+      throw error; // Re-throw other errors
+    }
+  }
 
   // Create a new welcome packet order for this child based on the original order
   const originalOrder = parent.welcomePacketOrders?.find(order => order.status === 'completed');
@@ -170,8 +193,16 @@ async function deleteChild(formData: FormData) {
   revalidatePath("/parent/dashboard");
 }
 
+type DashboardProps = {
+  searchParams?: { 
+    payment?: string; 
+    session_id?: string;
+    welcome_packet?: string;
+  };
+};
+
 // Page
-export default async function ParentDashboardPage() {
+export default async function ParentDashboardPage({ searchParams }: DashboardProps) {
   const session = await auth();
   if (!session?.user?.id) redirect("/login");
 
@@ -191,10 +222,14 @@ export default async function ParentDashboardPage() {
 
   return (
     <main className="mx-auto max-w-5xl px-4 py-8 space-y-8">
+      {/* Debug component - remove in production */}
+      <PaymentDebug searchParams={searchParams} />
+      
       {/* Client-side Christmas Setup and Header */}
       <DashboardClient 
         parentId={parent._id.toString()} 
         hasChristmasSetup={!!parent.christmasSettings?.setupCompleted}
+        searchParams={searchParams}
       />
 
       {/* Summary cards */}

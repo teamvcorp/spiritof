@@ -8,51 +8,79 @@ import ChristmasSetup from "@/components/parents/ChristmasSetup";
 interface DashboardClientProps {
   parentId: string;
   hasChristmasSetup: boolean;
+  searchParams?: { 
+    payment?: string; 
+    session_id?: string;
+    welcome_packet?: string;
+  };
 }
 
-export default function DashboardClient({ parentId, hasChristmasSetup }: DashboardClientProps) {
+export default function DashboardClient({ parentId, hasChristmasSetup, searchParams }: DashboardClientProps) {
   const [showChristmasSetup, setShowChristmasSetup] = useState(false);
-  const [welcomePacketMessage, setWelcomePacketMessage] = useState<{ type: 'success' | 'cancelled'; message: string } | null>(null);
+  const [statusMessage, setStatusMessage] = useState<{ type: 'success' | 'cancelled'; message: string } | null>(null);
 
   useEffect(() => {
-    // Check for welcome packet URL parameters
-    const urlParams = new URLSearchParams(window.location.search);
-    const welcomePacketStatus = urlParams.get('welcome_packet');
+    console.log('DashboardClient useEffect - searchParams:', searchParams);
+    let message: { type: 'success' | 'cancelled'; message: string } | null = null;
+
+    // Check search params first (server-side), then URL params (client-side fallback)
+    const payment = searchParams?.payment || (typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('payment') : null);
+    const sessionId = searchParams?.session_id || (typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('session_id') : null);
+    const welcomePacket = searchParams?.welcome_packet || (typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('welcome_packet') : null);
     
-    if (welcomePacketStatus === 'success') {
-      setWelcomePacketMessage({
+    console.log('Parsed values:', { payment, sessionId, welcomePacket });
+    
+    // Handle payment success/failure
+    if (payment === 'success' && sessionId) {
+      message = {
+        type: 'success',
+        message: '💰 Payment completed successfully! Your wallet has been topped up and welcome packet order is being processed.'
+      };
+    } else if (payment === 'cancelled') {
+      message = {
+        type: 'cancelled',
+        message: '❌ Payment was cancelled. You can try again anytime.'
+      };
+    }
+    // Handle welcome packet status
+    else if (welcomePacket === 'success') {
+      message = {
         type: 'success',
         message: '🎁 Welcome packet order completed successfully! Your package will be prepared and shipped within 3-5 business days.'
-      });
-      // Clean up URL
-      const newUrl = window.location.pathname;
-      window.history.replaceState({}, '', newUrl);
-    } else if (welcomePacketStatus === 'cancelled') {
-      setWelcomePacketMessage({
+      };
+    } else if (welcomePacket === 'cancelled') {
+      message = {
         type: 'cancelled',
         message: '❌ Welcome packet order was cancelled. You can try again anytime.'
-      });
-      // Clean up URL
-      const newUrl = window.location.pathname;
-      window.history.replaceState({}, '', newUrl);
+      };
     }
-  }, []);
+
+    if (message) {
+      console.log('Setting status message:', message);
+      setStatusMessage(message);
+      // Clean up URL
+      if (typeof window !== 'undefined') {
+        const newUrl = window.location.pathname;
+        window.history.replaceState({}, '', newUrl);
+      }
+    }
+  }, [searchParams]);
 
   const dismissMessage = () => {
-    setWelcomePacketMessage(null);
+    setStatusMessage(null);
   };
 
   return (
     <>
-      {/* Welcome Packet Success/Cancel Message */}
-      {welcomePacketMessage && (
+      {/* Status Message */}
+      {statusMessage && (
         <div className={`mb-6 p-4 rounded-lg border ${
-          welcomePacketMessage.type === 'success' 
+          statusMessage.type === 'success' 
             ? 'bg-emerald-50 border-emerald-200 text-emerald-800' 
             : 'bg-orange-50 border-orange-200 text-orange-800'
         }`}>
           <div className="flex items-center justify-between">
-            <p className="font-medium">{welcomePacketMessage.message}</p>
+            <p className="font-medium">{statusMessage.message}</p>
             <button 
               onClick={dismissMessage}
               className="text-lg font-bold opacity-60 hover:opacity-100"

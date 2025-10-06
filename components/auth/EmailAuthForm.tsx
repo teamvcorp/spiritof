@@ -67,12 +67,12 @@ export function EmailAuthForm({ onToggleMode, isSignUp }: AuthFormProps) {
   };
 
   return (
-    <Card className="w-full max-w-md mx-auto p-6">
-      <h2 className="text-2xl font-paytone-one text-center mb-6 text-santa">
+    <Card className="w-full max-w-md mx-auto p-6 bg-white mt-20">
+      <h2 className="text-4xl text-center mb-6 text-blueberry uppercase">
         {isSignUp ? "Create Account" : "Sign In"}
       </h2>
 
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={handleSubmit} className="space-y-4 ">
         {isSignUp && (
           <div>
             <label htmlFor="name" className="block text-sm font-medium mb-1">
@@ -132,21 +132,22 @@ export function EmailAuthForm({ onToggleMode, isSignUp }: AuthFormProps) {
             {success}
           </div>
         )}
-
+<div className='flex justify-center '>
         <Button
           type="submit"
           disabled={isLoading}
-          className="w-full bg-santa hover:bg-santa/90"
+          className="w-full bg-blueberry text-white hover:bg-frostyBlue hover:cursor-pointer"
         >
           {isLoading ? "Please wait..." : isSignUp ? "Create Account" : "Sign In"}
         </Button>
+        </div>
       </form>
 
       <div className="mt-4 text-center">
         <button
           type="button"
           onClick={onToggleMode}
-          className="text-sm text-santa hover:underline"
+          className="text-sm text-santa hover:underline hover:cursor-pointer"
         >
           {isSignUp
             ? "Already have an account? Sign in"

@@ -27,6 +27,7 @@
     font-size: 1.875rem;
     font-weight: 600;
     line-height: 1.375;
+    font-family: 'Paytone One', sans-serif;
   }
   
   h3 { 
@@ -44,6 +45,8 @@
     line-height: 1.25;
   }
 }
+
+
 
 @layer utilities {
   /* Custom Christmas colors */

@@ -16,7 +16,8 @@ export default async function AuthPage() {
   }
 
   return (
-    <div className="min-h-screen bg-frostyBlue py-20 px-4">
+    <div className="bg-[url('/images/snow.png')] bg-cover bg-center min-h-screen bg-frostyBlue py-20 px-4  ">
+
       <Container size='xl'>
         <AuthOptions />
       </Container>

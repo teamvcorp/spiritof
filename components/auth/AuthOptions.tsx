@@ -24,7 +24,7 @@ export function AuthOptions() {
         <div className="text-center">
           <button
             onClick={() => setShowEmailAuth(false)}
-            className="text-sm text-gray-600 hover:text-santa underline"
+            className="text-sm text-black hover:text-santa hover:underline hover:cursor-pointer"
           >
             ← Back to login options
           </button>
@@ -34,18 +34,18 @@ export function AuthOptions() {
   }
 
   return (
-    <Container size="full">
+    <Container  size="full">
 
-    <Card className="max-w-2xl mx-auto p-8 bg-white rounded-2xl shadow-md">
-      <h2 className="text-xl font-paytone-one text-center mb-6 text-santa lg:text-3xl">
-        Get Started with Spirit of Santa
-      </h2>
+    <Card className="max-w-2xl mx-auto p-10 bg-white rounded-2xl shadow-md mt-20">
       <div className='flex justify-center items-center gap-8 lg:flex-row lg:justify-between'>
       
       <div className="flex flex-col items-center justify-center w-full max-w-sm space-y-3">
+      <h2 className="text-xl uppercase font-paytone-one text-center mb-12 text-blueberry lg:text-4xl">
+        Get Started 
+      </h2>
         <Button
           onClick={() => signIn("google")}
-          className=" w-full bg-white text-xs hover:bg-gray-50 text-gray-700 border border-gray-300 flex items-center justify-center gap-3 lg:text-lg"
+          className=" w-full bg-white text-xs md:text-sm hover:bg-gray-50 text-gray-700 border border-gray-300 flex items-center justify-center gap-3 lg:text-lg"
         >
           <FaGoogle className="text-red-500" />
           Continue with Google
@@ -62,25 +62,26 @@ export function AuthOptions() {
 
         <Button
           onClick={() => setShowEmailAuth(true)}
-          className="w-full text-xs lg:text-lg bg-santa hover:bg-santa/90 text-white flex items-center justify-center gap-3"
+          className="w-full text-xs md:text-sm lg:text-lg bg-santa hover:bg-santa/90 text-white flex items-center justify-center gap-3"
         >
           <FaEnvelope />
           Continue with Email
         </Button>
+         <p className="mt-6 text-xs text-gray-500 text-center">
+        By continuing, you agree to our Terms of Service and Privacy Policy.
+      </p>
       </div>
       
             <Image
-              src="/images/santa.png"
+              src="/images/elfGift.png"
               alt="Spirit of Santa"
               width={100}
               height={100}
              sizes="(max-width: 100px) "
-            className="w-[100px] md:w-[150px] lg:w-[200px] h-auto"
+            className="hidden lg:block md:block md:w-[150px] lg:w-[200px] h-auto mr-4"
             />
 </div>
-      <p className="mt-6 text-xs text-gray-500 text-center">
-        By continuing, you agree to our Terms of Service and Privacy Policy.
-      </p>
+     
     </Card>
 
     </Container>

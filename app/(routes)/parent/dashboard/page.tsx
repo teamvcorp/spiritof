@@ -9,7 +9,15 @@ import Dashboard from "./Dashboard";  // your actual dashboard UI (server or cli
 import PinSetupModal from "./PinSetupModal";
 import PinVerifyModal from "./PinVerifyModal";
 
-export default async function ParentDashboardPage() {
+type PageProps = {
+  searchParams: Promise<{ 
+    payment?: string; 
+    session_id?: string;
+    welcome_packet?: string;
+  }>;
+};
+
+export default async function ParentDashboardPage({ searchParams }: PageProps) {
   const session = await auth();
   if (!session?.user?.id) redirect("/");
 
@@ -38,5 +46,9 @@ export default async function ParentDashboardPage() {
   if (!parent.pinIsSet) return <PinSetupModal parentId={String(parent._id)} />;
   if (!pinOk) return <PinVerifyModal parentId={String(parent._id)} />;
 
-  return <Dashboard />;
+  // Get search parameters
+  const params = await searchParams;
+  console.log('Page level - received searchParams:', params);
+
+  return <Dashboard searchParams={params} />;
 }

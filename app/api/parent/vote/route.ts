@@ -53,12 +53,20 @@ export async function POST(req: NextRequest) {
     // Check if can vote today
     const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
     const parentDoc = parent as unknown as { 
-      canVoteToday: (childId: string) => boolean; 
-      recordVote: (childId: string, amount: number) => Promise<void>; 
+      canVoteToday: (childId: string, todayISO: string) => boolean; 
+      recordVote: (childId: string, todayISO: string) => void; 
       recomputeWalletBalance: () => Promise<void>;
       addLedgerEntry: (entry: { type: string; amountCents: number; description?: string }) => void;
     }; // Cast to access methods
-    if (!parentDoc.canVoteToday(childId)) {
+    
+    console.log('Vote check:', {
+      childId,
+      today,
+      voteLedger: parent.voteLedger,
+      lastVoteForChild: parent.voteLedger?.get(childId)
+    });
+    
+    if (!parentDoc.canVoteToday(childId, today)) {
       return NextResponse.json({ 
         error: "Already voted for this child today. Try again tomorrow!" 
       }, { status: 400 });
@@ -75,21 +83,22 @@ export async function POST(req: NextRequest) {
     }
 
     // Perform the vote transaction
-    await Parent.findByIdAndUpdate(parent._id, {
-      $inc: { walletBalanceCents: -costInCents },
-      $set: { [`voteLedger.${childId}`]: today }
-    });
-
+    // Update child's score
     await Child.findByIdAndUpdate(child._id, {
       $inc: { score365: magicPointsToAdd }
     });
 
+    // Update parent's wallet and record vote
+    parent.walletBalanceCents -= costInCents;
+    parentDoc.recordVote(childId, today);
+    
     // Record vote in parent's ledger for audit trail
     parentDoc.addLedgerEntry({
       type: "ADJUSTMENT",
       amountCents: -costInCents,
-      // Add custom field for vote tracking
+      description: `Vote for ${child.displayName}: +${magicPointsToAdd} magic points`
     });
+    
     await parent.save();
 
     return NextResponse.json({ 

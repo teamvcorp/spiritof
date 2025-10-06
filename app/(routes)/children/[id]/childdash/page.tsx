@@ -5,6 +5,7 @@ import Container from "@/components/ui/Container";
 import { Cards, Card } from "@/components/ui/Card";
 import Button from "@/components/ui/Button";
 import NaughtyNiceMeter from "@/components/child/NaughtyNiceMeter";
+import EarnMagicButton from "@/components/child/EarnMagicButton";
 import { FaThumbsUp, FaEdit, FaGift, FaPlus } from "react-icons/fa";
 import { ImMagicWand, ImEye, ImPieChart } from "react-icons/im";
 import { MdOutlineGroup } from "react-icons/md";
@@ -48,7 +49,7 @@ const {id: childId} = await params;
 
   // Get child's gift list from populated master catalog items
   interface PopulatedGift {
-    _id: string;
+    _id: Types.ObjectId | string;
     title: string;
     price?: number;
     brand?: string;
@@ -59,7 +60,7 @@ const {id: childId} = await params;
   
   const populatedGifts = (child.giftList as unknown as PopulatedGift[]) || [];
   const giftList = populatedGifts.map(gift => ({
-    _id: gift._id,
+    _id: gift._id.toString(),
     title: gift.title,
     imageUrl: gift.blobUrl || gift.imageUrl || "/images/christmasMagic.png",
     price: gift.price || 0,
@@ -78,6 +79,11 @@ const {id: childId} = await params;
 
   // Get top 5 gifts for display
   const topGifts = giftList.slice(0, 5);
+
+  // Check parent settings for special features
+  const christmasSettings = parent.christmasSettings;
+  const allowEarlyGifts = christmasSettings?.allowEarlyGifts === true;
+  const allowFriendGifts = christmasSettings?.allowFriendGifts !== false; // Default to true
 
   return (
     <div className="min-h-screen p-6 bg-[linear-gradient(to_bottom,_#ea1938_0%,_#ea1938_50%,_#49c5fc_50%,_#49c5fc_100%)] py-10">
@@ -132,13 +138,12 @@ const {id: childId} = await params;
                 )}
               </div>
             </div>
-            <div className='flex justify-center gap-x-10'>
-              <Link href={`/share/${child.shareSlug}`}>
-                <Button className='bg-santa min-w-40'><span><ImMagicWand /></span>Earn Magic</Button>
-              </Link>
-              <Link href={`/children/${String(child._id)}/magic`}>
-                <Button className='bg-santa min-w-40'><span><ImEye /></span>Details</Button>
-              </Link>
+            <div className='flex justify-center'>
+              <EarnMagicButton 
+                childId={String(child._id)}
+                childName={child.displayName}
+                shareSlug={child.shareSlug}
+              />
             </div>
           </Card>
         </Cards>
@@ -216,6 +221,39 @@ const {id: childId} = await params;
             )}
           </Card>
         </Cards>
+
+        {/* Special Christmas Features */}
+        {(allowEarlyGifts || allowFriendGifts) && (
+          <Cards className="mt-6">
+            <Card className="bg-gradient-to-r from-yellow-400 to-orange-400 border-0 text-white">
+              <div className="text-center p-6">
+                <h2 className="text-2xl font-semibold mb-4">🎁 Special Christmas Features</h2>
+                <div className={`grid gap-4 ${(allowEarlyGifts && allowFriendGifts) ? 'grid-cols-1 md:grid-cols-2' : 'grid-cols-1 place-items-center'}`}>
+                  {allowEarlyGifts && (
+                    <Link href={`/children/${String(child._id)}/early-gifts`}>
+                      <Button className='bg-white text-orange-600 hover:bg-gray-100 w-full p-4 text-lg font-semibold rounded-xl'>
+                        ⭐ Request Early Gift
+                        <div className="text-sm font-normal mt-1">
+                          Ask for a gift as a reward for good behavior!
+                        </div>
+                      </Button>
+                    </Link>
+                  )}
+                  {allowFriendGifts && (
+                    <Link href={`/children/${String(child._id)}/friend-gifts`}>
+                      <Button className='bg-white text-orange-600 hover:bg-gray-100 w-full p-4 text-lg font-semibold rounded-xl'>
+                        💝 Send Friend Gift
+                        <div className="text-sm font-normal mt-1">
+                          Share the Christmas spirit with friends!
+                        </div>
+                      </Button>
+                    </Link>
+                  )}
+                </div>
+              </div>
+            </Card>
+          </Cards>
+        )}
         <Link href="/parent/dashboard">
           <Button className='bg-frostyBlue max-w-full my-6 text-white'><MdOutlineGroup/> Parent Portal</Button>
         </Link>

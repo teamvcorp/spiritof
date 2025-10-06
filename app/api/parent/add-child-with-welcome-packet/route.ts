@@ -4,7 +4,7 @@ import { dbConnect } from "@/lib/db";
 import { Parent } from "@/models/Parent";
 import { Child } from "@/models/Child";
 import { User } from "@/models/User";
-import { hasCompletedWelcomePacket, generateShareSlug, clampInt } from "@/lib/welcome-packet-helpers";
+import { hasCompletedWelcomePacket, generateUniqueShareSlug, clampInt } from "@/lib/welcome-packet-helpers";
 import Stripe from "stripe";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
@@ -96,20 +96,44 @@ export async function POST(req: NextRequest) {
 
     console.log(`👶 Adding child: ${displayName}, allocation: ${percentAllocation}%, avatar: ${avatarUrl || 'none'}`);
 
-    const shareSlug = generateShareSlug();
+    // Generate unique share slug with collision handling
+    const shareSlug = await generateUniqueShareSlug();
+    console.log(`🎯 Generated unique share slug: ${shareSlug}`);
 
-    // Create the child first
-    const newChild = await Child.create({
-      parentId: parent._id,
-      displayName: displayName.trim(),
-      avatarUrl: avatarUrl || undefined,
-      percentAllocation: clampInt(percentAllocation, 0, 100),
-      score365: 0,
-      donationsEnabled: true,
-      shareSlug,
-      neighborBalanceCents: 0,
-      neighborLedger: [],
-    });
+    // Create the child with retry logic for extreme edge cases
+    let newChild;
+    try {
+      newChild = await Child.create({
+        parentId: parent._id,
+        displayName: displayName.trim(),
+        avatarUrl: avatarUrl || undefined,
+        percentAllocation: clampInt(percentAllocation, 0, 100),
+        score365: 0,
+        donationsEnabled: true,
+        shareSlug,
+        neighborBalanceCents: 0,
+        neighborLedger: [],
+      });
+    } catch (error: any) {
+      // Handle the extremely rare case where collision occurs between check and create
+      if (error.code === 11000 && error.message.includes('shareSlug')) {
+        console.warn('⚠️ Rare shareSlug collision during create, retrying...');
+        const retrySlug = await generateUniqueShareSlug();
+        newChild = await Child.create({
+          parentId: parent._id,
+          displayName: displayName.trim(),
+          avatarUrl: avatarUrl || undefined,
+          percentAllocation: clampInt(percentAllocation, 0, 100),
+          score365: 0,
+          donationsEnabled: true,
+          shareSlug: retrySlug,
+          neighborBalanceCents: 0,
+          neighborLedger: [],
+        });
+      } else {
+        throw error; // Re-throw other errors
+      }
+    }
 
     console.log(`👶 Created new child: ${displayName}`);
 

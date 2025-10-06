@@ -174,7 +174,7 @@ export async function getChildGiftListNew(childId: string) {
   }).populate({
     path: 'giftList',
     model: 'MasterCatalog'
-  });
+  }).lean();
 
   if (!child) {
     throw new Error("Child not found or not authorized");
@@ -229,7 +229,7 @@ export async function getChildExistingGifts(childId: string) {
     path: 'giftList',
     model: 'MasterCatalog',
     select: 'title productUrl'
-  });
+  }).lean();
 
   if (!child) {
     throw new Error("Child not found or not authorized");
