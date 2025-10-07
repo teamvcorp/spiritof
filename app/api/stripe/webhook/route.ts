@@ -84,6 +84,8 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
     await handleWelcomePacketOrder(session);
   } else if (metadata.type === 'child_welcome_packet') {
     await handleChildWelcomePacketOrder(session);
+  } else if (metadata.type === 'big_magic_donation') {
+    await handleBigMagicDonation(session);
   }
 }
 
@@ -402,4 +404,43 @@ async function handlePaymentFailed(paymentIntent: Stripe.PaymentIntent) {
     
     console.log(`Payment failed: ${paymentIntent.id}`);
   }
+}
+
+async function handleBigMagicDonation(session: Stripe.Checkout.Session) {
+  const { metadata } = session;
+  const companyName = metadata?.companyName;
+  const companyEmail = metadata?.companyEmail;
+  const amount = parseInt(metadata?.amount || '0');
+  
+  console.log(`🏢 Webhook: Processing Big Magic donation - Company: ${companyName}, Amount: $${amount / 100}, Session: ${session.id}`);
+  
+  if (!companyName || !amount) {
+    console.log(`❌ Webhook: Missing company name or amount`);
+    return;
+  }
+
+  // TODO: In production, you'll want to:
+  // 1. Store this in a CorporateDonation model
+  // 2. Track the donation for reporting
+  // 3. Update sponsor list if needed
+  // 4. Send thank you email to company
+  
+  // For now, just send admin notification
+  const { sendAdminNotification } = await import("@/lib/admin-notifications");
+  
+  await sendAdminNotification({
+    type: 'admin_action',
+    title: `Big Magic Donation Completed - ${companyName}`,
+    description: `${companyName} has successfully completed their corporate donation of $${(amount / 100).toLocaleString()}.`,
+    priority: 'high',
+    metadata: {
+      companyName,
+      companyEmail,
+      amount: `$${(amount / 100).toLocaleString()}`,
+      sessionId: session.id,
+      paymentIntentId: session.payment_intent,
+    },
+  });
+  
+  console.log(`🎉 Webhook: Big Magic donation completed - Company: ${companyName}, Amount: $${amount / 100}`);
 }

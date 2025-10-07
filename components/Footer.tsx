@@ -70,6 +70,7 @@ export default function Footer({
           <div className="flex flex-wrap gap-x-6 gap-y-2 text-sm">
             <a href="/children/list" className="text-white/80 hover:text-white">Christmas Lists</a>
             <a href="/parent/dashboard" className="text-white/80 hover:text-white">Dashboard</a>
+            <a href="/big-magic" className="text-white/80 hover:text-white font-semibold">✨ Big Magic</a>
             <a href="/privacy" className="text-white/80 hover:text-white">Privacy</a>
             <a href="/terms" className="text-white/80 hover:text-white">Terms</a>
           </div>
