@@ -9,6 +9,7 @@ const CreateCheckoutSchema = z.object({
   companyName: z.string().min(1),
   companyEmail: z.string().email(),
   paymentMethod: z.enum(['card', 'ach']).default('card'),
+  logoUrl: z.string().url().optional(),
 });
 
 export async function POST(req: NextRequest) {
@@ -23,7 +24,7 @@ export async function POST(req: NextRequest) {
       }, { status: 400 });
     }
 
-    const { amount, companyName, companyEmail, paymentMethod } = parsed.data;
+    const { amount, companyName, companyEmail, paymentMethod, logoUrl } = parsed.data;
 
     await dbConnect();
 
@@ -57,6 +58,7 @@ export async function POST(req: NextRequest) {
         companyEmail,
         amount: amount.toString(),
         paymentMethod,
+        logoUrl: logoUrl || '',
       },
       success_url: `${process.env.NEXTAUTH_URL}/big-magic?donation=success&amount=${amount / 100}&company=${encodeURIComponent(companyName)}`,
       cancel_url: `${process.env.NEXTAUTH_URL}/big-magic?donation=cancelled`,

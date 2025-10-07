@@ -9,6 +9,7 @@ const RequestInvoiceSchema = z.object({
   companyName: z.string().min(1),
   companyEmail: z.string().email(),
   paymentMethod: z.enum(["check"]),
+  logoUrl: z.string().url().optional(),
 });
 
 const resend = new Resend(process.env.RESEND_API_KEY);
@@ -31,7 +32,7 @@ export async function POST(req: NextRequest) {
       }, { status: 400 });
     }
 
-    const { amount, companyName, companyEmail, paymentMethod } = parsed.data;
+    const { amount, companyName, companyEmail, paymentMethod, logoUrl } = parsed.data;
 
     await dbConnect();
 
@@ -138,6 +139,7 @@ export async function POST(req: NextRequest) {
         checkPayableTo: CHECK_PAYABLE_TO,
         taxId: TAX_ID,
         mailingAddress: MAILING_ADDRESS,
+        logoUrl: logoUrl || 'Not provided',
       },
     });
 

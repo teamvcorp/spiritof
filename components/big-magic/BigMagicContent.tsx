@@ -17,6 +17,8 @@ export function BigMagicContent() {
   const [customAmount, setCustomAmount] = useState("");
   const [companyName, setCompanyName] = useState("");
   const [companyEmail, setCompanyEmail] = useState("");
+  const [logoUrl, setLogoUrl] = useState("");
+  const [logoUploading, setLogoUploading] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState<"card" | "check" | "ach">("card");
   const [loading, setLoading] = useState(false);
   const [showSuccessMessage, setShowSuccessMessage] = useState(false);
@@ -35,6 +37,48 @@ export function BigMagicContent() {
   }, [donationStatus]);
 
   const suggestedAmounts = [250, 500, 1000, 2500, 5000, 10000];
+
+  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      alert('Please upload an image file');
+      return;
+    }
+
+    // Validate file size (2MB)
+    if (file.size > 2 * 1024 * 1024) {
+      alert('Logo must be under 2MB');
+      return;
+    }
+
+    setLogoUploading(true);
+    
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const response = await fetch('/api/big-magic/upload-logo', {
+        method: 'POST',
+        body: formData,
+      });
+
+      const data = await response.json();
+      
+      if (response.ok && data.url) {
+        setLogoUrl(data.url);
+      } else {
+        throw new Error(data.error || 'Failed to upload logo');
+      }
+    } catch (error: any) {
+      console.error('Logo upload error:', error);
+      alert(`Failed to upload logo: ${error.message}`);
+    } finally {
+      setLogoUploading(false);
+    }
+  };
 
   const handleDonation = async () => {
     const amount = selectedAmount || parseInt(customAmount);
@@ -62,6 +106,7 @@ export function BigMagicContent() {
             companyName,
             companyEmail,
             paymentMethod,
+            logoUrl: logoUrl || undefined,
           }),
         });
 
@@ -82,6 +127,7 @@ export function BigMagicContent() {
             companyName,
             companyEmail,
             paymentMethod,
+            logoUrl: logoUrl || undefined,
           }),
         });
 
@@ -277,6 +323,44 @@ export function BigMagicContent() {
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-santa focus:border-transparent"
               placeholder="contact@company.com"
             />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Company Logo (Optional)
+            </label>
+            <div className="flex items-start gap-4">
+              <div className="flex-1">
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleLogoUpload}
+                  disabled={logoUploading}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-santa focus:border-transparent file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-santa file:text-white hover:file:bg-santa/90"
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  Upload your company logo for sponsor recognition (max 2MB, PNG/JPG)
+                </p>
+              </div>
+              {logoUrl && (
+                <div className="flex-shrink-0">
+                  <img
+                    src={logoUrl}
+                    alt="Company logo preview"
+                    className="w-24 h-24 object-contain border-2 border-gray-200 rounded-lg bg-white p-2"
+                  />
+                  <button
+                    onClick={() => setLogoUrl("")}
+                    className="text-xs text-santa hover:underline mt-1 block text-center w-full"
+                  >
+                    Remove
+                  </button>
+                </div>
+              )}
+            </div>
+            {logoUploading && (
+              <p className="text-sm text-santa mt-2">Uploading logo...</p>
+            )}
           </div>
         </div>
 

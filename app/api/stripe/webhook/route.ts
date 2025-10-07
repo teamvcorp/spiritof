@@ -411,6 +411,8 @@ async function handleBigMagicDonation(session: Stripe.Checkout.Session) {
   const companyName = metadata?.companyName;
   const companyEmail = metadata?.companyEmail;
   const amount = parseInt(metadata?.amount || '0');
+  const logoUrl = metadata?.logoUrl || undefined;
+  const paymentMethod = metadata?.paymentMethod || 'card';
   
   console.log(`🏢 Webhook: Processing Big Magic donation - Company: ${companyName}, Amount: $${amount / 100}, Session: ${session.id}`);
   
@@ -419,13 +421,24 @@ async function handleBigMagicDonation(session: Stripe.Checkout.Session) {
     return;
   }
 
-  // TODO: In production, you'll want to:
-  // 1. Store this in a CorporateDonation model
-  // 2. Track the donation for reporting
-  // 3. Update sponsor list if needed
-  // 4. Send thank you email to company
+  // Save donation to database
+  const { CorporateDonation } = await import("@/models/CorporateDonation");
   
-  // For now, just send admin notification
+  const donation = await CorporateDonation.create({
+    companyName,
+    companyEmail,
+    amount,
+    paymentMethod: paymentMethod === 'ach' ? 'wire' : paymentMethod, // Map 'ach' to 'wire' for database
+    status: 'completed',
+    stripeSessionId: session.id,
+    stripePaymentIntentId: session.payment_intent as string,
+    logoUrl: logoUrl || undefined,
+    completedAt: new Date(),
+  });
+  
+  console.log(`💾 Saved Big Magic donation to database: ${donation._id}`);
+  
+  // Send admin notification
   const { sendAdminNotification } = await import("@/lib/admin-notifications");
   
   await sendAdminNotification({
@@ -439,6 +452,8 @@ async function handleBigMagicDonation(session: Stripe.Checkout.Session) {
       amount: `$${(amount / 100).toLocaleString()}`,
       sessionId: session.id,
       paymentIntentId: session.payment_intent,
+      logoUrl: logoUrl || 'Not provided',
+      donationId: String(donation._id),
     },
   });
   

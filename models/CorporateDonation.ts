@@ -9,6 +9,7 @@ export interface ICorporateDonation extends Document {
   stripeSessionId?: string;
   stripePaymentIntentId?: string;
   receiptUrl?: string;
+  logoUrl?: string; // Company logo for sponsor recognition
   notes?: string;
   createdAt: Date;
   completedAt?: Date;
@@ -51,6 +52,9 @@ const CorporateDonationSchema = new Schema<ICorporateDonation>(
       sparse: true,
     },
     receiptUrl: {
+      type: String,
+    },
+    logoUrl: {
       type: String,
     },
     notes: {
