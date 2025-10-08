@@ -54,7 +54,7 @@ const WELCOME_PACKET_ITEMS: WelcomePacketItem[] = [
   }
 ];
 
-const ENROLLMENT_FEE = 10; // $10 enrollment fee
+const ENROLLMENT_FEE = 5; // $5 enrollment fee
 
 type WizardStep = 'welcome' | 'items' | 'review' | 'processing';
 

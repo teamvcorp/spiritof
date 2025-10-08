@@ -18,6 +18,14 @@ export function GameModal({ isOpen, onClose, game }: GameModalProps) {
     if (isOpen && game) {
       setIsLoading(true);
       setError(null);
+      // Focus the modal for better accessibility and ensure it captures keyboard events
+      const timer = setTimeout(() => {
+        const modal = document.querySelector('[data-game-modal]') as HTMLElement;
+        if (modal) {
+          modal.focus();
+        }
+      }, 100);
+      return () => clearTimeout(timer);
     }
   }, [isOpen, game]);
 
@@ -32,63 +40,59 @@ export function GameModal({ isOpen, onClose, game }: GameModalProps) {
 
   if (!isOpen || !game) return null;
 
-  const modalWidth = game.width ? Math.min(game.width + 40, window.innerWidth - 40) : 600;
-  const modalHeight = game.height ? Math.min(game.height + 120, window.innerHeight - 40) : 500;
+  // Make the modal take up 90% minimum of screen for maximum play area
+  const modalWidth = Math.max(
+    window.innerWidth * 0.9,
+    game.width ? game.width + 40 : 1200
+  );
+  const modalHeight = Math.max(
+    window.innerHeight * 0.9,
+    game.height ? game.height + 100 : 800
+  );
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-2">
       <div 
-        className="bg-white rounded-2xl shadow-2xl relative flex flex-col overflow-hidden"
+        data-game-modal
+        tabIndex={-1}
+        className="bg-white rounded-xl shadow-2xl relative flex flex-col overflow-hidden outline-none"
         style={{ 
           width: modalWidth,
           height: modalHeight,
-          maxWidth: '95vw',
-          maxHeight: '95vh'
+          maxWidth: '98vw',
+          maxHeight: '98vh',
+          minWidth: '90vw',
+          minHeight: '90vh'
         }}
       >
-        {/* Header */}
-        <div className="bg-gradient-to-r from-santa to-berryPink text-white p-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="bg-white/20 p-2 rounded-lg">
-              <Gamepad2 size={24} />
+        {/* Always visible close button in top-right corner */}
+        <button
+          onClick={onClose}
+          className="absolute top-3 right-3 z-10 bg-white hover:bg-gray-100 text-santa p-2.5 rounded-full shadow-lg transition-all group border-2 border-santa/20"
+          title="Close Game (ESC)"
+        >
+          <X size={24} className="group-hover:scale-110 transition-transform font-bold" />
+        </button>
+        {/* Compact Header with Close Button */}
+        <div className="bg-gradient-to-r from-santa to-berryPink text-white p-2 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <div className="bg-white/20 p-1 rounded">
+              <Gamepad2 size={16} />
             </div>
             <div>
-              <h2 className="text-xl font-bold">{game.title}</h2>
-              <p className="text-white/90 text-sm">{game.description}</p>
+              <h2 className="text-sm font-bold">{game.title}</h2>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="bg-white/20 hover:bg-white/30 p-2 rounded-lg transition-colors"
+            className="bg-white hover:bg-gray-100 text-santa p-2 rounded-full shadow-lg transition-all group font-bold"
+            title="Close (ESC)"
           >
-            <X size={20} />
+            <X size={20} className="group-hover:scale-110 transition-transform" />
           </button>
         </div>
 
-        {/* Game Info Bar */}
-        <div className="bg-evergreen/10 px-4 py-2 flex items-center justify-between text-sm">
-          <div className="flex items-center gap-4">
-            {game.category && (
-              <span className="bg-evergreen/20 text-evergreen px-2 py-1 rounded-full font-medium">
-                {game.category.charAt(0).toUpperCase() + game.category.slice(1)}
-              </span>
-            )}
-            {game.ageRange && (
-              <span className="text-gray-600">Ages {game.ageRange}</span>
-            )}
-            {game.difficulty && (
-              <div className="flex items-center gap-1">
-                <Star size={14} className="text-yellow-500" />
-                <span className="text-gray-600 capitalize">{game.difficulty}</span>
-              </div>
-            )}
-          </div>
-          <div className="text-gray-500">
-            Press ESC to close
-          </div>
-        </div>
-
-        {/* Game Content */}
+        {/* Game Content - Maximum Space */}
         <div className="flex-1 relative bg-gray-50">
           {isLoading && (
             <div className="absolute inset-0 flex items-center justify-center bg-white">
@@ -134,23 +138,31 @@ export function GameModal({ isOpen, onClose, game }: GameModalProps) {
   );
 }
 
-// Hook for keyboard controls
+// Hook for keyboard controls and focus management
 export function useGameModalKeyboard(isOpen: boolean, onClose: () => void) {
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (isOpen && event.key === 'Escape') {
+        event.preventDefault();
+        event.stopPropagation();
         onClose();
       }
     };
 
     if (isOpen) {
-      document.addEventListener('keydown', handleKeyDown);
+      // Add event listener to document for global capture
+      document.addEventListener('keydown', handleKeyDown, true);
       // Prevent body scroll when modal is open
       document.body.style.overflow = 'hidden';
+      // Focus trap - ensure modal stays focused
+      const modal = document.querySelector('[data-game-modal]') as HTMLElement;
+      if (modal) {
+        modal.focus();
+      }
     }
 
     return () => {
-      document.removeEventListener('keydown', handleKeyDown);
+      document.removeEventListener('keydown', handleKeyDown, true);
       document.body.style.overflow = 'unset';
     };
   }, [isOpen, onClose]);

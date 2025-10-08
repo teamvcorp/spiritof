@@ -65,12 +65,39 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Parent profile not found" }, { status: 404 });
     }
 
-    const { selectedItems, totalAmount } = await req.json();
+    // Parse and validate request body
+    let requestBody;
+    try {
+      requestBody = await req.json();
+      console.log("Welcome packet request body:", requestBody);
+    } catch (parseError) {
+      console.error("Failed to parse request body:", parseError);
+      return NextResponse.json({ 
+        error: "Invalid JSON in request body" 
+      }, { status: 400 });
+    }
+
+    const { selectedItems, totalAmount } = requestBody;
+
+    // Validate required fields
+    if (!Array.isArray(selectedItems)) {
+      return NextResponse.json({ 
+        error: "selectedItems must be an array" 
+      }, { status: 400 });
+    }
+
+    if (typeof totalAmount !== 'number' || totalAmount <= 0) {
+      return NextResponse.json({ 
+        error: "totalAmount must be a positive number" 
+      }, { status: 400 });
+    }
 
     // Validate selected items
     const validItems = selectedItems.filter((itemId: string) => 
       WELCOME_PACKET_ITEMS.some(item => item.id === itemId)
     );
+
+    console.log("Valid items filtered:", validItems);
 
     // Calculate expected total
     const expectedTotal = ENROLLMENT_FEE + validItems.reduce((total: number, itemId: string) => {
@@ -78,9 +105,14 @@ export async function POST(req: NextRequest) {
       return total + (item?.price || 0);
     }, 0);
 
+    console.log("Expected total:", expectedTotal, "Received total:", totalAmount);
+
     if (totalAmount !== expectedTotal) {
       return NextResponse.json({ 
-        error: "Total amount mismatch" 
+        error: "Total amount mismatch",
+        expected: expectedTotal,
+        received: totalAmount,
+        details: `Expected $${expectedTotal} but received $${totalAmount}`
       }, { status: 400 });
     }
 

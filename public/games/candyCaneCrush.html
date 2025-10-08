@@ -1,0 +1,638 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Candy Cane Crush 🎄</title>
+  <style>
+    :root{
+      --bg1:#103a5a; /* brighter winter sky */
+      --bg2:#0b2136;
+      --panel:#13476e;
+      --accent:#ff445e; /* candy-cane red brighter */
+      --accent-2:#8be1ff; /* ice blue brighter */
+      --text:#f4fbff;
+      --gold:#ffd166;
+      --cell: 64px; /* tile size */
+      --shadow: 0 14px 40px rgba(0,20,40,.45);
+    }
+
+    *{box-sizing:border-box}
+    html,body{height:100%;}
+    body{
+      margin:0; font-family: system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji", "Segoe UI Emoji";
+      color:var(--text);
+      background:
+        radial-gradient(1400px 700px at 10% -10%, rgba(255,255,255,.12), transparent 60%),
+        radial-gradient(1400px 700px at 110% 110%, rgba(255,255,255,.12), transparent 60%),
+        linear-gradient(var(--bg1), var(--bg2));
+      overflow-x:hidden;
+    }
+
+    /* gently falling snow for extra festivity */
+    .snow{position:fixed; inset:0; pointer-events:none; background-image: radial-gradient(#fff, rgba(255,255,255,.2) 2px, transparent 3px);
+      background-size: 3px 3px; opacity:.18; animation:snow 18s linear infinite;}
+    @keyframes snow{ from{ transform: translateY(-10%);} to{ transform: translateY(10%);} }
+
+    .app{ max-width:1080px; margin:0 auto; padding:20px; }
+    header{ display:flex; align-items:center; gap:14px; margin:18px 0 10px; }
+    .logo{ font-weight:900; letter-spacing:.5px; font-size:clamp(20px, 4vw, 36px); display:flex; align-items:center; gap:.5rem; text-shadow:0 2px 8px #0005 }
+    .logo .candy{ display:inline-block; width:38px; height:38px; border-radius:50%; background:
+      repeating-linear-gradient(45deg, #fff 0 8px, var(--accent) 8px 16px);
+      box-shadow: 0 6px 16px rgba(0,0,0,.35), inset 0 6px 16px rgba(255,255,255,.4); border:2px solid #fff7; }
+
+    .hud{ display:flex; flex-wrap:wrap; gap:10px; margin:10px 0 18px; align-items:center }
+    .card{ background:linear-gradient(180deg, rgba(255,255,255,.14), rgba(255,255,255,.05)); border:1px solid #ffffff30; border-radius:16px; padding:12px 14px; box-shadow:var(--shadow); }
+    .pill{ display:inline-flex; align-items:center; gap:.5rem; padding:8px 12px; border-radius:999px; background:#ffffff18; border:1px solid #ffffff38; }
+    .btn{ cursor:pointer; user-select:none; padding:10px 14px; border-radius:12px; border:1px solid #ffffff55; background:linear-gradient(180deg, #ffffff9e, #ffffff3a); color:#103a5a; font-weight:800; letter-spacing:.25px; transition:.2s transform,.2s filter; box-shadow:var(--shadow); }
+    .btn:hover{ transform:translateY(-1px); filter:brightness(1.05)}
+    .btn:active{ transform:translateY(0)}
+    .btn.primary{ background:linear-gradient(180deg, var(--gold), #ffc24b); color:#5b3600; }
+    .layout{ display:grid; grid-template-columns: 1fr auto 320px; gap:16px; align-items:start; }
+
+    /* Board */
+    .board-wrap{ position:relative; }
+    .board{
+      position:relative;
+      width:calc(var(--cell) * 8);
+      height:calc(var(--cell) * 8);
+      display:grid;
+      grid-template-columns: repeat(8, var(--cell));
+      grid-template-rows: repeat(8, var(--cell));
+      background:linear-gradient(180deg, #105285, #0e2d4a);
+      border-radius:18px; overflow:hidden; border:2px solid #ffffff55; box-shadow:var(--shadow);
+    }
+
+    .cell{
+      width:var(--cell); height:var(--cell);
+      display:grid; place-items:center;
+      position:relative;
+      transition: transform .12s ease;
+      cursor:pointer;
+      touch-action:none; /* allow custom drag on touch */
+    }
+
+    .gem{ width:82%; height:82%; border-radius:18px; border:2px solid #fff6; box-shadow: inset 0 10px 24px #ffffff55, 0 6px 18px #0006; position:relative; }
+
+    /* 6 candy styles (0..5) */
+    .t0{ background: radial-gradient(circle at 30% 30%, #fff8, transparent 40%), repeating-linear-gradient(45deg, #fff 0 10px, #ff3a59 10px 20px); }
+    .t1{ background: radial-gradient(circle at 30% 30%, #fff8, transparent 40%), linear-gradient(45deg, #5fe1ff, #0077ff); }
+    .t2{ background: radial-gradient(circle at 30% 30%, #fff8, transparent 40%), linear-gradient(45deg, #ffe082, #ff8c1a); }
+    .t3{ background: radial-gradient(circle at 30% 30%, #fff8, transparent 40%), linear-gradient(45deg, #a7ff83, #09e07a); }
+    .t4{ background: radial-gradient(circle at 30% 30%, #fff8, transparent 40%), linear-gradient(45deg, #dfa2ff, #7d35ff); }
+    .t5{ background: radial-gradient(circle at 30% 30%, #fff8, transparent 40%), repeating-linear-gradient(45deg, #fff 0 12px, #20f07d 12px 24px); }
+
+    .selected .gem{ outline:3px solid #fff; box-shadow: 0 0 0 3px #fff, inset 0 6px 16px #0006; }
+    .pop{ animation: pop .22s ease; }
+    @keyframes pop{ from{ transform:scale(.85)} to{ transform:scale(1)} }
+
+    /* Right column: Stickers */
+    .stickers{ display:grid; grid-template-columns: repeat(3, 1fr); gap:10px; }
+    .sticker{ aspect-ratio:1; display:grid; place-items:center; background:#ffffff22; border:2px dashed #ffffff66; border-radius:14px; box-shadow:var(--shadow); font-size:30px; position:relative; }
+    .sticker.locked::after{ content:'🔒'; position:absolute; bottom:6px; right:8px; font-size:16px; opacity:.9 }
+
+    .panel{ background:linear-gradient(180deg, rgba(255,255,255,.18), rgba(255,255,255,.08)); border:1px solid #ffffff55; border-radius:18px; padding:16px; box-shadow:var(--shadow); }
+    .panel h3{ margin:0 0 10px; font-size:18px; letter-spacing:.2px; }
+
+    /* Toast */
+    .toast{ position:fixed; left:50%; top:20px; transform:translateX(-50%); background:#06111cdd; padding:12px 16px; border:1px solid #ffffff55; border-radius:999px; backdrop-filter: blur(6px); box-shadow:var(--shadow); display:none; }
+
+    /* Modal */
+    .modal{ position:fixed; inset:0; background:rgba(0,0,0,.55); display:none; align-items:center; justify-content:center; z-index:10; }
+    .modal .box{ background:linear-gradient(180deg, #ffffff, #f3fbff); color:#103a5a; border-radius:18px; padding:20px; width:min(90vw, 360px); border:2px solid #bfe8ff; box-shadow:var(--shadow); text-align:center }
+    .modal h2{ margin:6px 0 4px }
+    .modal .big{ font-size:40px }
+
+    /* Footer */
+    footer{ opacity:.9; margin:20px 0; font-size:13px; text-align:center; }
+    a{ color: #0044ff; }
+
+    @media (max-width: 1080px){
+      .layout{ grid-template-columns: 1fr; }
+      .board{ margin:0 auto; }
+    }
+  </style>
+</head>
+<body>
+  <div class="snow"></div>
+  <div class="app">
+    <header>
+      <span class="candy"></span>
+      <div class="logo">Candy Cane Crush</div>
+      <div style="margin-left:auto" class="pill">❄️ Timed Match‑3 • Christmas Edition</div>
+    </header>
+
+    <div class="hud">
+      <div class="card">Level: <strong id="level">1</strong></div>
+      <div class="card">Goal: remove <strong id="goal">40</strong> candies</div>
+      <div class="card">Removed: <strong id="removed">0</strong></div>
+      <div class="card">Time: <strong id="time">60</strong>s</div>
+      <button id="newGame" class="btn">⟲ New Game</button>
+    </div>
+
+    <div class="layout">
+      <div class="board-wrap">
+        <div id="board" class="board" aria-label="game board" role="grid"></div>
+      </div>
+
+      <div class="panel" style="min-width:220px">
+        <h3>How to Play</h3>
+        <ol style="margin:0; padding-left:18px; line-height:1.5">
+          <li>Swap by <strong>clicking two adjacent</strong> tiles <em>or</em> by <strong>dragging</strong> one toward a neighbor.</li>
+          <li>Match <strong>3+ in a row</strong> to collect them and trigger cascades.</li>
+          <li>Clear the required <strong>Goal</strong> before the <strong>Timer</strong> hits 0.</li>
+        </ol>
+        <p style="opacity:.85">Finish a level to unlock a festive sticker. Your progress is saved locally.</p>
+        <button id="hintBtn" class="btn" style="margin-top:8px; width:100%">💡 Hint</button>
+      </div>
+
+      <div class="panel">
+        <h3>🎁 Sticker Album</h3>
+        <div id="stickers" class="stickers"></div>
+      </div>
+    </div>
+
+    <footer>Made with ❤️ for the holidays. No trackers, no ads.
+    </footer>
+  </div>
+
+  <div id="toast" class="toast"></div>
+  <div id="modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle" aria-describedby="modalDesc">
+    <div class="box">
+      <div id="modalIcon" class="big">🎉</div>
+      <h2 id="modalTitle">Level Complete!</h2>
+      <p id="modalDesc">You cleared the goal in time.</p>
+      <div style="display:flex; gap:10px; justify-content:center; margin-top:10px">
+        <button id="modalPrimary" class="btn primary">Next Level</button>
+        <button id="modalSecondary" class="btn">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+  (() => {
+    const N = 8;                // board size N x N
+    const TYPES = 6;            // number of candy types
+
+    // Difficulty curves
+    const GOAL_BY_LEVEL = lvl => 40 + (lvl-1)*10;               // candies to remove
+    const TIME_BY_LEVEL = lvl => Math.max(30, 60 - (lvl-1)*3);  // seconds (min 30)
+
+    const EMOJI_STICKERS = [
+      '🎄','🦌','🎅','🤶','🧦','🛷','❄️','⛄','🕯️','🍪','🕎','⭐'
+    ];
+
+    // State
+    let board = [];
+    let level = 1;
+    let goal = GOAL_BY_LEVEL(level);
+    let removed = 0;
+    let timeLeft = TIME_BY_LEVEL(level);
+    let timer = null;
+    let started = false;   // start timer on first valid swap
+    let selected = null;   // {r,c}
+    let busy = false;      // lock while resolving
+
+    // DOM refs
+    const elBoard = document.getElementById('board');
+    const elLevel = document.getElementById('level');
+    const elGoal = document.getElementById('goal');
+    const elRemoved = document.getElementById('removed');
+    const elTime = document.getElementById('time');
+    const elNew = document.getElementById('newGame');
+    const elStickers = document.getElementById('stickers');
+    const elToast = document.getElementById('toast');
+    const elHint = document.getElementById('hintBtn');
+
+    // --- Utilities ---
+    const key = (r,c) => `${r}-${c}`;
+    const inBounds = (r,c) => r>=0 && r<N && c>=0 && c<N;
+
+    function saveProgress(){
+      const data = { level, unlocked: unlockedCount() };
+      localStorage.setItem('ccc_progress', JSON.stringify(data));
+    }
+    function loadProgress(){
+      const raw = localStorage.getItem('ccc_progress');
+      if(!raw) return;
+      try{
+        const d = JSON.parse(raw);
+        if(d && typeof d.level === 'number'){
+          level = Math.max(1, d.level);
+          buildStickers(d.unlocked|0);
+        }
+      }catch{ /* ignore */ }
+    }
+
+    // --- Stickers ---
+    function unlockedCount(){
+      return [...elStickers.querySelectorAll('.sticker')].filter(s=>!s.classList.contains('locked')).length;
+    }
+    function buildStickers(unlocked=0){
+      elStickers.innerHTML = '';
+      for(let i=0;i<EMOJI_STICKERS.length;i++){
+        const d = document.createElement('div');
+        d.className = 'sticker' + (i<unlocked ? '' : ' locked');
+        d.dataset.idx = i;
+        d.textContent = i<unlocked ? EMOJI_STICKERS[i] : '🎁';
+        elStickers.appendChild(d);
+      }
+    }
+    function unlockSticker(){
+      const current = unlockedCount();
+      if(current < EMOJI_STICKERS.length){
+        const slot = elStickers.querySelectorAll('.sticker')[current];
+        slot.classList.remove('locked');
+        slot.textContent = EMOJI_STICKERS[current];
+        toast(`Sticker unlocked: ${EMOJI_STICKERS[current]}`);
+      } else {
+        toast('All stickers unlocked!');
+      }
+    }
+
+    // --- Board Setup ---
+    function randomType(){ return Math.floor(Math.random()*TYPES); }
+
+    function genBoard(){
+      board = Array.from({length:N}, ()=>Array.from({length:N}, ()=>randomType()));
+      // Clean initial accidental matches by re-rolling tile if part of a match pattern
+      let changed = true; let safety=0;
+      while(changed && safety++<100){
+        changed = false;
+        for(let r=0;r<N;r++){
+          for(let c=0;c<N;c++){
+            if(isPartOfMatch(r,c)){
+              board[r][c] = (board[r][c]+1+Math.floor(Math.random()* (TYPES-1))) % TYPES; // change type
+              changed = true;
+            }
+          }
+        }
+      }
+    }
+
+    function isPartOfMatch(r,c){
+      const t = board[r][c];
+      // horizontal check around (r,c)
+      const h = (eq(r,c-2,t)&&eq(r,c-1,t)) || (eq(r,c-1,t)&&eq(r,c+1,t)) || (eq(r,c+1,t)&&eq(r,c+2,t));
+      // vertical
+      const v = (eq(r-2,c,t)&&eq(r-1,c,t)) || (eq(r-1,c,t)&&eq(r+1,c,t)) || (eq(r+1,c,t)&&eq(r+2,c,t));
+      return h || v;
+    }
+    function eq(r,c,t){ return inBounds(r,c) && board[r][c]===t; }
+
+    function render(){
+      elBoard.innerHTML = '';
+      for(let r=0;r<N;r++){
+        for(let c=0;c<N;c++){
+          const cell = document.createElement('div');
+          cell.className = 'cell';
+          cell.dataset.r=r; cell.dataset.c=c; cell.role='gridcell';
+          const gem = document.createElement('div');
+          gem.className = `gem t${board[r][c]}`;
+          cell.appendChild(gem);
+          elBoard.appendChild(cell);
+        }
+      }
+    }
+
+    function updateHUD(){
+      elLevel.textContent = level;
+      goal = GOAL_BY_LEVEL(level);
+      elGoal.textContent = goal;
+      elRemoved.textContent = removed;
+      elTime.textContent = timeLeft;
+    }
+
+    // --- Gameplay core ---
+    // Click-to-swap AND drag-to-swap
+    function onCellClick(e){
+      if(busy) return;
+      const cell = e.target.closest('.cell');
+      if(!cell) return;
+      const r=+cell.dataset.r, c=+cell.dataset.c;
+      if(!selected){
+        selected = {r,c};
+        cell.classList.add('selected');
+        return;
+      }
+      const s = selected;
+      const prev = elBoard.querySelector(`.cell[data-r="${s.r}"][data-c="${s.c}"]`);
+      prev?.classList.remove('selected');
+      selected = null;
+
+      if(Math.abs(s.r-r)+Math.abs(s.c-c) !== 1){
+        // not adjacent: reselect
+        selected = {r,c};
+        cell.classList.add('selected');
+        return;
+      }
+
+      attemptSwap(s.r,s.c,r,c);
+    }
+
+    // Drag support
+    let dragStart = null; // {r,c,x,y}
+    elBoard.addEventListener('pointerdown', (e)=>{
+      const cell = e.target.closest('.cell'); if(!cell || busy) return;
+      cell.setPointerCapture(e.pointerId);
+      dragStart = { r:+cell.dataset.r, c:+cell.dataset.c, x:e.clientX, y:e.clientY };
+      selected = {r:dragStart.r, c:dragStart.c};
+      cell.classList.add('selected');
+    });
+    elBoard.addEventListener('pointermove', (e)=>{
+      if(!dragStart || busy) return;
+      const dx = e.clientX - dragStart.x; const dy = e.clientY - dragStart.y;
+      const TH = 18; // pixels to trigger
+      if(Math.abs(dx)<TH && Math.abs(dy)<TH) return;
+      let dr=0, dc=0;
+      if(Math.abs(dx)>Math.abs(dy)) dc = dx>0?1:-1; else dr = dy>0?1:-1;
+      const r2 = dragStart.r + dr, c2 = dragStart.c + dc;
+      const startEl = elBoard.querySelector(`.cell[data-r="${dragStart.r}"][data-c="${dragStart.c}"]`);
+      startEl?.classList.remove('selected');
+      dragStart = null; selected = null;
+      if(!inBounds(r2,c2)) return;
+      attemptSwap(startEl ? +startEl.dataset.r : r2-dr, startEl ? +startEl.dataset.c : c2-dc, r2, c2);
+    });
+    elBoard.addEventListener('pointerup', ()=>{ dragStart=null; });
+
+    function attemptSwap(r1,c1,r2,c2){
+      // try swap
+      swap(r1,c1,r2,c2);
+      const matches = findMatches();
+      if(matches.length===0){
+        // invalid move, swap back
+        swap(r1,c1,r2,c2);
+        shakeCells([key(r1,c1), key(r2,c2)]);
+        return;
+      }
+      if(!started){ started = true; startTimer(); }
+      resolveBoard(matches);
+    }
+
+    function swap(r1,c1,r2,c2){
+      const t = board[r1][c1];
+      board[r1][c1] = board[r2][c2];
+      board[r2][c2] = t;
+      // Update only the two cells visually for snappiness
+      const a = elBoard.querySelector(`.cell[data-r="${r1}"][data-c="${c1}"] .gem`);
+      const b = elBoard.querySelector(`.cell[data-r="${r2}"][data-c="${c2}"] .gem`);
+      if(a) a.className = `gem t${board[r1][c1]}`;
+      if(b) b.className = `gem t${board[r2][c2]}`;
+    }
+
+    function shakeCells(ids){
+      ids.forEach(id=>{
+        const [rr,cc]=id.split('-');
+        const cell = elBoard.querySelector(`.cell[data-r="${rr}"][data-c="${cc}"]`);
+        if(cell){
+          cell.style.transition='transform .12s';
+          cell.style.transform='translateY(-4px)';
+          setTimeout(()=>{ cell.style.transform=''; }, 120);
+        }
+      });
+    }
+
+    function findMatches(){
+      const toClear = new Set();
+      // horizontal
+      for(let r=0;r<N;r++){
+        let run=1;
+        for(let c=1;c<=N;c++){
+          if(c<N && board[r][c]===board[r][c-1]){ run++; }
+          else{
+            if(run>=3){
+              for(let k=c-run;k<c;k++) toClear.add(key(r,k));
+            }
+            run=1;
+          }
+        }
+      }
+      // vertical
+      for(let c=0;c<N;c++){
+        let run=1;
+        for(let r=1;r<=N;r++){
+          if(r<N && board[r][c]===board[r-1][c]){ run++; }
+          else{
+            if(run>=3){
+              for(let k=r-run;k<r;k++) toClear.add(key(k,c));
+            }
+            run=1;
+          }
+        }
+      }
+      // Return as array of {r,c}
+      return [...toClear].map(s=>{ const [r,c]=s.split('-').map(Number); return {r,c}; });
+    }
+
+    async function resolveBoard(matches){
+      busy = true;
+      // 1) Clear matched tiles visually & count removals
+      matches.forEach(({r,c})=>{
+        const cell = elBoard.querySelector(`.cell[data-r="${r}"][data-c="${c}"] .gem`);
+        cell?.classList.add('pop');
+      });
+      await wait(120);
+      matches.forEach(({r,c})=>{ board[r][c] = null; });
+      removed += matches.length;
+      updateHUD();
+      render();
+      await wait(80);
+
+      // 2) Gravity
+      for(let c=0;c<N;c++){
+        let write = N-1;
+        for(let r=N-1;r>=0;r--){
+          if(board[r][c]!==null){
+            board[write][c] = board[r][c];
+            if(write!==r) board[r][c]=null;
+            write--;
+          }
+        }
+        for(let r=write;r>=0;r--){ board[r][c] = randomType(); }
+      }
+      render();
+      await wait(80);
+
+      // 3) Chain reactions
+      let more = findMatches();
+      while(more.length){
+        more.forEach(({r,c})=>{
+          const cell = elBoard.querySelector(`.cell[data-r="${r}"][data-c="${c}"] .gem`);
+          cell?.classList.add('pop');
+        });
+        await wait(120);
+        more.forEach(({r,c})=> board[r][c]=null);
+        removed += more.length;
+        updateHUD();
+        render();
+        await wait(60);
+        // gravity again
+        for(let c=0;c<N;c++){
+          let write = N-1;
+          for(let r=N-1;r>=0;r--){
+            if(board[r][c]!==null){ board[write][c]=board[r][c]; if(write!==r) board[r][c]=null; write--; }
+          }
+          for(let r=write;r>=0;r--) board[r][c]=randomType();
+        }
+        render();
+        await wait(60);
+        more = findMatches();
+      }
+
+      // 4) Check win/lose (timed + removal goal)
+      if(removed >= goal){
+        stopTimer();
+        // unlock sticker immediately and persist
+        unlockSticker();
+        saveProgress();
+        showModal({
+          win:true,
+          title:`Level ${level} Complete!`,
+          desc:`You cleared ${removed} candies with ${timeLeft}s left.`,
+          primary:'Next Level',
+          onPrimary:()=>{ level++; startLevel(); }
+        });
+      }
+
+      busy = false;
+    }
+
+    function anyValidMoves(){
+      // Bruteforce: test swapping adjacent cells for a match
+      for(let r=0;r<N;r++){
+        for(let c=0;c<N;c++){
+          const dirs = [[0,1],[1,0]]; // right, down to avoid duplicates
+          for(const [dr,dc] of dirs){
+            const r2=r+dr, c2=c+dc; if(!inBounds(r2,c2)) continue;
+            // swap
+            const t=board[r][c]; board[r][c]=board[r2][c2]; board[r2][c2]=t;
+            const m=findMatches();
+            // swap back
+            board[r2][c2]=board[r][c]; board[r][c]=t;
+            if(m.length) return true;
+          }
+        }
+      }
+      return false;
+    }
+
+    function shuffleBoard(){
+      // Fisher–Yates shuffle of all tiles
+      const flat = board.flat();
+      for(let i=flat.length-1;i>0;i--){
+        const j = Math.floor(Math.random()*(i+1));
+        [flat[i], flat[j]] = [flat[j], flat[i]];
+      }
+      // write back
+      for(let i=0;i<flat.length;i++){
+        const r=Math.floor(i/N), c=i%N; board[r][c]=flat[i];
+      }
+      render();
+    }
+
+    function wait(ms){ return new Promise(res=>setTimeout(res,ms)); }
+
+    // --- Timer ---
+    function startTimer(){
+      stopTimer();
+      timer = setInterval(()=>{
+        timeLeft--; updateHUD();
+        if(timeLeft<=0){
+          stopTimer();
+          showModal({
+            win:false,
+            title:'Time\'s Up! ',
+            desc:`You removed ${removed}/${goal}.`,
+            primary:'Try Again',
+            onPrimary:()=>{ startLevel(false); }
+          });
+          saveProgress();
+        }
+      }, 1000);
+    }
+    function stopTimer(){ if(timer){ clearInterval(timer); timer=null; } }
+
+    function toast(msg){
+      elToast.textContent = msg; elToast.style.display='block';
+      clearTimeout(elToast._t);
+      elToast._t = setTimeout(()=>{ elToast.style.display='none'; }, 1800);
+    }
+
+    function giveHint(){
+      // Find a possible 3-match by simulating swaps
+      for(let r=0;r<N;r++){
+        for(let c=0;c<N;c++){
+          const dirs = [[0,1],[1,0]];
+          for(const [dr,dc] of dirs){
+            const r2=r+dr, c2=c+dc; if(!inBounds(r2,c2)) continue;
+            const t=board[r][c]; board[r][c]=board[r2][c2]; board[r2][c2]=t;
+            const m=findMatches();
+            board[r2][c2]=board[r][c]; board[r][c]=t;
+            if(m.length){
+              // highlight suggested pair briefly
+              const a = elBoard.querySelector(`.cell[data-r="${r}"][data-c="${c}"]`);
+              const b = elBoard.querySelector(`.cell[data-r="${r2}"][data-c="${c2}"]`);
+              [a,b].forEach(el=>{
+                el.classList.add('selected');
+                setTimeout(()=>el.classList.remove('selected'), 700);
+              });
+              toast('Try swapping these!');
+              return;
+            }
+          }
+        }
+      }
+      toast('No moves! Shuffling…');
+      shuffleBoard();
+    }
+
+    // --- Level flow ---
+    function startLevel(resetLevel=true){
+      if(resetLevel===false){ /* keep same level */ } else { /* nothing */ }
+      goal = GOAL_BY_LEVEL(level);
+      timeLeft = TIME_BY_LEVEL(level);
+      removed = 0;
+      started = false;
+      stopTimer();
+      genBoard();
+      render();
+      updateHUD();
+
+      // ensure valid move exists; if not, reshuffle
+      let safety=0;
+      while(!anyValidMoves() && safety++<10){ shuffleBoard(); }
+    }
+
+    // --- Event listeners ---
+    elBoard.addEventListener('click', onCellClick);
+    elNew.addEventListener('click', ()=>{ level=1; buildStickers(unlockedCount()); saveProgress(); startLevel(); toast('New game!'); });
+    elHint.addEventListener('click', giveHint);
+
+    // --- Modal helpers ---
+    const elModal = document.getElementById('modal');
+    const elMI = document.getElementById('modalIcon');
+    const elMT = document.getElementById('modalTitle');
+    const elMD = document.getElementById('modalDesc');
+    const elMP = document.getElementById('modalPrimary');
+    const elMS = document.getElementById('modalSecondary');
+
+    function showModal({win, title, desc, primary, onPrimary}){
+      elMI.textContent = win ? '🎉' : '⏰';
+      elMT.textContent = title;
+      elMD.textContent = desc;
+      elMP.textContent = primary || (win? 'Next' : 'Retry');
+      elModal.style.display='flex';
+      const close = ()=>{ elModal.style.display='none'; };
+      elMS.onclick = close;
+      elMP.onclick = ()=>{ close(); onPrimary && onPrimary(); };
+    }
+
+    // --- Init ---
+    buildStickers(0);
+    loadProgress();
+    startLevel();
+
+  })();
+  </script>
+</body>
+</html>

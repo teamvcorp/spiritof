@@ -58,7 +58,7 @@ export function WelcomePacketButton({ hasCompletedWelcomePacket, className }: We
           Set Up
         </Button>
         <p className="text-sm text-gray-500 mt-2">
-          $10 enrollment fee + optional add-ons
+          $5 enrollment fee + optional add-ons
         </p>
       </div>
     </div>
