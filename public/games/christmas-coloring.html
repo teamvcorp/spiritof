@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Christmas Coloring Book</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #ff69b4, #ffc0cb);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+        .game-container {
+            background: white;
+            border-radius: 20px;
+            padding: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            text-align: center;
+            max-width: 800px;
+        }
+        .coloring-area {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            margin: 20px 0;
+            flex-wrap: wrap;
+        }
+        .canvas-container {
+            position: relative;
+            border: 3px solid #ff1744;
+            border-radius: 15px;
+            background: white;
+        }
+        #coloringCanvas {
+            display: block;
+            border-radius: 12px;
+            cursor: crosshair;
+        }
+        .tools-panel {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+        }
+        .color-palette {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+            background: white;
+            padding: 15px;
+            border-radius: 15px;
+            border: 3px solid #22c55e;
+        }
+        .color-btn {
+            width: 40px;
+            height: 40px;
+            border: 3px solid #ddd;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .color-btn:hover {
+            transform: scale(1.1);
+            border-color: #333;
+        }
+        .color-btn.selected {
+            border-color: #333;
+            border-width: 4px;
+            transform: scale(1.15);
+        }
+        .brush-sizes {
+            display: flex;
+            gap: 10px;
+            background: white;
+            padding: 10px;
+            border-radius: 15px;
+            border: 3px solid #22c55e;
+        }
+        .brush-btn {
+            width: 40px;
+            height: 40px;
+            border: 2px solid #ddd;
+            border-radius: 50%;
+            background: white;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+        .brush-btn:hover {
+            transform: scale(1.1);
+            border-color: #333;
+        }
+        .brush-btn.selected {
+            border-color: #ff1744;
+            background: #ff1744;
+            color: white;
+            transform: scale(1.1);
+        }
+        .controls {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin: 15px 0;
+            flex-wrap: wrap;
+        }
+        .btn {
+            background: #22c55e;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+        .btn:hover {
+            background: #1ea24b;
+            transform: scale(1.05);
+        }
+        .btn.danger {
+            background: #ff1744;
+        }
+        .btn.danger:hover {
+            background: #dc1535;
+        }
+        .btn.secondary {
+            background: #6b7280;
+        }
+        .btn.secondary:hover {
+            background: #4b5563;
+        }
+        .templates {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin: 15px 0;
+            flex-wrap: wrap;
+        }
+        .template-btn {
+            padding: 8px 15px;
+            background: #ff69b4;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 12px;
+            transition: all 0.3s ease;
+        }
+        .template-btn:hover {
+            background: #e11d48;
+            transform: scale(1.05);
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <h1>🎨 Christmas Coloring Book 🎄</h1>
+        
+        <div class="templates">
+            <button class="template-btn" onclick="loadTemplate('tree')">🎄 Christmas Tree</button>
+            <button class="template-btn" onclick="loadTemplate('santa')">🎅 Santa Claus</button>
+            <button class="template-btn" onclick="loadTemplate('snowman')">⛄ Snowman</button>
+            <button class="template-btn" onclick="loadTemplate('star')">⭐ Star</button>
+            <button class="template-btn" onclick="loadTemplate('present')">🎁 Present</button>
+        </div>
+        
+        <div class="coloring-area">
+            <div class="canvas-container">
+                <canvas id="coloringCanvas" width="400" height="400"></canvas>
+            </div>
+            
+            <div class="tools-panel">
+                <div class="color-palette" id="colorPalette">
+                    <!-- Colors will be generated here -->
+                </div>
+                
+                <div class="brush-sizes">
+                    <button class="brush-btn selected" data-size="5">S</button>
+                    <button class="brush-btn" data-size="10">M</button>
+                    <button class="brush-btn" data-size="20">L</button>
+                </div>
+                
+                <div class="controls">
+                    <button class="btn secondary" onclick="toggleEraser()">✏️ Eraser</button>
+                    <button class="btn danger" onclick="clearCanvas()">🗑️ Clear</button>
+                    <button class="btn" onclick="saveDrawing()">💾 Save</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('coloringCanvas');
+        const ctx = canvas.getContext('2d');
+        const colorPalette = document.getElementById('colorPalette');
+
+        let isDrawing = false;
+        let currentColor = '#ff1744';
+        let currentSize = 5;
+        let isEraser = false;
+
+        const colors = [
+            '#ff1744', '#22c55e', '#3b82f6', '#fbbf24',
+            '#8b5cf6', '#f97316', '#ec4899', '#06b6d4',
+            '#84cc16', '#f59e0b', '#6366f1', '#ef4444',
+            '#10b981', '#f472b6', '#14b8a6', '#000000'
+        ];
+
+        // Initialize color palette
+        function initColorPalette() {
+            colorPalette.innerHTML = '';
+            colors.forEach((color, index) => {
+                const colorBtn = document.createElement('button');
+                colorBtn.className = 'color-btn' + (index === 0 ? ' selected' : '');
+                colorBtn.style.backgroundColor = color;
+                colorBtn.onclick = () => selectColor(color, colorBtn);
+                colorPalette.appendChild(colorBtn);
+            });
+        }
+
+        function selectColor(color, button) {
+            currentColor = color;
+            isEraser = false;
+            
+            // Update selected color
+            document.querySelectorAll('.color-btn').forEach(btn => btn.classList.remove('selected'));
+            button.classList.add('selected');
+            
+            canvas.style.cursor = 'crosshair';
+        }
+
+        // Brush size selection
+        document.querySelectorAll('.brush-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                currentSize = parseInt(btn.dataset.size);
+                document.querySelectorAll('.brush-btn').forEach(b => b.classList.remove('selected'));
+                btn.classList.add('selected');
+            });
+        });
+
+        function toggleEraser() {
+            isEraser = !isEraser;
+            canvas.style.cursor = isEraser ? 'grab' : 'crosshair';
+            
+            if (isEraser) {
+                document.querySelectorAll('.color-btn').forEach(btn => btn.classList.remove('selected'));
+            } else {
+                document.querySelectorAll('.color-btn')[0].classList.add('selected');
+                currentColor = colors[0];
+            }
+        }
+
+        function clearCanvas() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = 'white';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+        }
+
+        function saveDrawing() {
+            const link = document.createElement('a');
+            link.download = 'christmas-coloring.png';
+            link.href = canvas.toDataURL();
+            link.click();
+        }
+
+        // Drawing functions
+        function startDrawing(e) {
+            isDrawing = true;
+            draw(e);
+        }
+
+        function draw(e) {
+            if (!isDrawing) return;
+
+            const rect = canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+
+            ctx.globalCompositeOperation = isEraser ? 'destination-out' : 'source-over';
+            ctx.lineWidth = currentSize;
+            ctx.lineCap = 'round';
+            ctx.strokeStyle = currentColor;
+
+            ctx.lineTo(x, y);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(x, y);
+        }
+
+        function stopDrawing() {
+            if (!isDrawing) return;
+            isDrawing = false;
+            ctx.beginPath();
+        }
+
+        // Mouse events
+        canvas.addEventListener('mousedown', startDrawing);
+        canvas.addEventListener('mousemove', draw);
+        canvas.addEventListener('mouseup', stopDrawing);
+        canvas.addEventListener('mouseout', stopDrawing);
+
+        // Touch events for mobile
+        canvas.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            const touch = e.touches[0];
+            const mouseEvent = new MouseEvent('mousedown', {
+                clientX: touch.clientX,
+                clientY: touch.clientY
+            });
+            canvas.dispatchEvent(mouseEvent);
+        });
+
+        canvas.addEventListener('touchmove', (e) => {
+            e.preventDefault();
+            const touch = e.touches[0];
+            const mouseEvent = new MouseEvent('mousemove', {
+                clientX: touch.clientX,
+                clientY: touch.clientY
+            });
+            canvas.dispatchEvent(mouseEvent);
+        });
+
+        canvas.addEventListener('touchend', (e) => {
+            e.preventDefault();
+            const mouseEvent = new MouseEvent('mouseup', {});
+            canvas.dispatchEvent(mouseEvent);
+        });
+
+        // Template loading
+        function loadTemplate(template) {
+            clearCanvas();
+            ctx.strokeStyle = '#333';
+            ctx.lineWidth = 2;
+            
+            switch(template) {
+                case 'tree':
+                    drawChristmasTree();
+                    break;
+                case 'santa':
+                    drawSanta();
+                    break;
+                case 'snowman':
+                    drawSnowman();
+                    break;
+                case 'star':
+                    drawStar();
+                    break;
+                case 'present':
+                    drawPresent();
+                    break;
+            }
+        }
+
+        function drawChristmasTree() {
+            // Tree layers
+            ctx.beginPath();
+            ctx.moveTo(200, 50);
+            ctx.lineTo(150, 120);
+            ctx.lineTo(250, 120);
+            ctx.closePath();
+            ctx.stroke();
+
+            ctx.beginPath();
+            ctx.moveTo(200, 100);
+            ctx.lineTo(140, 180);
+            ctx.lineTo(260, 180);
+            ctx.closePath();
+            ctx.stroke();
+
+            ctx.beginPath();
+            ctx.moveTo(200, 160);
+            ctx.lineTo(130, 250);
+            ctx.lineTo(270, 250);
+            ctx.closePath();
+            ctx.stroke();
+
+            // Trunk
+            ctx.fillRect(190, 250, 20, 40);
+            
+            // Star on top
+            drawStarAt(200, 40, 10);
+        }
+
+        function drawSanta() {
+            // Head
+            ctx.beginPath();
+            ctx.arc(200, 150, 50, 0, 2 * Math.PI);
+            ctx.stroke();
+            
+            // Hat
+            ctx.beginPath();
+            ctx.moveTo(160, 120);
+            ctx.lineTo(180, 80);
+            ctx.lineTo(220, 90);
+            ctx.stroke();
+            
+            // Body
+            ctx.beginPath();
+            ctx.arc(200, 250, 60, 0, Math.PI);
+            ctx.stroke();
+            
+            // Beard
+            ctx.beginPath();
+            ctx.arc(200, 180, 25, 0, Math.PI);
+            ctx.stroke();
+        }
+
+        function drawSnowman() {
+            // Bottom circle
+            ctx.beginPath();
+            ctx.arc(200, 320, 60, 0, 2 * Math.PI);
+            ctx.stroke();
+            
+            // Middle circle
+            ctx.beginPath();
+            ctx.arc(200, 220, 45, 0, 2 * Math.PI);
+            ctx.stroke();
+            
+            // Head circle
+            ctx.beginPath();
+            ctx.arc(200, 140, 35, 0, 2 * Math.PI);
+            ctx.stroke();
+            
+            // Hat
+            ctx.fillRect(180, 110, 40, 30);
+            ctx.fillRect(175, 105, 50, 10);
+        }
+
+        function drawStar() {
+            drawStarAt(200, 200, 80);
+        }
+
+        function drawStarAt(x, y, size) {
+            const spikes = 5;
+            const step = Math.PI / spikes;
+            
+            ctx.beginPath();
+            ctx.moveTo(x, y - size);
+            
+            for (let i = 0; i < spikes * 2; i++) {
+                const radius = i % 2 === 0 ? size : size / 2;
+                const angle = i * step - Math.PI / 2;
+                const px = x + Math.cos(angle) * radius;
+                const py = y + Math.sin(angle) * radius;
+                ctx.lineTo(px, py);
+            }
+            
+            ctx.closePath();
+            ctx.stroke();
+        }
+
+        function drawPresent() {
+            // Box
+            ctx.strokeRect(150, 200, 100, 80);
+            
+            // Ribbon vertical
+            ctx.beginPath();
+            ctx.moveTo(200, 200);
+            ctx.lineTo(200, 280);
+            ctx.stroke();
+            
+            // Ribbon horizontal
+            ctx.beginPath();
+            ctx.moveTo(150, 240);
+            ctx.lineTo(250, 240);
+            ctx.stroke();
+            
+            // Bow
+            ctx.beginPath();
+            ctx.arc(190, 200, 8, 0, 2 * Math.PI);
+            ctx.stroke();
+            
+            ctx.beginPath();
+            ctx.arc(210, 200, 8, 0, 2 * Math.PI);
+            ctx.stroke();
+        }
+
+        // Initialize
+        initColorPalette();
+        clearCanvas();
+        loadTemplate('tree'); // Start with Christmas tree template
+    </script>
+</body>
+</html>

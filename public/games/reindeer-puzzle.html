@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reindeer Jigsaw Puzzle</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #22c55e, #16a34a);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+        .game-container {
+            background: white;
+            border-radius: 20px;
+            padding: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            text-align: center;
+            max-width: 600px;
+        }
+        .puzzle-area {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            margin: 20px 0;
+            flex-wrap: wrap;
+        }
+        .puzzle-board {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            grid-template-rows: repeat(3, 1fr);
+            gap: 2px;
+            width: 300px;
+            height: 300px;
+            border: 3px solid #ff1744;
+            border-radius: 15px;
+            background: #f0f0f0;
+            padding: 10px;
+        }
+        .puzzle-piece {
+            width: 90px;
+            height: 90px;
+            border: 2px dashed #ccc;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 40px;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+        .puzzle-piece.filled {
+            border: 2px solid #22c55e;
+            background: #f0fdf4;
+        }
+        .pieces-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .pieces-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .piece {
+            width: 80px;
+            height: 80px;
+            border: 2px solid #ff1744;
+            border-radius: 8px;
+            cursor: grab;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 35px;
+            background: white;
+            transition: all 0.3s ease;
+            user-select: none;
+        }
+        .piece:hover {
+            transform: scale(1.1);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+        .piece.dragging {
+            transform: rotate(5deg) scale(1.1);
+            z-index: 1000;
+            cursor: grabbing;
+        }
+        .piece.placed {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        .controls {
+            margin: 20px 0;
+        }
+        .btn {
+            background: #ff1744;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: bold;
+            margin: 5px;
+            transition: all 0.3s ease;
+        }
+        .btn:hover {
+            background: #dc1535;
+            transform: scale(1.05);
+        }
+        .btn.secondary {
+            background: #22c55e;
+        }
+        .btn.secondary:hover {
+            background: #1ea24b;
+        }
+        .win-message {
+            font-size: 24px;
+            font-weight: bold;
+            color: #22c55e;
+            margin: 20px 0;
+            display: none;
+            animation: bounce 1s infinite;
+        }
+        @keyframes bounce {
+            0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+            40% { transform: translateY(-10px); }
+            60% { transform: translateY(-5px); }
+        }
+        .instructions {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 15px;
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <h1>🦌 Reindeer Jigsaw Puzzle 🧩</h1>
+        <div class="instructions">
+            Drag and drop the pieces to complete the reindeer picture!
+        </div>
+        
+        <div class="puzzle-area">
+            <div class="puzzle-board" id="puzzleBoard">
+                <!-- 9 drop zones will be created here -->
+            </div>
+            
+            <div class="pieces-container">
+                <h3>Puzzle Pieces</h3>
+                <div class="pieces-grid" id="piecesGrid">
+                    <!-- Draggable pieces will be created here -->
+                </div>
+                <div class="controls">
+                    <button class="btn secondary" onclick="shufflePieces()">Shuffle Pieces</button>
+                    <button class="btn" onclick="resetPuzzle()">Reset Puzzle</button>
+                </div>
+            </div>
+        </div>
+        
+        <div id="winMessage" class="win-message">
+            🎉 Amazing! You completed the reindeer puzzle! 🎉
+        </div>
+    </div>
+
+    <script>
+        // Reindeer picture made of emoji pieces
+        const reindeerPicture = [
+            '🌟', '🦌', '🌟',
+            '🎄', '🦌', '🎄', 
+            '❄️', '🎅', '❄️'
+        ];
+
+        let gameState = {
+            pieces: [...reindeerPicture],
+            board: new Array(9).fill(null),
+            draggedPiece: null,
+            draggedIndex: null,
+            completedPieces: 0
+        };
+
+        function initPuzzle() {
+            createBoard();
+            createPieces();
+            shufflePieces();
+        }
+
+        function createBoard() {
+            const board = document.getElementById('puzzleBoard');
+            board.innerHTML = '';
+            
+            for (let i = 0; i < 9; i++) {
+                const slot = document.createElement('div');
+                slot.className = 'puzzle-piece';
+                slot.dataset.index = i;
+                slot.addEventListener('dragover', handleDragOver);
+                slot.addEventListener('drop', handleDrop);
+                board.appendChild(slot);
+            }
+        }
+
+        function createPieces() {
+            const piecesGrid = document.getElementById('piecesGrid');
+            piecesGrid.innerHTML = '';
+            
+            gameState.pieces.forEach((piece, index) => {
+                const pieceElement = document.createElement('div');
+                pieceElement.className = 'piece';
+                pieceElement.textContent = piece;
+                pieceElement.dataset.correctIndex = reindeerPicture.indexOf(piece, reindeerPicture.indexOf(piece) === index ? 0 : reindeerPicture.indexOf(piece) + 1);
+                pieceElement.dataset.pieceIndex = index;
+                pieceElement.draggable = true;
+                
+                pieceElement.addEventListener('dragstart', handleDragStart);
+                pieceElement.addEventListener('dragend', handleDragEnd);
+                
+                // Touch events for mobile
+                pieceElement.addEventListener('touchstart', handleTouchStart);
+                pieceElement.addEventListener('touchmove', handleTouchMove);
+                pieceElement.addEventListener('touchend', handleTouchEnd);
+                
+                piecesGrid.appendChild(pieceElement);
+            });
+        }
+
+        function shufflePieces() {
+            for (let i = gameState.pieces.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [gameState.pieces[i], gameState.pieces[j]] = [gameState.pieces[j], gameState.pieces[i]];
+            }
+            createPieces();
+        }
+
+        function handleDragStart(e) {
+            if (e.target.classList.contains('placed')) return;
+            
+            gameState.draggedPiece = e.target.textContent;
+            gameState.draggedIndex = parseInt(e.target.dataset.pieceIndex);
+            e.target.classList.add('dragging');
+        }
+
+        function handleDragEnd(e) {
+            e.target.classList.remove('dragging');
+        }
+
+        function handleDragOver(e) {
+            e.preventDefault();
+        }
+
+        function handleDrop(e) {
+            e.preventDefault();
+            const slot = e.target;
+            const slotIndex = parseInt(slot.dataset.index);
+            
+            if (gameState.draggedPiece && !slot.textContent) {
+                slot.textContent = gameState.draggedPiece;
+                slot.classList.add('filled');
+                gameState.board[slotIndex] = gameState.draggedPiece;
+                
+                // Mark piece as placed
+                const pieceElement = document.querySelector(`[data-piece-index="${gameState.draggedIndex}"]`);
+                pieceElement.classList.add('placed');
+                
+                checkWin();
+            }
+        }
+
+        // Touch events for mobile devices
+        let touchPiece = null;
+        let touchOffset = { x: 0, y: 0 };
+
+        function handleTouchStart(e) {
+            if (e.target.classList.contains('placed')) return;
+            
+            e.preventDefault();
+            touchPiece = e.target;
+            const touch = e.touches[0];
+            const rect = touchPiece.getBoundingClientRect();
+            touchOffset.x = touch.clientX - rect.left;
+            touchOffset.y = touch.clientY - rect.top;
+            
+            touchPiece.style.position = 'fixed';
+            touchPiece.style.zIndex = '1000';
+            touchPiece.style.pointerEvents = 'none';
+        }
+
+        function handleTouchMove(e) {
+            if (!touchPiece) return;
+            e.preventDefault();
+            
+            const touch = e.touches[0];
+            touchPiece.style.left = (touch.clientX - touchOffset.x) + 'px';
+            touchPiece.style.top = (touch.clientY - touchOffset.y) + 'px';
+        }
+
+        function handleTouchEnd(e) {
+            if (!touchPiece) return;
+            e.preventDefault();
+            
+            const touch = e.changedTouches[0];
+            const elementBelow = document.elementFromPoint(touch.clientX, touch.clientY);
+            
+            // Reset piece position
+            touchPiece.style.position = '';
+            touchPiece.style.zIndex = '';
+            touchPiece.style.pointerEvents = '';
+            touchPiece.style.left = '';
+            touchPiece.style.top = '';
+            
+            if (elementBelow && elementBelow.classList.contains('puzzle-piece') && !elementBelow.textContent) {
+                const slotIndex = parseInt(elementBelow.dataset.index);
+                elementBelow.textContent = touchPiece.textContent;
+                elementBelow.classList.add('filled');
+                gameState.board[slotIndex] = touchPiece.textContent;
+                touchPiece.classList.add('placed');
+                checkWin();
+            }
+            
+            touchPiece = null;
+        }
+
+        function checkWin() {
+            let correct = 0;
+            for (let i = 0; i < 9; i++) {
+                if (gameState.board[i] === reindeerPicture[i]) {
+                    correct++;
+                }
+            }
+            
+            if (correct === 9) {
+                document.getElementById('winMessage').style.display = 'block';
+                // Add celebration effect
+                setTimeout(() => {
+                    const pieces = document.querySelectorAll('.puzzle-piece.filled');
+                    pieces.forEach((piece, index) => {
+                        setTimeout(() => {
+                            piece.style.transform = 'scale(1.1)';
+                            setTimeout(() => {
+                                piece.style.transform = 'scale(1)';
+                            }, 200);
+                        }, index * 100);
+                    });
+                }, 500);
+            }
+        }
+
+        function resetPuzzle() {
+            gameState.board = new Array(9).fill(null);
+            gameState.completedPieces = 0;
+            document.getElementById('winMessage').style.display = 'none';
+            
+            // Clear board
+            const slots = document.querySelectorAll('.puzzle-piece');
+            slots.forEach(slot => {
+                slot.textContent = '';
+                slot.classList.remove('filled');
+            });
+            
+            // Reset pieces
+            const pieces = document.querySelectorAll('.piece');
+            pieces.forEach(piece => {
+                piece.classList.remove('placed');
+            });
+        }
+
+        // Initialize the game
+        initPuzzle();
+    </script>
+</body>
+</html>

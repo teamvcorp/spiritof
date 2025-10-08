@@ -1,0 +1,451 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Santa Maze Heist — Code-Along</title>
+  <style>
+    html, body { height:100%; margin:0; background:#0a0f1d; color:#e8ebf0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell; }
+    #wrap { display:grid; grid-template-columns: 1fr 360px; gap:12px; height:100%; }
+    #game { display:block; width:100%; height:100%; background:radial-gradient(1200px 700px at 60% -20%, #1b2f57 0%, #0a0f1d 60%); }
+    aside { padding:12px; border-left:1px solid #1c2940; overflow:auto; }
+    aside h1 { font-size:18px; margin:0 0 8px; }
+    .kbd { display:inline-block; padding:2px 6px; border:1px solid #3a4968; border-radius:6px; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; background:#101727; }
+    .pill { display:inline-block; padding:2px 8px; border-radius:999px; background:#15355f; border:1px solid #2a4c7f; margin-right:6px; }
+    code { background:#101727; padding:2px 4px; border-radius:4px; }
+  </style>
+</head>
+<body>
+  <div id="wrap">
+    <canvas id="game"></canvas>
+    <aside>
+      <h1>Santa Maze Heist — Code-Along</h1>
+      <p>🎅 Navigate the maze, grab presents, and deliver them to the center chimney while naughty elves race you there. First to 10 wins.</p>
+      <p><span class="pill">Arrow keys / WASD</span> move • <span class="pill">R</span> restart</p>
+      <ol>
+        <li>Sections are labeled <code>// STEP X</code> so you can follow along.</li>
+        <li>Tweak numbers (maze size, elves, speeds) and rerun to feel the difference.</li>
+        <li>We now use a <strong>fixed layout</strong> with many paths to the chimney.</li>
+      </ol>
+    </aside>
+  </div>
+
+<script>
+// =========== Santa Maze Heist — one-file JS game ===========
+// Pac-Man flavored: grid-based maze, tile movement, AI opponents, BFS/A* pathfinding.
+
+// ---- STEP 0: Canvas & grid config
+const canvas = document.getElementById('game');
+const ctx = canvas.getContext('2d');
+let DPR = Math.max(1, Math.min(devicePixelRatio||1, 2));
+function resize(){ const r=canvas.getBoundingClientRect(); canvas.width=Math.floor(r.width*DPR); canvas.height=Math.floor(r.height*DPR); }
+addEventListener('resize', resize); resize();
+
+// Grid size (odd numbers recommended for perfect mazes)
+const CFG = {
+  COLS: 25, ROWS: 25, TILE: 28, // change COLS/ROWS for bigger/smaller mazes
+  santaSpeed: 5,
+  elfSpeed: 4,
+  presentsOnMap: 6,
+  presentRespawnMs: 3000,
+  elves: 3,
+  winScore: 10,
+  lives: 3,
+  powerups: 2,       // freeze orbs on the map
+  freezeMs: 5000     // elves stay frozen for this long (ms)
+};
+
+// Derived canvas logical size (scaled by DPR visually)
+function logicalWidth(){ return Math.min(CFG.COLS*CFG.TILE, canvas.width/DPR); }
+function logicalHeight(){ return Math.min(CFG.ROWS*CFG.TILE, canvas.height/DPR); }
+
+// ---- STEP 1: Maze generation (Fixed Layout)
+// Represent grid as walls between cells; 0=wall, 1=floor.
+let grid; // 2D array [r][c]
+function genMaze(cols, rows){
+  grid = Array.from({length: rows}, ()=>Array.from({length: cols}, ()=>0));
+
+  // Open a dense network of corridors: any odd row OR odd col is open
+  for (let r=1; r<rows-1; r++){
+    for (let c=1; c<cols-1; c++){
+      if ((r % 2 === 1) || (c % 2 === 1)) grid[r][c] = 1;
+    }
+  }
+
+  // Widen highways into center to guarantee many approaches
+  const CR = (rows/2)|0, CC = (cols/2)|0;
+  for (let d=-3; d<=3; d++){
+    for (let k=1; k<cols-1; k++) if (grid[CR+d]) grid[CR+d][k] = 1; // horizontal band
+    for (let k=1; k<rows-1; k++) if (grid[k]) grid[k][CC+d] = 1;     // vertical band
+  }
+
+  // Ensure a 3x3 room for the chimney
+  for (let dr=-1; dr<=1; dr++){
+    for (let dc=-1; dc<=1; dc++){
+      const rr = CR+dr, cc = CC+dc; if (rr>0&&rr<rows-1&&cc>0&&cc<cols-1) grid[rr][cc]=1;
+    }
+  }
+
+  // Make sure start tile and early corridor are open
+  grid[1][1] = 1; if (cols>2) grid[1][2] = 1; if (rows>2) grid[2][1] = 1;
+}
+
+// ---- STEP 2: Entities & state
+const state = {
+  santa: { r:1, c:1, px:0, py:0, tr:1, tc:1, moving:false, carrying:false, dir:null, nextDir:null, invulnUntil:0 },
+  elves: [],
+  presents: [],
+  powerups: [],
+  santaScore: 0, elfScore: 0,
+  lives: CFG.lives,
+  freezeUntil: 0,
+  t: 0, gameOver:false, message:"",
+};
+
+// Helpers
+const inBounds=(r,c)=> r>=0 && r<CFG.ROWS && c>=0 && c<CFG.COLS;
+const isOpen=(r,c)=> inBounds(r,c) && grid[r][c]===1;
+const key = (r,c)=> r+","+c;
+
+// ---- STEP 3: Pathfinding helpers
+function bfsNextStep(sr,sc, gr,gc){
+  if (sr===gr && sc===gc) return [sr,sc];
+  const q=[[sr,sc]]; const seen=new Set([key(sr,sc)]);
+  const parent=new Map();
+  while(q.length){
+    const [r,c]=q.shift();
+    const nbrs=[[r-1,c],[r+1,c],[r,c-1],[r,c+1]];
+    for(const [nr,nc] of nbrs){
+      if(!isOpen(nr,nc) || seen.has(key(nr,nc))) continue;
+      seen.add(key(nr,nc)); parent.set(key(nr,nc), [r,c]);
+      if(nr===gr && nc===gc){
+        let cur=[nr,nc], prev=parent.get(key(nr,nc));
+        while(prev && !(prev[0]===sr && prev[1]===sc)) { cur=prev; prev=parent.get(key(prev[0],prev[1])); }
+        return cur;
+      }
+      q.push([nr,nc]);
+    }
+  }
+  return [sr,sc];
+}
+
+function aStarNextStep(sr,sc, gr,gc){
+  if (sr===gr && sc===gc) return [sr,sc];
+  const open=[[sr,sc]]; const g=new Map([[key(sr,sc),0]]); const came=new Map();
+  function h(r,c){ return Math.abs(r-gr)+Math.abs(c-gc); }
+  function f(n){ return (g.get(key(n[0],n[1]))||Infinity) + h(n[0],n[1]); }
+  function popLowest(){ let bi=0, best=f(open[0]); for(let i=1;i<open.length;i++){ const fi=f(open[i]); if(fi<best){ best=fi; bi=i; } } return open.splice(bi,1)[0]; }
+  const seen=new Set([key(sr,sc)]);
+  while(open.length){
+    const [r,c]=popLowest();
+    if(r===gr && c===gc){
+      let cur=[r,c], prev=came.get(key(r,c));
+      while(prev && !(prev[0]===sr && prev[1]===sc)){ cur=prev; prev=came.get(key(prev[0],prev[1])); }
+      return cur;
+    }
+    const nbrs=[[r-1,c],[r+1,c],[r,c-1],[r,c+1]];
+    for(const [nr,nc] of nbrs){
+      if(!isOpen(nr,nc)) continue;
+      const nk=key(nr,nc); const tentativeG=(g.get(key(r,c))||Infinity)+1;
+      if(!seen.has(nk) || tentativeG < (g.get(nk)||Infinity)){
+        came.set(nk,[r,c]); g.set(nk,tentativeG);
+        if(!seen.has(nk)){ open.push([nr,nc]); seen.add(nk); }
+      }
+    }
+  }
+  return [sr,sc];
+}
+
+// ---- STEP 4: Presents (spawn, pickup, respawn)
+function randomFloor(){
+  let r,c; do{ r=(Math.random()*CFG.ROWS)|0; c=(Math.random()*CFG.COLS)|0; } while(!isOpen(r,c));
+  return [r,c];
+}
+function spawnPresent(){
+  const [r,c]=randomFloor();
+  return { r,c, active:true, respawnAt:0 };
+}
+function spawnPowerup(){
+  const [r,c]=randomFloor();
+  return { r,c, active:true }; // freeze orb
+}
+
+// ---- STEP 5: Setup / Reset
+function reset(){
+  genMaze(CFG.COLS, CFG.ROWS);
+  state.santa = { r:1, c:1, px:1*CFG.TILE, py:1*CFG.TILE, tr:1, tc:1, moving:false, carrying:false, dir:null, nextDir:null, invulnUntil:0 };
+
+  state.elves = [];
+  for(let i=0;i<CFG.elves;i++){
+    const [r,c]=randomFloor();
+    state.elves.push({ r, c, px:c*CFG.TILE, py:r*CFG.TILE, tr:r, tc:c, moving:false, carrying:false, wob:Math.random()*Math.PI*2, frozen:false });
+  }
+
+  state.presents = Array.from({length:CFG.presentsOnMap}, ()=>spawnPresent());
+  state.powerups = Array.from({length:CFG.powerups}, ()=>spawnPowerup());
+
+  state.santaScore=0; state.elfScore=0; state.lives=CFG.lives; state.freezeUntil=0; state.t=0; state.gameOver=false; state.message="";
+
+  runTests(); // quick runtime sanity checks
+}
+
+// ---- STEP 6: Controls
+const keys={ArrowUp:false,ArrowDown:false,ArrowLeft:false,ArrowRight:false,KeyW:false,KeyA:false,KeyS:false,KeyD:false};
+addEventListener('keydown',e=>{ if(e.code in keys){ keys[e.code]=true; e.preventDefault(); } if(e.code==='KeyR') reset();
+  const s=state.santa;
+  if(e.code==='ArrowUp'||e.code==='KeyW') s.nextDir='up';
+  if(e.code==='ArrowDown'||e.code==='KeyS') s.nextDir='down';
+  if(e.code==='ArrowLeft'||e.code==='KeyA') s.nextDir='left';
+  if(e.code==='ArrowRight'||e.code==='KeyD') s.nextDir='right';
+});
+addEventListener('keyup',e=>{ if(e.code in keys) keys[e.code]=false; });
+
+// ---- STEP 7: Update loop
+function update(dt){
+  if(state.gameOver) return;
+  state.t += dt;
+  const now = performance.now();
+
+  // === CONTINUOUS MOVEMENT ===
+  const s = state.santa;
+  const aligned = (Math.abs(s.px - s.c*CFG.TILE) < 1 && Math.abs(s.py - s.r*CFG.TILE) < 1);
+  if(aligned){ s.px = s.c*CFG.TILE; s.py = s.r*CFG.TILE; s.tr = s.r; s.tc = s.c; s.moving=false; }
+  function canGo(r,c,dir){
+    if(dir==='up') return isOpen(r-1,c);
+    if(dir==='down') return isOpen(r+1,c);
+    if(dir==='left') return isOpen(r,c-1);
+    if(dir==='right') return isOpen(r,c+1);
+    return false;
+  }
+  if(s.nextDir && aligned && canGo(s.r,s.c,s.nextDir)) s.dir = s.nextDir;
+  if(!s.moving && s.dir && canGo(s.r,s.c,s.dir)){
+    if(s.dir==='up'){ s.tr=s.r-1; s.tc=s.c; }
+    if(s.dir==='down'){ s.tr=s.r+1; s.tc=s.c; }
+    if(s.dir==='left'){ s.tr=s.r; s.tc=s.c-1; }
+    if(s.dir==='right'){ s.tr=s.r; s.tc=s.c+1; }
+    s.moving=true;
+  }
+  function stepToward(a, speed){
+    const targetX=a.tc*CFG.TILE, targetY=a.tr*CFG.TILE;
+    const dx=targetX-a.px, dy=targetY-a.py;
+    const dist=Math.hypot(dx,dy);
+    if(dist <= speed){ a.px=targetX; a.py=targetY; a.c=a.tc; a.r=a.tr; a.moving=false; return; }
+    const nx=dx/dist, ny=dy/dist; a.px += nx*speed; a.py += ny*speed;
+  }
+  if(s.moving) stepToward(s, CFG.santaSpeed);
+
+  // === PICKUPS ===
+  if(!s.carrying){
+    for(const pr of state.presents){
+      if(pr.active && pr.r===s.r && pr.c===s.c){ pr.active=false; pr.respawnAt = now+CFG.presentRespawnMs; s.carrying=true; pulse('🎁 Picked up!'); break; }
+    }
+  }
+  for(const pu of state.powerups){ if(pu.active && pu.r===s.r && pu.c===s.c){ pu.active=false; state.freezeUntil = now + CFG.freezeMs; pulse('❄️ Elves frozen!'); } }
+
+  // === DELIVER ===
+  const CR=(CFG.ROWS/2)|0, CC=(CFG.COLS/2)|0;
+  if(s.carrying && s.r===CR && s.c===CC){ s.carrying=false; state.santaScore++; pulse('You delivered a present!'); }
+
+  // Respawn presents
+  for(const pr of state.presents){ if(!pr.active && now>=pr.respawnAt){ const [r,c]=randomFloor(); pr.r=r; pr.c=c; pr.active=true; } }
+
+  // === ELVES AI (freeze + mixed targeting, A* intercept) ===
+  const elvesFrozen = now < state.freezeUntil;
+  for(const e of state.elves){
+    e.frozen = elvesFrozen;
+    if(e.frozen){ e.moving=false; continue; }
+
+    let goalR, goalC;
+    if(e.carrying){ goalR=CR; goalC=CC; }
+    else {
+      const intercept = (state.elves.indexOf(e) % 2 === 0) && state.santa.carrying;
+      if(intercept){ goalR = s.r; goalC = s.c; }
+      else {
+        let best=Infinity, choice=null;
+        for(const pr of state.presents){ if(!pr.active) continue; const d=Math.abs(pr.r-e.r)+Math.abs(pr.c-e.c); if(d<best){ best=d; choice=pr; } }
+        if(choice){ goalR=choice.r; goalC=choice.c; } else { goalR=CR; goalC=CC; }
+      }
+    }
+
+    if(e.r===goalR && e.c===goalC){
+      if(e.carrying){ e.carrying=false; state.elfScore++; pulse('An elf delivered a present!'); }
+      else { for(const pr of state.presents){ if(pr.active && pr.r===e.r && pr.c===e.c){ pr.active=false; pr.respawnAt=now+CFG.presentRespawnMs; e.carrying=true; break; } } }
+    }
+
+    if(!e.moving){
+      const useAStar = (goalR===s.r && goalC===s.c);
+      const [nr,nc] = useAStar ? aStarNextStep(e.r,e.c, goalR,goalC) : bfsNextStep(e.r,e.c, goalR,goalC);
+      e.tr=nr; e.tc=nc; e.moving=true;
+    }
+    stepToward(e, CFG.elfSpeed);
+  }
+
+  // === COLLISIONS ===
+  for(const e of state.elves){
+    if(e.frozen) continue;
+    if(e.r===s.r && e.c===s.c && now>=s.invulnUntil){
+      if(s.carrying){ state.presents.push({ r:s.r, c:s.c, active:true, respawnAt:0 }); s.carrying=false; }
+      state.lives = Math.max(0, state.lives - 1);
+      s.invulnUntil = now + 1500;
+      pulse('💥 Elf bumped you!');
+      s.r=1; s.c=1; s.tr=1; s.tc=1; s.px=CFG.TILE; s.py=CFG.TILE; s.moving=false; s.dir=null; s.nextDir=null;
+    }
+  }
+
+  // === WIN/LOSE ===
+  if(state.santaScore>=CFG.winScore){ state.gameOver=true; state.message='🎉 You win! Santa saved the season.'; }
+  if(state.elfScore>=CFG.winScore || state.lives<=0){ state.gameOver=true; state.message = state.lives<=0 ? '😵 Out of lives! Elves ruined Christmas.' : '😈 Elves win! They out-delivered you.'; }
+}
+
+function pulse(msg){ lastPulse.t = performance.now(); lastPulse.msg = msg; }
+const lastPulse = { t:0, msg:"" };
+
+// ---- STEP 8: Drawing
+function draw(){
+  const w = logicalWidth(), h = logicalHeight();
+  ctx.save(); ctx.scale(DPR, DPR); ctx.clearRect(0,0,w,h);
+
+  // center view if canvas larger than maze
+  const ox = (w - CFG.COLS*CFG.TILE)/2|0; const oy = (h - CFG.ROWS*CFG.TILE)/2|0;
+  ctx.translate(ox, oy);
+
+  // Maze
+  for(let r=0;r<CFG.ROWS;r++){
+    for(let c=0;c<CFG.COLS;c++){
+      const x=c*CFG.TILE, y=r*CFG.TILE;
+      if(grid[r][c]===1){
+        ctx.fillStyle = '#0f1e33'; ctx.fillRect(x,y,CFG.TILE,CFG.TILE);
+      } else {
+        ctx.fillStyle = '#081120'; ctx.fillRect(x,y,CFG.TILE,CFG.TILE);
+      }
+    }
+  }
+
+  // Chimney (center)
+  const CR=(CFG.ROWS/2)|0, CC=(CFG.COLS/2)|0; const cx=CC*CFG.TILE, cy=CR*CFG.TILE;
+  ctx.fillStyle='#203757'; ctx.fillRect(cx, cy, CFG.TILE, CFG.TILE); ctx.strokeStyle='#496a9a'; ctx.strokeRect(cx+1, cy+1, CFG.TILE-2, CFG.TILE-2);
+  ctx.fillStyle='#8b9cc0'; ctx.fillRect(cx+CFG.TILE*0.35, cy+4, CFG.TILE*0.3, CFG.TILE*0.6);
+
+  // Presents
+  for(const pr of state.presents){ if(!pr.active) continue; const x=pr.c*CFG.TILE, y=pr.r*CFG.TILE; drawPresent(x,y); }
+
+  // Powerups
+  for(const pu of state.powerups){ if(!pu.active) continue; const x=pu.c*CFG.TILE, y=pu.r*CFG.TILE; drawPowerup(x,y); }
+
+  // Santa
+  drawSanta(state.santa.px, state.santa.py, state.santa.carrying);
+
+  // Elves
+  for(const e of state.elves){ drawElf(e.px, e.py, e.carrying, e.wob); e.wob += 0.15; }
+
+  // HUD
+  ctx.resetTransform(); ctx.scale(DPR, DPR);
+  ctx.fillStyle='#e8ebf0'; ctx.font='600 14px ui-monospace, monospace';
+  ctx.fillText(`🎅 Santa ${state.santaScore}  |  😈 Elves ${state.elfScore}  |  ❤️ Lives ${state.lives}  |  First to ${CFG.winScore}`, 12, 20);
+  if(performance.now()-lastPulse.t < 1200){ ctx.fillStyle='rgba(255,255,255,.85)'; ctx.fillText(lastPulse.msg, 12, 40); }
+  const left = Math.max(0, Math.ceil((state.freezeUntil - performance.now())/1000));
+  if(left>0){ ctx.fillText(`❄️ Elves frozen: ${left}s`, 12, 60); }
+
+  if(state.gameOver){
+    ctx.fillStyle='rgba(5,8,16,.7)'; ctx.fillRect(0,0,w,h);
+    ctx.fillStyle='#e8ebf0'; ctx.font='bold 28px ui-monospace, monospace'; ctx.textAlign='center';
+    ctx.fillText(state.message, w/2, h/2-12);
+    ctx.font='16px ui-monospace, monospace'; ctx.fillText('Press R to restart', w/2, h/2+16);
+  }
+
+  ctx.restore();
+}
+
+function drawPresent(x,y){
+  const s=CFG.TILE*0.5; const cx=x+CFG.TILE/2, cy=y+CFG.TILE/2;
+  ctx.save(); ctx.translate(cx,cy);
+  ctx.fillStyle='#2fb0c2'; roundRect(-s/2,-s/2,s,s,4); ctx.fill();
+  ctx.strokeStyle='#ffd45a'; ctx.lineWidth=2; ctx.beginPath(); ctx.moveTo(0,-s/2); ctx.lineTo(0,s/2); ctx.moveTo(-s/2,0); ctx.lineTo(s/2,0); ctx.stroke();
+  ctx.restore();
+}
+function drawPowerup(x,y){
+  const s=CFG.TILE*0.5; const cx=x+CFG.TILE/2, cy=y+CFG.TILE/2;
+  ctx.save(); ctx.translate(cx,cy);
+  ctx.fillStyle='rgba(160,200,255,.95)'; ctx.beginPath(); ctx.arc(0,0,s*0.6,0,Math.PI*2); ctx.fill();
+  ctx.fillStyle='#0a0f1d'; ctx.font='bold 12px ui-monospace, monospace'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText('❄',0,1);
+  ctx.restore();
+}
+function drawSanta(px,py,carrying){
+  ctx.save(); ctx.translate(px+CFG.TILE/2, py+CFG.TILE/2);
+  if(performance.now()<state.santa.invulnUntil && (Math.floor(state.t/120)%2===0)) ctx.globalAlpha=0.5;
+  ctx.fillStyle='#c22f2f'; roundRect(-10,-8,20,16,6); ctx.fill();
+  ctx.strokeStyle='#d4a25a'; ctx.lineWidth=2; ctx.beginPath(); ctx.moveTo(-10,8); ctx.quadraticCurveTo(-2,12, 8,8); ctx.stroke();
+  ctx.fillStyle='#ffd45a'; ctx.beginPath(); ctx.arc(10,-2,3,0,Math.PI*2); ctx.fill();
+  if(carrying){ ctx.fillStyle='rgba(47,176,194,.85)'; roundRect(-5,-18,10,10,3); ctx.fill(); }
+  ctx.restore();
+}
+function drawElf(px,py,carrying,wob){
+  ctx.save(); ctx.translate(px+CFG.TILE/2, py+CFG.TILE/2);
+  ctx.rotate(Math.sin(wob)*0.08);
+  ctx.fillStyle='#3ea34b'; roundRect(-9,-7,18,14,5); ctx.fill();
+  ctx.strokeStyle='#9ad08f'; ctx.beginPath(); ctx.moveTo(-10,7); ctx.quadraticCurveTo(-2,11, 6,7); ctx.stroke();
+  ctx.fillStyle='#e8ebf0'; ctx.beginPath(); ctx.arc(6,-2,2,0,Math.PI*2); ctx.fill();
+  if(carrying){ ctx.fillStyle='rgba(47,176,194,.85)'; roundRect(-5,-16,10,10,3); ctx.fill(); }
+  ctx.restore();
+}
+
+function roundRect(x,y,w,h,r){
+  ctx.beginPath();
+  ctx.moveTo(x+r,y);
+  ctx.lineTo(x+w-r,y);
+  ctx.quadraticCurveTo(x+w,y, x+w,y+r);
+  ctx.lineTo(x+w,y+h-r);
+  ctx.quadraticCurveTo(x+w,y+h, x+w-r,y+h);
+  ctx.lineTo(x+r,y+h);
+  ctx.quadraticCurveTo(x,y+h, x,y+h-r);
+  ctx.lineTo(x,y+r);
+  ctx.quadraticCurveTo(x,y, x+r,y);
+}
+
+// ---- STEP 9: Loop
+let last=performance.now();
+function frame(now){ const dt=Math.min(33, now-last); last=now; update(dt); draw(); requestAnimationFrame(frame); }
+
+// ---- STEP 10: Runtime tests (sanity checks)
+function runTests(){
+  const CR=(CFG.ROWS/2)|0, CC=(CFG.COLS/2)|0;
+  const tests = [];
+  function T(name, cond){ tests.push([name, !!cond]); console.assert(cond, name); }
+
+  // existing tests
+  T('Grid exists', Array.isArray(grid) && grid.length===CFG.ROWS && grid[0].length===CFG.COLS);
+  T('Center cell open', grid[CR][CC]===1);
+  T('Elves spawned correctly', Array.isArray(state.elves) && state.elves.length===CFG.elves);
+  T('Presents spawned', Array.isArray(state.presents) && state.presents.length===CFG.presentsOnMap);
+  T('Powerups present', Array.isArray(state.powerups) && state.powerups.length===CFG.powerups);
+  T('Lives set', typeof state.lives==='number' && state.lives===CFG.lives);
+
+  // NEW tests for the fixed maze + movement + pathfinding
+  const centerEntrances = [isOpen(CR-1,CC), isOpen(CR+1,CC), isOpen(CR,CC-1), isOpen(CR,CC+1)].filter(Boolean).length;
+  T('Center has >=3 open approaches', centerEntrances >= 3);
+
+  // BFS/A*: from start towards center returns a valid next step
+  const bfsStep = bfsNextStep(1,1, CR,CC);  
+  T('BFS next step from start is open', isOpen(bfsStep[0], bfsStep[1]) && !(bfsStep[0]===1 && bfsStep[1]===1));
+
+  const aStep = aStarNextStep(1,1, CR,CC);
+  const manhattan = Math.abs(aStep[0]-1)+Math.abs(aStep[1]-1);
+  T('A* next step valid + adjacent', isOpen(aStep[0],aStep[1]) && manhattan===1);
+
+  // Another corner sample to ensure connectivity
+  const rr = CFG.ROWS-2, cc = CFG.COLS-2; // both odd => open
+  const bfsStep2 = bfsNextStep(rr,cc, CR,CC);
+  T('BFS from opposite corner moves', isOpen(rr,cc) && (bfsStep2[0]!==rr || bfsStep2[1]!==cc));
+
+  // Start tile has at least one exit (right or down)
+  T('Start has an exit', isOpen(1,2) || isOpen(2,1));
+
+  const passed = tests.every(t=>t[1]);
+  console.log('%cRuntime tests: ' + (passed?'PASSED':'FAILED'), 'color:'+(passed?'#3ea34b':'#c22f2f'));
+}
+
+// Boot
+reset(); requestAnimationFrame(frame);
+</script>
+</body>
+</html>

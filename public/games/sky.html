@@ -1,0 +1,450 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Sky Sleigh — Code-Along JS Game</title>
+  <style>
+    html, body { height: 100%; margin: 0; background:#0a0f1d; color:#e8ebf0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, Arial, "Apple Color Emoji", "Segoe UI Emoji"; }
+    #wrap { display:grid; grid-template-columns: 1fr 340px; gap:12px; height:100%; }
+    #game { display:block; width:100%; height:100%; background:linear-gradient(#10305a, #0a0f1d 60%); }
+    aside { padding:12px; border-left:1px solid #1c2940; overflow:auto; }
+    aside h1 { font-size:18px; margin:0 0 8px; }
+    aside .kbd { display:inline-block; padding:2px 6px; border:1px solid #3a4968; border-radius:6px; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; background:#101727; }
+    aside code { background:#101727; padding:2px 4px; border-radius:4px; }
+    .pill { display:inline-block; padding:2px 8px; border-radius:999px; background:#15355f; border:1px solid #2a4c7f; margin-right:6px; }
+    .row { margin:6px 0; }
+  </style>
+</head>
+<body>
+  <div id="wrap">
+    <canvas id="game"></canvas>
+    <aside>
+      <h1>Sky Sleigh — Code-Along</h1>
+      <div class="row"><span class="pill">Arrow keys</span> fly • <span class="pill">Space</span> drop present • <span class="pill">R</span> restart</div>
+      <p>Goal: Fly over bumpy ground and <strong>drop presents into chimneys</strong> while dodging birds, clouds, and snowballs.</p>
+      <ol>
+        <li>Skim the file: sections are marked with <code>// STEP X</code>.</li>
+        <li>Try changing numbers (speeds, gravity, counts) and observe behavior.</li>
+        <li>Add a new obstacle by copying a spawner — or tweak the ground shape.</li>
+      </ol>
+      <p>Tip: If the canvas looks stretched, your display scale is handled in <code>resize()</code>.</p>
+      <p style="opacity:.7">No assets needed. Everything is drawn via Canvas 2D.</p>
+    </aside>
+  </div>
+
+  <script>
+  // ====== Sky Sleigh — one-file JS game ======
+  // Controls: arrows to fly, Space to drop presents, R to restart.
+
+  // --- STEP 0: Canvas setup
+  const canvas = document.getElementById('game');
+  const ctx = canvas.getContext('2d');
+  const DPR = Math.max(1, Math.min(window.devicePixelRatio || 1, 2));
+  function resize() {
+    const rect = canvas.getBoundingClientRect();
+    canvas.width = Math.floor(rect.width * DPR);
+    canvas.height = Math.floor(rect.height * DPR);
+  }
+  window.addEventListener('resize', resize);
+  resize();
+
+  // --- STEP 1: Game state helpers
+  const TAU = Math.PI * 2;
+  const rand = (a,b)=>a + Math.random()*(b-a);
+  const clamp=(v,min,max)=>Math.max(min,Math.min(max,v));
+
+  let keys = {ArrowUp:false, ArrowDown:false, ArrowLeft:false, ArrowRight:false, Space:false};
+  window.addEventListener('keydown', (e)=>{
+    if (e.code === 'Space') { e.preventDefault(); keys.Space = true; }
+    if (e.code in keys) keys[e.code] = true;
+    if (e.code === 'KeyR') reset();
+  });
+  window.addEventListener('keyup', (e)=>{ if (e.code in keys) keys[e.code] = false; });
+
+  // --- STEP 2: World params (tweak these!)
+  const world = {
+    gravity: 0.22,
+    air: 0.98,
+    scroll: 2.0,        // base world scroll speed
+    skyH: 0.62,         // horizon as fraction of height
+    bumpAmp: 36,        // ground amplitude (px)
+    bumpFreq: 0.004,    // ground frequency
+    houseGapMin: 260,
+    houseGapMax: 420,
+    chimneyHitbox: 22,
+    maxClouds: 6,
+    maxBirds: 4,
+    maxSnowballs: 5,
+  };
+
+  // --- STEP 3: Entities
+  const state = {
+    t: 0,
+    score: 0,
+    delivered: 0,
+    missed: 0,
+    lives: 5,
+    gameOver: false,
+    presents: [],
+    clouds: [],
+    birds: [],
+    snowballs: [],
+    houses: [],
+  };
+
+  // Player (the sleigh)
+  const player = {
+    x: 220, y: 160, vx:0, vy:0, r: 18, cooldown: 0, invuln: 0,
+  };
+
+  // --- STEP 4: Procedural ground & houses
+  let groundOffset = 0;
+  function groundY(xWorld){
+    const h = canvas.height;
+    const base = world.skyH * h;
+    const y = base + Math.sin((xWorld + groundOffset) * world.bumpFreq) * world.bumpAmp;
+    return Math.min(h-6, y);
+  }
+
+  function spawnHouse(x){
+    const h = canvas.height;
+    const roofY = groundY(x) - rand(60, 100);
+    const w = rand(60, 100);
+    const bodyH = h - groundY(x) - 6 + (groundY(x)-roofY);
+    const chimneyX = x + w*0.7;
+    const chimneyY = roofY - 12;
+    state.houses.push({ x, w, roofY, chimneyX, chimneyY, hit:false });
+  }
+
+  function ensureHouses(){
+    const rightEdge = cameraX + canvas.width + 200;
+    if (state.houses.length === 0) {
+      let x = cameraX + 200;
+      for (let i=0;i<5;i++){ spawnHouse(x); x += rand(world.houseGapMin, world.houseGapMax);}    
+    } else {
+      let last = state.houses[state.houses.length-1];
+      while (last && last.x < rightEdge){
+        const nx = last.x + rand(world.houseGapMin, world.houseGapMax);
+        spawnHouse(nx); last = state.houses[state.houses.length-1];
+      }
+    }
+  }
+
+  // --- STEP 5: Camera scroll
+  let cameraX = 0;
+
+  // --- STEP 6: Spawners for hazards
+  function maybeSpawnCloud(){
+    if (state.clouds.length < world.maxClouds && Math.random()<0.02){
+      const y = rand(40, canvas.height*0.45);
+      const s = rand(0.6, 1.2);
+      state.clouds.push({ x: cameraX + canvas.width + 100, y, vx: -(world.scroll*s*0.5), r: rand(30,55)});
+    }
+  }
+  function maybeSpawnBird(){
+    if (state.birds.length < world.maxBirds && Math.random()<0.025){
+      const y = rand(70, canvas.height*0.55);
+      state.birds.push({ x: cameraX + canvas.width + 40, y, vx: -(world.scroll*1.5 + rand(0,1.5)), r: 14, flap: rand(0,TAU)});
+    }
+  }
+  function maybeSpawnSnow(){
+    if (state.snowballs.length < world.maxSnowballs && Math.random()<0.035){
+      const x = cameraX + rand(200, canvas.width+120);
+      state.snowballs.push({ x, y: -10, vy: rand(1,2.5), r: 8});
+    }
+  }
+
+  // --- STEP 7: Reset
+  function reset(){
+    state.t = 0; state.score=0; state.delivered=0; state.missed=0; state.gameOver=false; state.lives=5;
+    state.presents=[]; state.clouds=[]; state.birds=[]; state.snowballs=[]; state.houses=[];
+    player.x = 220; player.y = canvas.height*0.35; player.vx=0; player.vy=0; player.cooldown=0; player.invuln=0;
+    cameraX = 0; groundOffset = 0; ensureHouses();
+  }
+
+  // --- STEP 8: Physics & input
+  function update(dt){
+    if (state.gameOver) return;
+    state.t += dt; 
+
+    // camera and ground scroll
+    cameraX += world.scroll; 
+    groundOffset += world.scroll;
+
+    // input → velocity
+    const accel = 0.5;
+    if (keys.ArrowUp)    player.vy -= accel;
+    if (keys.ArrowDown)  player.vy += accel;
+    if (keys.ArrowLeft)  player.vx -= accel*0.8;
+    if (keys.ArrowRight) player.vx += accel*0.8;
+
+    // damp & gravity (slight, so flight feels floaty)
+    player.vx *= world.air; 
+    player.vy = player.vy*world.air + 0.08; 
+
+    player.x += player.vx; 
+    player.y += player.vy;
+
+    // keep on screen
+    const minY = 30, maxY = canvas.height*0.9;
+    player.y = clamp(player.y, minY, maxY);
+    player.x = clamp(player.x, cameraX+40, cameraX + canvas.width*0.6);
+
+    // fire presents
+    if (keys.Space && player.cooldown<=0){
+      state.presents.push({ x: player.x+8, y: player.y+6, vx: world.scroll*0.3, vy: -1, r: 7, alive:true });
+      player.cooldown = 16; // frames
+    }
+    player.cooldown = Math.max(0, player.cooldown-1);
+    player.invuln = Math.max(0, player.invuln-1);
+
+    // update presents
+    for (const p of state.presents){
+      if (!p.alive) continue;
+      p.vy += world.gravity*0.55;
+      p.x += p.vx; p.y += p.vy;
+      // hit ground or off screen
+      const gy = groundY(p.x);
+      if (p.y >= gy - 2){ p.alive=false; state.missed++; }
+      if (p.y > canvas.height+20) p.alive=false;
+      // check houses/chimneys
+      for (const h of state.houses){
+        if (h.hit) continue;
+        const cx = h.chimneyX; const cy = h.chimneyY;
+        if (Math.abs(p.x - cx) < world.chimneyHitbox && Math.abs(p.y - (cy+10)) < 18){
+          // deliver
+          p.alive=false; h.hit=true; state.delivered++; state.score += 100;
+          break;
+        }
+      }
+    }
+    // cull
+    state.presents = state.presents.filter(p=>p.alive);
+
+    // spawn hazards
+    maybeSpawnCloud(); maybeSpawnBird(); maybeSpawnSnow(); ensureHouses();
+
+    // move hazards
+    for (const c of state.clouds){ c.x += c.vx; }
+    for (const b of state.birds){ b.x += b.vx; b.flap += 0.3; b.y += Math.sin(b.flap)*0.3; }
+    for (const s of state.snowballs){ s.vy += world.gravity*0.2; s.y += s.vy; }
+
+    // collisions with player
+    function circleHit(ax,ay,ar,bx,by,br){ const dx=ax-bx, dy=ay-by; return dx*dx+dy*dy < (ar+br)*(ar+br); }
+    const px = player.x, py = player.y, pr = player.r;
+    for (const c of state.clouds){ if (c.x < cameraX-80) continue; if (circleHit(px,py,pr, c.x,c.y,c.r)) crash(); }
+    for (const b of state.birds){ if (b.x < cameraX-80) continue; if (circleHit(px,py,pr, b.x,b.y,b.r)) crash(); }
+    for (const s of state.snowballs){ if (s.y > canvas.height+40) continue; if (circleHit(px,py,pr, s.x,s.y,s.r)) crash(); }
+
+    // remove off-screen hazards
+    state.clouds = state.clouds.filter(c=>c.x > cameraX-100);
+    state.birds = state.birds.filter(b=>b.x > cameraX-100);
+    state.snowballs = state.snowballs.filter(s=>s.y < canvas.height+60);
+
+    // score trickle
+    state.score += 1; // survive to score slowly
+  }
+
+  function crash(){
+    if (player.invuln>0) return;
+    state.lives = Math.max(0, state.lives - 1);
+    if (state.lives <= 0){
+      state.gameOver = true;
+      return;
+    }
+    // brief invulnerability + knockback so you get a chance to recover
+    player.invuln = 90; // ~1.5s at 60fps
+    player.vx = -2; 
+    player.vy = -1.5;
+  }
+
+  // --- STEP 9: Drawing helpers
+  function draw(){
+    const w = canvas.width, h = canvas.height;
+    // sky background gradient already in CSS; add stars
+    ctx.save();
+    ctx.scale(DPR, DPR); // draw in CSS pixels
+    ctx.clearRect(0,0,w,h);
+
+    // parallax stars
+    for (let i=0;i<60;i++){
+      const sx = (i*251 + cameraX*0.3) % (w/DPR);
+      const sy = (i*97)% (h/DPR*0.6);
+      ctx.globalAlpha = 0.4 + (i%5)/10;
+      ctx.fillStyle = '#bcd6ff';
+      ctx.fillRect(sx, sy, 2, 2);
+    }
+    ctx.globalAlpha = 1;
+
+    // ground path
+    ctx.strokeStyle = '#0e1b2e';
+    ctx.fillStyle = '#0c1627';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    const startX = cameraX - 20;
+    const step = 8; 
+    let x = startX;
+    ctx.moveTo(x - cameraX, groundY(x));
+    for (; x < cameraX + w/DPR + 40; x += step){
+      ctx.lineTo(x - cameraX, groundY(x));
+    }
+    ctx.lineTo(w/DPR+40, h/DPR);
+    ctx.lineTo(-40, h/DPR);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+
+    // houses
+    for (const ho of state.houses){
+      if (ho.x + 140 < cameraX || ho.x - 40 > cameraX + w/DPR) continue;
+      drawHouse(ho);
+    }
+
+    // presents
+    for (const p of state.presents){ drawPresent(p); }
+
+    // hazards
+    for (const c of state.clouds){ drawCloud(c); }
+    for (const b of state.birds){ drawBird(b); }
+    for (const s of state.snowballs){ drawSnowball(s); }
+
+    // player sleigh
+    drawSleigh(player);
+
+    // HUD
+    drawHUD();
+
+    if (state.gameOver){
+      ctx.fillStyle = 'rgba(10,15,29,.6)';
+      ctx.fillRect(0,0,w/DPR,h/DPR);
+      ctx.fillStyle = '#e8ebf0';
+      ctx.font = 'bold 28px ui-monospace, monospace';
+      ctx.textAlign='center';
+      ctx.fillText('Game Over', w/DPR/2, h/DPR/2 - 18);
+      ctx.font = '16px ui-monospace, monospace';
+      ctx.fillText(`Delivered: ${state.delivered}  |  Missed: ${state.missed}  |  Score: ${state.score}`, w/DPR/2, h/DPR/2 + 10);
+      ctx.fillText('Press R to restart', w/DPR/2, h/DPR/2 + 34);
+    }
+
+    ctx.restore();
+  }
+
+  function drawSleigh(p){
+    const x = (p.x - cameraX), y = p.y;
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.rotate(p.vy*0.03);
+    // blink while invulnerable
+    if (player.invuln>0 && (Math.floor(state.t/100)%2===0)) ctx.globalAlpha = 0.5;
+    // body
+    ctx.fillStyle = '#c22f2f';
+    roundRect(-22,-10, 40, 16, 6);
+    ctx.fill();
+    // runners
+    ctx.strokeStyle = '#d4a25a'; ctx.lineWidth=2; ctx.beginPath();
+    ctx.moveTo(-22,6); ctx.quadraticCurveTo(-10,12, 2,8); ctx.moveTo(6,8); ctx.quadraticCurveTo(14,12, 24,10); ctx.stroke();
+    // nose glow
+    ctx.fillStyle = '#ffd45a'; ctx.globalAlpha=.8; ctx.beginPath(); ctx.arc(20,-2,3,0,TAU); ctx.fill(); ctx.globalAlpha=1;
+    ctx.restore();
+  }
+
+  function drawCloud(c){
+    const x = c.x - cameraX, y = c.y;
+    ctx.save(); ctx.translate(x,y);
+    ctx.fillStyle = 'rgba(230,240,255,.9)';
+    blobby(0,0,c.r);
+    ctx.restore();
+  }
+  function drawBird(b){
+    const x = b.x - cameraX, y = b.y;
+    ctx.save(); ctx.translate(x,y);
+    ctx.strokeStyle = '#e9edf7'; ctx.lineWidth=2;
+    const w = 14 + Math.sin(b.flap)*6;
+    ctx.beginPath(); ctx.moveTo(-w,0); ctx.quadraticCurveTo(0,-6, w,0); ctx.stroke();
+    ctx.restore();
+  }
+  function drawSnowball(s){
+    const x = s.x - cameraX, y = s.y;
+    ctx.save(); ctx.translate(x,y);
+    ctx.fillStyle = '#dfe9ff'; ctx.beginPath(); ctx.arc(0,0,s.r,0,TAU); ctx.fill();
+    ctx.restore();
+  }
+
+  function drawPresent(p){
+    const x = p.x - cameraX, y = p.y;
+    ctx.save(); ctx.translate(x,y);
+    ctx.fillStyle = '#2fb0c2'; roundRect(-6,-6,12,12,3); ctx.fill();
+    ctx.strokeStyle='#ffd45a'; ctx.lineWidth=2; ctx.beginPath();
+    ctx.moveTo(0,-6); ctx.lineTo(0,6); ctx.moveTo(-6,0); ctx.lineTo(6,0); ctx.stroke();
+    ctx.restore();
+  }
+
+  function drawHouse(h){
+    const baseY = groundY(h.x);
+    const x = h.x - cameraX; const yRoof = h.roofY; const w = h.w;
+    // body
+    ctx.fillStyle = '#182841'; roundRect(x, yRoof+6, w, baseY - (yRoof+6), 4); ctx.fill();
+    // roof
+    ctx.fillStyle = '#203757'; ctx.beginPath();
+    ctx.moveTo(x-6, yRoof+6); ctx.lineTo(x+w/2, yRoof-10); ctx.lineTo(x+w+6, yRoof+6); ctx.closePath(); ctx.fill();
+    // windows
+    ctx.fillStyle = '#ffd45a'; const win = 10; for (let wy=yRoof+20; wy<baseY-16; wy+=20){ for (let wx=x+8; wx<x+w-8; wx+=18){ ctx.fillRect(wx, wy, win, win); }}
+    // chimney
+    ctx.fillStyle = h.hit ? '#3ea34b' : '#8b9cc0';
+    ctx.fillRect(h.chimneyX-6 - cameraX, h.chimneyY, 12, 16);
+    // guide (hitbox optional)
+    // ctx.strokeStyle = 'rgba(255,255,255,.2)'; ctx.strokeRect(h.chimneyX-world.chimneyHitbox - cameraX, h.chimneyY-10, world.chimneyHitbox*2, 20);
+  }
+
+  function drawHUD(){
+    ctx.fillStyle='#e8ebf0';
+    ctx.font='600 14px ui-monospace, monospace';
+    ctx.textAlign='left';
+    ctx.fillText(`Score ${state.score}`, 12, 18);
+    ctx.fillText(`Delivered ${state.delivered}`, 12, 36);
+    ctx.fillText(`Missed ${state.missed}`, 12, 54);
+    // Lives: hearts for style + numeric fallback
+    const hearts = '❤'.repeat(state.lives || 0);
+    ctx.fillText(`Lives ${hearts} (${state.lives})`, 12, 72);
+  }
+
+  // util draw funcs
+  function roundRect(x,y,w,h,r){
+    ctx.beginPath();
+    ctx.moveTo(x+r,y);
+    ctx.lineTo(x+w-r,y);
+    ctx.quadraticCurveTo(x+w,y, x+w,y+r);
+    ctx.lineTo(x+w,y+h-r);
+    ctx.quadraticCurveTo(x+w,y+h, x+w-r,y+h);
+    ctx.lineTo(x+r,y+h);
+    ctx.quadraticCurveTo(x,y+h, x,y+h-r);
+    ctx.lineTo(x,y+r);
+    ctx.quadraticCurveTo(x,y, x+r,y);
+  }
+  function blobby(x,y,r){
+    ctx.beginPath();
+    for (let i=0;i<6;i++){
+      const ang = (i/6)*TAU;
+      const rr = r * (0.7 + 0.4*Math.sin(state.t*0.006 + i));
+      const px = x + Math.cos(ang)*rr; const py = y + Math.sin(ang)*rr*0.7;
+      if (i===0) ctx.moveTo(px,py); else ctx.quadraticCurveTo(x,y,px,py);
+    }
+    ctx.closePath(); ctx.fill();
+  }
+
+  // --- STEP 10: Main loop
+  let last = performance.now();
+  function frame(now){
+    const dt = Math.min(33, now - last); last = now;
+    update(dt);
+    draw();
+    requestAnimationFrame(frame);
+  }
+
+  // boot
+  reset();
+  requestAnimationFrame(frame);
+  </script>
+</body>
+</html>

@@ -6,6 +6,7 @@ import { Cards, Card } from "@/components/ui/Card";
 import Button from "@/components/ui/Button";
 import NaughtyNiceMeter from "@/components/child/NaughtyNiceMeter";
 import EarnMagicButton from "@/components/child/EarnMagicButton";
+import { GameButton } from "@/components/games/GameButton";
 import { FaThumbsUp, FaEdit, FaGift, FaPlus } from "react-icons/fa";
 import { ImMagicWand, ImEye, ImPieChart } from "react-icons/im";
 import { MdOutlineGroup } from "react-icons/md";
@@ -216,6 +217,68 @@ const {id: childId} = await params;
                 </div>
               </>
             )}
+          </Card>
+        </Cards>
+
+        {/* Fun Games Section */}
+        <Cards className="mt-6">
+          <Card className="bg-gradient-to-r from-blueberry to-berryPink border-0 text-white">
+            <div className="text-center p-6">
+              <h2 className="text-2xl font-semibold mb-4">🎮 Christmas Games</h2>
+              <p className="text-white/90 mb-6">
+                Take a break and play some fun Christmas games while you wait for Santa!
+              </p>
+              
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 mb-6">
+                <div className="bg-white/10 backdrop-blur-sm border border-white/20 rounded-xl p-4 hover:bg-white/20 transition-all">
+                  <div className="text-4xl mb-2">🎄</div>
+                  <h3 className="font-bold mb-2">Memory Match</h3>
+                  <GameButton 
+                    gameId="christmas-memory" 
+                    variant="compact"
+                    className="bg-white text-blueberry text-sm px-3 py-2"
+                  />
+                </div>
+                
+                <div className="bg-white/10 backdrop-blur-sm border border-white/20 rounded-xl p-4 hover:bg-white/20 transition-all">
+                  <div className="text-4xl mb-2">🎅</div>
+                  <h3 className="font-bold mb-2">Catch Presents</h3>
+                  <GameButton 
+                    gameId="santa-catch" 
+                    variant="compact"
+                    className="bg-white text-blueberry text-sm px-3 py-2"
+                  />
+                </div>
+                
+                <div className="bg-white/10 backdrop-blur-sm border border-white/20 rounded-xl p-4 hover:bg-white/20 transition-all">
+                  <div className="text-4xl mb-2">🦌</div>
+                  <h3 className="font-bold mb-2">Jigsaw Puzzle</h3>
+                  <GameButton 
+                    gameId="reindeer-puzzle" 
+                    variant="compact"
+                    className="bg-white text-blueberry text-sm px-3 py-2"
+                  />
+                </div>
+                
+                <div className="bg-white/10 backdrop-blur-sm border border-white/20 rounded-xl p-4 hover:bg-white/20 transition-all">
+                  <div className="text-4xl mb-2">🎨</div>
+                  <h3 className="font-bold mb-2">Coloring Book</h3>
+                  <GameButton 
+                    gameId="christmas-coloring" 
+                    variant="compact"
+                    className="bg-white text-blueberry text-sm px-3 py-2"
+                  />
+                </div>
+              </div>
+              
+              <div className="mt-6">
+                <GameButton 
+                  showAllGames={true}
+                  variant="button"
+                  className="bg-white text-blueberry hover:bg-gray-100 font-bold px-8 py-3 text-lg"
+                />
+              </div>
+            </div>
           </Card>
         </Cards>
 

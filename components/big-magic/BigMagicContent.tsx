@@ -524,10 +524,10 @@ export function BigMagicContent() {
           We'd love to discuss custom sponsorship opportunities and partnership packages.
         </p>
         <a 
-          href="mailto:partnerships@spiritofsanta.com" 
+          href="mailto:admin@thevacorp.com" 
           className="text-santa font-semibold hover:underline"
         >
-          partnerships@spiritofsanta.com
+          admin@thevacorp.com
         </a>
       </div>
     </Container>
