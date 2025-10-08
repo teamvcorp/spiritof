@@ -51,27 +51,37 @@ const ENROLLMENT_FEE = 5;
 const ENROLLMENT_PRODUCT_ID = 'prod_TBOjbHfeic8jZb';
 
 export async function POST(req: NextRequest) {
+  console.log("🎁 Welcome packet API called");
   try {
+    console.log("1. Checking auth...");
     const session = await auth();
     if (!session?.user?.id) {
+      console.log("❌ No session or user ID");
       return NextResponse.json({ error: "Authentication required" }, { status: 401 });
     }
+    console.log("✅ Auth OK, user ID:", session.user.id);
 
+    console.log("2. Connecting to database...");
     await dbConnect();
+    console.log("✅ Database connected");
 
     // Get parent record
+    console.log("3. Finding parent record...");
     const parent = await Parent.findOne({ userId: session.user.id });
     if (!parent) {
+      console.log("❌ Parent not found for user:", session.user.id);
       return NextResponse.json({ error: "Parent profile not found" }, { status: 404 });
     }
+    console.log("✅ Parent found:", parent._id);
 
     // Parse and validate request body
     let requestBody;
     try {
+      console.log("4. Parsing request body...");
       requestBody = await req.json();
-      console.log("Welcome packet request body:", requestBody);
+      console.log("✅ Request body parsed:", requestBody);
     } catch (parseError) {
-      console.error("Failed to parse request body:", parseError);
+      console.error("❌ Failed to parse request body:", parseError);
       return NextResponse.json({ 
         error: "Invalid JSON in request body" 
       }, { status: 400 });
@@ -79,20 +89,28 @@ export async function POST(req: NextRequest) {
 
     const { selectedItems, totalAmount } = requestBody;
 
+    console.log("5. Validating request fields...");
+    console.log("selectedItems:", selectedItems, "type:", typeof selectedItems);
+    console.log("totalAmount:", totalAmount, "type:", typeof totalAmount);
+
     // Validate required fields
     if (!Array.isArray(selectedItems)) {
+      console.log("❌ selectedItems is not an array");
       return NextResponse.json({ 
         error: "selectedItems must be an array" 
       }, { status: 400 });
     }
 
     if (typeof totalAmount !== 'number' || totalAmount <= 0) {
+      console.log("❌ totalAmount validation failed");
       return NextResponse.json({ 
         error: "totalAmount must be a positive number" 
       }, { status: 400 });
     }
+    console.log("✅ Basic validation passed");
 
     // Validate selected items
+    console.log("6. Validating selected items...");
     const validItems = selectedItems.filter((itemId: string) => 
       WELCOME_PACKET_ITEMS.some(item => item.id === itemId)
     );
@@ -100,6 +118,7 @@ export async function POST(req: NextRequest) {
     console.log("Valid items filtered:", validItems);
 
     // Calculate expected total
+    console.log("7. Calculating expected total...");
     const expectedTotal = ENROLLMENT_FEE + validItems.reduce((total: number, itemId: string) => {
       const item = WELCOME_PACKET_ITEMS.find(i => i.id === itemId);
       return total + (item?.price || 0);
@@ -108,6 +127,7 @@ export async function POST(req: NextRequest) {
     console.log("Expected total:", expectedTotal, "Received total:", totalAmount);
 
     if (totalAmount !== expectedTotal) {
+      console.log("❌ Total amount mismatch");
       return NextResponse.json({ 
         error: "Total amount mismatch",
         expected: expectedTotal,
@@ -115,8 +135,10 @@ export async function POST(req: NextRequest) {
         details: `Expected $${expectedTotal} but received $${totalAmount}`
       }, { status: 400 });
     }
+    console.log("✅ Total amount validation passed");
 
     // Create line items for Stripe checkout
+    console.log("8. Creating Stripe line items...");
     const lineItems: Stripe.Checkout.SessionCreateParams.LineItem[] = [
       // Enrollment fee (required)
       {
@@ -137,9 +159,11 @@ export async function POST(req: NextRequest) {
     ];
 
     // Add selected items
+    console.log("9. Adding selected items to line items...");
     validItems.forEach((itemId: string) => {
       const item = WELCOME_PACKET_ITEMS.find(i => i.id === itemId);
       if (item) {
+        console.log(`Adding item: ${item.name} ($${item.price})`);
         lineItems.push({
           price_data: {
             currency: 'usd',
@@ -158,8 +182,10 @@ export async function POST(req: NextRequest) {
         });
       }
     });
+    console.log("✅ Line items created:", lineItems.length);
 
     // Create Stripe checkout session
+    console.log("10. Creating Stripe checkout session...");
     const checkoutSession = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
       line_items: lineItems,
@@ -178,8 +204,10 @@ export async function POST(req: NextRequest) {
         allowed_countries: ['US', 'CA'] // Adjust based on your shipping regions
       }
     });
+    console.log("✅ Stripe session created:", checkoutSession.id);
 
     // Store the pending order in parent's record
+    console.log("11. Storing order in parent record...");
     if (!parent.welcomePacketOrders) {
       parent.welcomePacketOrders = [];
     }
@@ -193,6 +221,7 @@ export async function POST(req: NextRequest) {
     });
 
     await parent.save();
+    console.log("✅ Parent record updated");
 
     console.log(`🎁 Created welcome packet checkout for parent ${parent._id}: $${totalAmount}`);
 
@@ -203,10 +232,12 @@ export async function POST(req: NextRequest) {
     });
 
   } catch (error) {
-    console.error("Welcome packet creation error:", error);
+    console.error("❌ Welcome packet creation error:", error);
+    console.error("Error stack:", error instanceof Error ? error.stack : 'No stack trace');
     return NextResponse.json({ 
       error: "Failed to create welcome packet order",
-      details: error instanceof Error ? error.message : "Unknown error"
+      details: error instanceof Error ? error.message : "Unknown error",
+      timestamp: new Date().toISOString()
     }, { status: 500 });
   }
 }

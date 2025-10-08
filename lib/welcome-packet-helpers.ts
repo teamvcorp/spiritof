@@ -6,12 +6,28 @@ export async function hasCompletedWelcomePacket(parentId: string): Promise<boole
   await dbConnect();
   
   const parent = await Parent.findById(parentId).lean();
-  if (!parent) return false;
+  if (!parent) {
+    console.log(`❌ Welcome packet check: Parent not found for ID: ${parentId}`);
+    return false;
+  }
+  
+  console.log(`📦 Welcome packet check for parent ${parentId}:`);
+  console.log(`   - Has welcomePacketOrders: ${!!parent.welcomePacketOrders}`);
+  console.log(`   - Number of orders: ${parent.welcomePacketOrders?.length || 0}`);
+  
+  if (parent.welcomePacketOrders?.length) {
+    parent.welcomePacketOrders.forEach((order, index) => {
+      console.log(`   - Order ${index}: status=${order.status}, sessionId=${order.stripeSessionId}, amount=$${order.totalAmount}`);
+    });
+  }
   
   // Check if parent has any completed welcome packet orders
-  return Boolean(
+  const hasCompleted = Boolean(
     parent.welcomePacketOrders?.some(order => order.status === 'completed')
   );
+  
+  console.log(`   - Has completed order: ${hasCompleted}`);
+  return hasCompleted;
 }
 
 export async function canAddChildren(parentId: string): Promise<{

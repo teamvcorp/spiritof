@@ -48,6 +48,29 @@ export default function DashboardClient({ parentId, hasChristmasSetup, searchPar
         type: 'success',
         message: 'Welcome packet order completed successfully! Your package will be prepared and shipped within 3-5 business days.'
       };
+      
+      // Check and update welcome packet status in case webhook failed
+      console.log('🔄 Welcome packet success detected, checking status...');
+      fetch('/api/parent/check-welcome-packet', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      })
+      .then(response => response.json())
+      .then(data => {
+        console.log('✅ Welcome packet status check result:', data);
+        if (data.updatedOrders) {
+          console.log('🔄 Orders were updated, refreshing page...');
+          // Refresh the page to show updated state
+          setTimeout(() => {
+            window.location.href = '/parent/dashboard';
+          }, 2000);
+        }
+      })
+      .catch(error => {
+        console.error('❌ Error checking welcome packet status:', error);
+      });
     } else if (welcomePacket === 'cancelled') {
       message = {
         type: 'cancelled',

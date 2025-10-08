@@ -89,30 +89,52 @@ export function WelcomePacketSetup({ onComplete, onCancel }: WelcomePacketSetupP
     setIsProcessing(true);
     
     try {
+      const requestData = {
+        selectedItems,
+        totalAmount: calculateTotal()
+      };
+      
+      console.log('🎁 Creating welcome packet with data:', requestData);
+      
       const response = await fetch('/api/parent/welcome-packet', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          selectedItems,
-          totalAmount: calculateTotal()
-        }),
+        body: JSON.stringify(requestData),
       });
 
-      if (!response.ok) {
-        throw new Error('Failed to create welcome packet order');
+      console.log('📦 Response status:', response.status);
+      console.log('📦 Response ok:', response.ok);
+
+      const responseText = await response.text();
+      console.log('📦 Raw response:', responseText);
+
+      let data;
+      try {
+        data = JSON.parse(responseText);
+      } catch (parseError) {
+        console.error('Failed to parse response as JSON:', parseError);
+        throw new Error(`Server returned invalid JSON: ${responseText}`);
       }
 
-      const data = await response.json();
+      if (!response.ok) {
+        console.error('❌ Server error response:', data);
+        throw new Error(data.details || data.error || 'Failed to create welcome packet order');
+      }
+
+      console.log('✅ Success response:', data);
       
       // Redirect to Stripe checkout
       if (data.checkoutUrl) {
+        console.log('🔄 Redirecting to checkout:', data.checkoutUrl);
         window.location.href = data.checkoutUrl;
+      } else {
+        throw new Error('No checkout URL received from server');
       }
     } catch (error) {
-      console.error('Error creating welcome packet:', error);
-      alert('Failed to process welcome packet order. Please try again.');
+      console.error('❌ Error creating welcome packet:', error);
+      alert(`Failed to process welcome packet order: ${error instanceof Error ? error.message : 'Unknown error'}. Please try again.`);
       setCurrentStep('review');
     } finally {
       setIsProcessing(false);
