@@ -38,6 +38,7 @@ export async function POST(req: NextRequest) {
       customer_email: companyEmail,
       payment_method_types: paymentMethodTypes,
       mode: paymentMethod === 'ach' ? 'payment' : STRIPE_CONFIG.mode,
+      locale: 'en', // Explicitly set to English
       line_items: [
         {
           price_data: {

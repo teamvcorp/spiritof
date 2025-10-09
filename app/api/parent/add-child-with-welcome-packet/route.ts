@@ -210,6 +210,7 @@ export async function POST(req: NextRequest) {
       payment_method_types: ['card'],
       line_items: lineItems,
       mode: 'payment',
+      locale: 'en', // Explicitly set to English
       success_url: `${process.env.NEXTAUTH_URL}/parent/dashboard?child_welcome_packet=success&child=${encodeURIComponent(displayName)}`,
       cancel_url: `${process.env.NEXTAUTH_URL}/parent/dashboard?child_welcome_packet=cancelled&child=${encodeURIComponent(displayName)}`,
       metadata: {

@@ -79,12 +79,17 @@ export default function ChristmasSetup({ isOpen, onClose, parentId }: ChristmasS
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string>("");
   const [addingPayment, setAddingPayment] = useState(false);
+  const [settingsLoaded, setSettingsLoaded] = useState(false);
 
   const totalSteps = 5;
 
   useEffect(() => {
-    if (isOpen) {
+    console.log('🚀 ChristmasSetup useEffect triggered - isOpen:', isOpen, 'settingsLoaded:', settingsLoaded);
+    
+    if (isOpen && !settingsLoaded) {
+      console.log('� Loading settings because modal opened and settings not yet loaded');
       loadExistingSettings();
+      
       // Check if returning from payment setup
       const urlParams = new URLSearchParams(window.location.search);
       const paymentSetup = urlParams.get('payment_setup');
@@ -108,43 +113,93 @@ export default function ChristmasSetup({ isOpen, onClose, parentId }: ChristmasS
         window.history.replaceState({}, '', url.toString());
       }
     }
-  }, [isOpen]);
+    
+    // Reset settingsLoaded when modal closes
+    if (!isOpen && settingsLoaded) {
+      console.log('🔄 Modal closed, resetting settingsLoaded flag');
+      setSettingsLoaded(false);
+    }
+  }, [isOpen, settingsLoaded]);
 
   const loadExistingSettings = async () => {
     try {
-      const response = await fetch('/api/parent/christmas-settings');
+      console.log('🔄 Loading existing Christmas settings...');
+      const response = await fetch('/api/parent/christmas-settings', {
+        method: 'GET',
+        headers: {
+          'Cache-Control': 'no-cache',
+          'Pragma': 'no-cache'
+        }
+      });
+      console.log('📡 API response status:', response.status);
+      
       if (response.ok) {
         const data = await response.json();
-        if (data.settings) {
-          const loadedSettings = { ...defaultSettings, ...data.settings };
+        console.log('📦 Raw API response:', JSON.stringify(data, null, 2));
+        
+        if (data.success && data.settings && Object.keys(data.settings).length > 0) {
+          console.log('⚙️ DB settings found:', data.settings);
           
-          // Auto-populate address from welcome packet if not already set
-          if (data.welcomePacketAddress && 
-              (!loadedSettings.shippingAddress.street || 
-               !loadedSettings.shippingAddress.city || 
-               !loadedSettings.shippingAddress.state)) {
-            loadedSettings.shippingAddress = {
-              ...loadedSettings.shippingAddress,
-              recipientName: loadedSettings.shippingAddress.recipientName || data.welcomePacketAddress.recipientName || data.parentName,
-              street: loadedSettings.shippingAddress.street || data.welcomePacketAddress.street,
-              apartment: loadedSettings.shippingAddress.apartment || data.welcomePacketAddress.apartment,
-              city: loadedSettings.shippingAddress.city || data.welcomePacketAddress.city,
-              state: loadedSettings.shippingAddress.state || data.welcomePacketAddress.state,
-              zipCode: loadedSettings.shippingAddress.zipCode || data.welcomePacketAddress.zipCode,
-              country: loadedSettings.shippingAddress.country || data.welcomePacketAddress.country || "US",
-            };
-          }
+          // Handle Mongoose document - the actual data is in _doc
+          const dbSettings = data.settings._doc || data.settings;
+          console.log('📋 Extracted settings data:', dbSettings);
           
-          // Auto-populate recipient name with parent name if still not set
-          if (!loadedSettings.shippingAddress.recipientName && data.parentName) {
-            loadedSettings.shippingAddress.recipientName = data.parentName;
-          }
+          // Create a completely new settings object
+          const loadedSettings: ChristmasSettings = {
+            monthlyBudgetGoal: Number(dbSettings.monthlyBudgetGoal) || 200,
+            autoContributeAmount: Number(dbSettings.autoContributeAmount) || 50,
+            enableAutoContribute: Boolean(dbSettings.enableAutoContribute),
+            listLockDate: String(dbSettings.listLockDate || "2025-12-11"),
+            finalPaymentDate: String(dbSettings.finalPaymentDate || "2025-12-20"),
+            allowFriendGifts: Boolean(dbSettings.allowFriendGifts),
+            maxFriendGiftValue: Number(dbSettings.maxFriendGiftValue) || 25,
+            allowEarlyGifts: Boolean(dbSettings.allowEarlyGifts),
+            hasPaymentMethod: Boolean(data.settings.hasPaymentMethod), // This comes from API level
+            paymentMethodLast4: data.settings.paymentMethodLast4, // This comes from API level
+            reminderEmails: Boolean(dbSettings.reminderEmails),
+            weeklyBudgetUpdates: Boolean(dbSettings.weeklyBudgetUpdates),
+            listLockReminders: Boolean(dbSettings.listLockReminders),
+            shippingAddress: {
+              recipientName: String(dbSettings.shippingAddress?.recipientName || data.parentName || ""),
+              street: String(dbSettings.shippingAddress?.street || ""),
+              apartment: String(dbSettings.shippingAddress?.apartment || ""),
+              city: String(dbSettings.shippingAddress?.city || ""),
+              state: String(dbSettings.shippingAddress?.state || ""),
+              zipCode: String(dbSettings.shippingAddress?.zipCode || ""),
+              country: String(dbSettings.shippingAddress?.country || "US"),
+              isDefault: Boolean(dbSettings.shippingAddress?.isDefault ?? true),
+            }
+          };
           
+          console.log('✨ Final loaded settings:', JSON.stringify(loadedSettings, null, 2));
+          
+          // Force set the settings
           setSettings(loadedSettings);
+          setSettingsLoaded(true);
+          
+          // Double-check that it was set
+          setTimeout(() => {
+            console.log('� Post-setState verification - settings should be:', loadedSettings);
+          }, 200);
+          
+          console.log('✅ Settings loaded and applied successfully');
+        } else {
+          console.log('⚠️ No valid settings in response, using defaults');
+          console.log('⚠️ Response structure:', { success: data.success, hasSettings: !!data.settings, settingsKeys: data.settings ? Object.keys(data.settings) : 'none' });
+          setSettings(defaultSettings);
+          setSettingsLoaded(true);
         }
+      } else {
+        console.error('❌ Failed to fetch settings, status:', response.status);
+        const errorText = await response.text();
+        console.error('❌ Error response:', errorText);
+        setSettings(defaultSettings);
+        setSettingsLoaded(true);
       }
     } catch (error) {
-      console.error('Failed to load existing settings:', error);
+      console.error('❌ Failed to load existing settings:', error);
+      setSettings(defaultSettings);
+      setSettingsLoaded(true);
     }
   };
 

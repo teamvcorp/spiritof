@@ -78,6 +78,7 @@ export async function POST(req: NextRequest) {
       customer: stripeCustomerId,
       payment_method_types: ['card'],
       mode: STRIPE_CONFIG.mode,
+      locale: 'en', // Explicitly set to English
       line_items: [
         {
           price_data: {

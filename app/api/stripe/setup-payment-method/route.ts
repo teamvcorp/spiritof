@@ -48,6 +48,7 @@ export async function POST(request: NextRequest) {
       customer: customerId,
       payment_method_types: ['card'],
       mode: 'setup',
+      locale: 'en', // Explicitly set to English
       success_url: `${returnUrl}?payment_setup=success`,
       cancel_url: `${returnUrl}?payment_setup=cancelled`,
       metadata: {

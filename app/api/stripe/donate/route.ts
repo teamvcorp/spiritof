@@ -44,6 +44,7 @@ export async function POST(req: NextRequest) {
     const checkoutSession = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
       mode: STRIPE_CONFIG.mode,
+      locale: 'en', // Explicitly set to English
       line_items: [
         {
           price_data: {

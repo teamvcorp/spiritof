@@ -192,6 +192,7 @@ export async function POST(req: NextRequest) {
       mode: 'payment',
       success_url: `${process.env.NEXTAUTH_URL}/parent/dashboard?welcome_packet=success`,
       cancel_url: `${process.env.NEXTAUTH_URL}/parent/dashboard?welcome_packet=cancelled`,
+      locale: 'en', // Explicitly set to English
       metadata: {
         type: 'welcome_packet',
         parentId: parent._id.toString(),

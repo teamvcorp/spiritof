@@ -5,6 +5,7 @@ import { Parent } from "@/models/Parent";
 import { Child } from "@/models/Child";
 import { User } from "@/models/User";
 import Container from "@/components/ui/Container";
+import Button from "@/components/ui/Button";
 import { revalidatePath } from "next/cache";
 import { Types } from "mongoose";
 import { IParent } from "@/types/parentTypes";
@@ -273,126 +274,127 @@ export default async function ParentDashboardPage({ searchParams }: DashboardPro
 
         {/* Children list */}
         <section className="space-y-3">
-          {children.length === 0 && (
-            <>
-              <h2 className="text-xl font-semibold">Children</h2>
-              <ul className="space-y-3">
-                {children.map((c) => {
-                  const id = String(c._id);
-                  return (
-                    <li key={id} className="rounded-lg border p-4 space-y-4">
-                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 items-start">
-                        {/* Left: avatar + name */}
-                        <div className="flex items-center gap-3">
-                          {c.avatarUrl ? (
-                            <Image src={c.avatarUrl} alt="avatar" width={48} height={48} className="h-12 w-12 rounded-full object-cover" />
-                          ) : (
-                            <div className="h-12 w-12 rounded-full bg-muted flex items-center justify-center text-xs text-muted-foreground">No Avatar</div>
-                          )}
-                          <div>
-                            <div className="font-medium">{c.displayName}</div>
-                            <div className="text-xs text-muted-foreground">ID: {id.slice(-6)}</div>
-                          </div>
-                        </div>
-
-                        {/* Middle: details */}
-                        <div className="space-y-1 text-sm">
-                          <div className="text-muted-foreground">Allocation: {c.percentAllocation}%</div>
-                          <div className="text-muted-foreground">Naughty/Nice: {c.score365}/365</div>
-                          <div className="text-muted-foreground">Neighbor Balance: {formatCents(c.neighborBalanceCents ?? 0)}</div>
-                        </div>
-
-                        {/* Right: actions */}
-                        <div className="flex sm:justify-end gap-2">
-                          {/* QR Share Button */}
-                          <QRShareButton
-                            childId={String(c._id)}
-                            childName={c.displayName}
-                            shareSlug={c.shareSlug}
-                          />
-
-                          {/* Edit modal toggle */}
-                          <input id={`edit-${id}`} type="checkbox" className="peer hidden" />
-                          <label htmlFor={`edit-${id}`} className="btn-secondary">Edit</label>
-
-                          {/* Delete confirm (details) */}
-                          <details className="[&_summary]:list-none">
-                            <summary className="btn-danger">Delete</summary>
-                            <div className="mt-2 p-2 rounded border text-sm">
-                              <div className="mb-2">This cannot be undone.</div>
-                              <form action={deleteChild}>
-                                <input type="hidden" name="childId" value={id} />
-                                <button type="submit" className="btn-danger">Confirm Delete</button>
-                              </form>
-                            </div>
-                          </details>
-
-                          {/* Modal content controlled by peer checkbox */}
-                          <div className="hidden peer-checked:flex fixed inset-0 bg-black/40 items-center justify-center z-50">
-                            <div className="w-full max-w-md rounded-lg border bg-background p-4 shadow-xl" role="dialog" aria-modal="true">
-                              <div className="flex items-center justify-between mb-3">
-                                <h3 className="text-lg font-semibold">Edit {c.displayName}</h3>
-                                <label htmlFor={`edit-${id}`} className="inline-flex items-center rounded-md border px-3 py-2 text-sm hover:bg-muted cursor-pointer">
-                                  ×
-                                </label>
-                              </div>
-
-                              <form action={updateChild} className="space-y-3">
-                                <input type="hidden" name="childId" value={id} />
-
-                                <div className="flex flex-col gap-1">
-                                  <label className="text-sm">Display Name</label>
-                                  <input name="displayName" required defaultValue={c.displayName}
-                                    className="w-full rounded-md border px-3 py-2 text-sm bg-background" />
-                                </div>
-
-                                <div className="flex flex-col gap-1">
-                                  <label className="text-sm">Percent Allocation (0–100)</label>
-                                  <input name="percentAllocation" type="number" min={0} max={100}
-                                    defaultValue={c.percentAllocation}
-                                    className="w-full rounded-md border px-3 py-2 text-sm bg-background" />
-                                </div>
-
-                                <div className="flex flex-col gap-1">
-                                  <label className="text-sm">Avatar URL</label>
-                                  <input name="avatarUrl" defaultValue={c.avatarUrl || ""}
-                                    className="w-full rounded-md border px-3 py-2 text-sm bg-background" />
-                                </div>
-
-                                <div className="flex items-center gap-2">
-                                  <input id={`donate-${id}`} type="checkbox" name="donationsEnabled" defaultChecked={c.donationsEnabled ?? true} />
-                                  <label htmlFor={`donate-${id}`} className="text-sm">Allow neighbor donations</label>
-                                </div>
-
-                                <div className="flex justify-end gap-2 pt-2">
-                                  <label htmlFor={`edit-${id}`} className="inline-flex items-center rounded-md border px-3 py-2 text-sm hover:bg-muted cursor-pointer">
-                                    Cancel
-                                  </label>
-                                  <button type="submit" className="inline-flex items-center rounded-md bg-primary px-3 py-2 text-sm font-medium text-primary-foreground hover:opacity-90">
-                                    Save
-                                  </button>
-                                </div>
-                              </form>
-                            </div>
-                          </div>
+          <div className="flex items-center justify-between">
+            <h2 className="text-xl font-semibold">Children</h2>
+            {children.length > 0 && (
+              <Link href="/parent/vote">
+                <Button className="bg-santa hover:bg-red-700 text-white">
+                  🗳️ Vote for Good Behavior
+                </Button>
+              </Link>
+            )}
+          </div>
+          
+          {children.length === 0 ? (
+            <div className="text-center py-8 text-gray-500">
+              <p>No children added yet. Add your first child below!</p>
+            </div>
+          ) : (
+            <ul className="space-y-3">
+              {children.map((c) => {
+                const id = String(c._id);
+                return (
+                  <li key={id} className="rounded-lg border p-4 space-y-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 items-start">
+                      {/* Left: avatar + name */}
+                      <div className="flex items-center gap-3">
+                        {c.avatarUrl ? (
+                          <Image src={c.avatarUrl} alt="avatar" width={48} height={48} className="h-12 w-12 rounded-full object-cover" />
+                        ) : (
+                          <div className="h-12 w-12 rounded-full bg-muted flex items-center justify-center text-xs text-muted-foreground">No Avatar</div>
+                        )}
+                        <div>
+                          <div className="font-medium">{c.displayName}</div>
+                          <div className="text-xs text-muted-foreground">ID: {id.slice(-6)}</div>
                         </div>
                       </div>
 
-                      {/* Vote Section */}
-                      <Vote
-                        child={{
-                          _id: id,
-                          displayName: c.displayName,
-                          score365: c.score365,
-                          avatarUrl: c.avatarUrl
-                        }}
-                        parentWalletBalance={parent.walletBalanceCents}
-                      />
-                    </li>
-                  );
-                })}
-              </ul>
-            </>
+                      {/* Middle: details */}
+                      <div className="space-y-1 text-sm">
+                        <div className="text-muted-foreground">Allocation: {c.percentAllocation}%</div>
+                        <div className="text-muted-foreground">Naughty/Nice: {c.score365}/365</div>
+                        <div className="text-muted-foreground">Neighbor Balance: {formatCents(c.neighborBalanceCents ?? 0)}</div>
+                      </div>
+
+                      {/* Right: actions */}
+                      <div className="flex sm:justify-end gap-2 flex-wrap">
+                        {/* QR Share Button */}
+                        <QRShareButton
+                          childId={String(c._id)}
+                          childName={c.displayName}
+                          shareSlug={c.shareSlug}
+                        />
+
+                        {/* Edit modal toggle */}
+                        <input id={`edit-${id}`} type="checkbox" className="peer hidden" />
+                        <label htmlFor={`edit-${id}`} className="btn-secondary">Edit</label>
+
+                        {/* Delete confirm (details) */}
+                        <details className="[&_summary]:list-none">
+                          <summary className="btn-danger">Delete</summary>
+                          <div className="mt-2 p-2 rounded border text-sm">
+                            <div className="mb-2">This cannot be undone.</div>
+                            <form action={deleteChild}>
+                              <input type="hidden" name="childId" value={id} />
+                              <button type="submit" className="btn-danger">Confirm Delete</button>
+                            </form>
+                          </div>
+                        </details>
+
+                        {/* Modal content controlled by peer checkbox */}
+                        <div className="hidden peer-checked:flex fixed inset-0 bg-black/40 items-center justify-center z-50">
+                          <div className="w-full max-w-md rounded-lg border bg-background p-4 shadow-xl" role="dialog" aria-modal="true">
+                            <div className="flex items-center justify-between mb-3">
+                              <h3 className="text-lg font-semibold">Edit {c.displayName}</h3>
+                              <label htmlFor={`edit-${id}`} className="inline-flex items-center rounded-md border px-3 py-2 text-sm hover:bg-muted cursor-pointer">
+                                ×
+                              </label>
+                            </div>
+
+                            <form action={updateChild} className="space-y-3">
+                              <input type="hidden" name="childId" value={id} />
+
+                              <div className="flex flex-col gap-1">
+                                <label className="text-sm">Display Name</label>
+                                <input name="displayName" required defaultValue={c.displayName}
+                                  className="w-full rounded-md border px-3 py-2 text-sm bg-background" />
+                              </div>
+
+                              <div className="flex flex-col gap-1">
+                                <label className="text-sm">Percent Allocation (0–100)</label>
+                                <input name="percentAllocation" type="number" min={0} max={100}
+                                  defaultValue={c.percentAllocation}
+                                  className="w-full rounded-md border px-3 py-2 text-sm bg-background" />
+                              </div>
+
+                              <div className="flex flex-col gap-1">
+                                <label className="text-sm">Avatar URL</label>
+                                <input name="avatarUrl" defaultValue={c.avatarUrl || ""}
+                                  className="w-full rounded-md border px-3 py-2 text-sm bg-background" />
+                              </div>
+
+                              <div className="flex items-center gap-2">
+                                <input id={`donate-${id}`} type="checkbox" name="donationsEnabled" defaultChecked={c.donationsEnabled ?? true} />
+                                <label htmlFor={`donate-${id}`} className="text-sm">Allow neighbor donations</label>
+                              </div>
+
+                              <div className="flex justify-end gap-2 pt-2">
+                                <label htmlFor={`edit-${id}`} className="inline-flex items-center rounded-md border px-3 py-2 text-sm hover:bg-muted cursor-pointer">
+                                  Cancel
+                                </label>
+                                <button type="submit" className="inline-flex items-center rounded-md bg-primary px-3 py-2 text-sm font-medium text-primary-foreground hover:opacity-90">
+                                  Save
+                                </button>
+                              </div>
+                            </form>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
           )}
         </section>
 
