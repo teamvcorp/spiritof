@@ -1,7 +1,6 @@
 import type { NextAuthConfig, Session, Account, User as NextAuthUser } from "next-auth";
 import type { JWT } from "next-auth/jwt";
 import Google from "next-auth/providers/google";
-import Resend from "next-auth/providers/resend";
 import Credentials from "next-auth/providers/credentials";
 import { NextRequest, NextResponse } from "next/server";
 import { ensureUser } from "@/lib/auth/ensureUser";
@@ -111,16 +110,12 @@ export const authConfig = {
       user?: NextAuthUser | undefined;
       account?: Account | null | undefined;
     }): Promise<AppJWT> {
-      // On first login (Google, Email, OR Credentials) we ensure a DB user, then read flags from DB.
+      // On first login (Google OR Credentials) we ensure a DB user, then read flags from DB.
       if (user?.email) {
         await dbConnect();
         
-        // Check what provider is being used
-        console.log('🔐 JWT callback - provider:', account?.provider, 'email:', user.email);
-        
-        // For Google OAuth and Email (magic link), ensure user exists (credentials users already exist from signup)
-        // Resend provider ID is "resend" or might be "email"
-        if (account?.provider === "google" || account?.provider === "resend" || account?.provider === "email") {
+        // For Google OAuth, ensure user exists (credentials users already exist from signup)
+        if (account?.provider === "google") {
           await ensureUser(user.email, user.name ?? undefined, user.image ?? undefined);
         }
 
@@ -129,14 +124,11 @@ export const authConfig = {
           .lean<{ _id: Types.ObjectId; isParentOnboarded?: boolean; parentId?: Types.ObjectId | null; admin?: boolean }>();
 
         if (dbUser) {
-          console.log('👤 Found user in DB:', dbUser._id, 'isParentOnboarded:', dbUser.isParentOnboarded);
           token.uid = String(dbUser._id);
           token.role = "user";
           token.isParentOnboarded = !!dbUser.isParentOnboarded;
           token.parentId = dbUser.parentId ? String(dbUser.parentId) : null;
           token.admin = !!dbUser.admin;
-        } else {
-          console.log('❌ No user found in DB for email:', user.email);
         }
       } else if (token.uid) {
         // Subsequent requests: refresh flags from database
@@ -196,11 +188,6 @@ export const authConfig = {
           response_type: "code",
         },
       },
-    }),
-
-    Resend({
-      apiKey: process.env.RESEND_API_KEY!,
-      from: process.env.RESEND_FROM_EMAIL || "noreply@spiritofsanta.club",
     }),
 
     Credentials({
