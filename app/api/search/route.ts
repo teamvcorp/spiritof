@@ -63,8 +63,8 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ 
       items: items.map(item => ({
         ...item,
-        // Use blob URL if available, fall back to imageUrl
-        imageUrl: item.blobUrl || item.imageUrl
+        // imageUrl is already the correct field
+        imageUrl: item.imageUrl
       }))
     });
   } catch (error) {

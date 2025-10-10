@@ -6,6 +6,8 @@ export interface MasterCatalogItem {
   _id?: mongoose.Types.ObjectId;
   title: string;
   brand?: string;
+  brandLogoUrl?: string; // NEW: Vercel Blob URL for brand logo
+  brandLogoStoredAt?: Date; // NEW: When brand logo was uploaded
   category?: string;
   description?: string;
   gender: CatalogGender;
@@ -13,12 +15,11 @@ export interface MasterCatalogItem {
   ageMax?: number;
   price?: number;
   retailer?: string;
-  productUrl: string; // Required - unique identifier
+  productUrl: string;
   
-  // Vercel Blob storage for image
-  imageUrl?: string; // Original source image URL
-  blobUrl?: string;  // Vercel Blob URL for stored image
-  imageStoredAt?: Date; // When image was uploaded to blob
+  // Vercel Blob storage for product image
+  imageUrl?: string;
+  imageStoredAt?: Date;
   
   // Product identifiers
   sku?: string;
@@ -30,12 +31,12 @@ export interface MasterCatalogItem {
   // Search and categorization
   tags?: string[];
   popularity?: number;
-  searchTerms?: string[]; // Terms that led to this item being found
+  searchTerms?: string[];
   
   // Metadata
   sourceType: "live_search" | "manual" | "curated" | "trending";
-  isActive: boolean; // Can be set to false to hide items
-  lastValidatedAt?: Date; // Last time product URL was validated
+  isActive: boolean;
+  lastValidatedAt?: Date;
   
   createdAt: Date;
   updatedAt: Date;
@@ -51,6 +52,8 @@ export type MasterCatalogDoc = HydratedDocument<MasterCatalogItem>;
 const MasterCatalogSchema = new Schema<MasterCatalogItem, MasterCatalogModel, NoMethods, Q, NoVirtuals>({
   title: { type: String, required: true, trim: true, maxlength: 200 },
   brand: { type: String, trim: true },
+  brandLogoUrl: { type: String, trim: true }, // NEW: Brand logo from Vercel Blob
+  brandLogoStoredAt: Date, // NEW: Track upload time
   category: { type: String, trim: true },
   description: { type: String, trim: true, maxlength: 1000 },
   gender: { type: String, enum: ["boy", "girl", "neutral"], required: true, index: true },
@@ -58,11 +61,10 @@ const MasterCatalogSchema = new Schema<MasterCatalogItem, MasterCatalogModel, No
   ageMax: Number,
   price: { type: Number, min: 0 },
   retailer: { type: String, trim: true, lowercase: true },
-  productUrl: { type: String, required: true, unique: true, trim: true }, // Unique constraint
+  productUrl: { type: String, required: true, unique: true, trim: true },
   
   // Image storage
-  imageUrl: { type: String, trim: true }, // Original source
-  blobUrl: { type: String, trim: true },   // Vercel blob stored image
+  imageUrl: { type: String, trim: true },
   imageStoredAt: Date,
   
   // Product identifiers
@@ -92,7 +94,6 @@ MasterCatalogSchema.index({ gender: 1, category: 1 });
 MasterCatalogSchema.index({ price: 1 });
 MasterCatalogSchema.index({ retailer: 1 });
 MasterCatalogSchema.index({ isActive: 1, createdAt: -1 });
-// Note: productUrl index is automatically created by unique: true constraint
 
 export const MasterCatalog: MasterCatalogModel =
   (mongoose.models.MasterCatalog as MasterCatalogModel) ??

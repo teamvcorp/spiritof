@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Button from '@/components/ui/Button';
 import ImageUpload from '@/components/ui/ImageUpload';
 import { CatalogGender } from '@/models/MasterCatalog';
@@ -11,6 +11,7 @@ const ADMIN_PASSWORD = 'admin123'; // In production, this should be from env or 
 export interface CatalogFormData {
   title: string;
   brand: string;
+  brandLogoUrl: string; // NEW: Brand logo URL
   category: string;
   description: string;
   gender: CatalogGender;
@@ -30,6 +31,7 @@ export interface CatalogFormData {
 export const emptyCatalogFormData: CatalogFormData = {
   title: '',
   brand: '',
+  brandLogoUrl: '', // NEW: Empty default
   category: '',
   description: '',
   gender: 'neutral',
@@ -51,16 +53,24 @@ interface CatalogItemFormProps {
   onSubmit: (data: CatalogFormData) => void;
   loading: boolean;
   submitLabel?: string;
+  includeBrandLogoUpload?: boolean; // NEW: Optional flag to show/hide brand logo upload
 }
 
 export default function CatalogItemForm({
   formData,
   onSubmit,
   loading,
-  submitLabel = "Save Item"
+  submitLabel = "Save Item",
+  includeBrandLogoUpload = false // NEW: Default to false for backward compatibility
 }: CatalogItemFormProps) {
   const [data, setData] = useState<CatalogFormData>(formData);
   const [uploadingImage, setUploadingImage] = useState(false);
+  const [uploadingBrandLogo, setUploadingBrandLogo] = useState(false); // NEW: Brand logo upload state
+
+  // NEW: Sync internal state with incoming formData prop
+  useEffect(() => {
+    setData(formData);
+  }, [formData]);
 
   const handleImageUpload = async (file: File) => {
     setUploadingImage(true);
@@ -87,6 +97,35 @@ export default function CatalogItemForm({
       alert('Failed to upload image');
     } finally {
       setUploadingImage(false);
+    }
+  };
+
+  // NEW: Handle brand logo upload
+  const handleBrandLogoUpload = async (file: File) => {
+    setUploadingBrandLogo(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const response = await fetch('/api/upload-image', {
+        method: 'POST',
+        headers: {
+          'X-Admin-Password': ADMIN_PASSWORD,
+        },
+        body: formData,
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        setData(prev => ({ ...prev, brandLogoUrl: result.url }));
+      } else {
+        alert('Failed to upload brand logo');
+      }
+    } catch (error) {
+      console.error('Brand logo upload error:', error);
+      alert('Failed to upload brand logo');
+    } finally {
+      setUploadingBrandLogo(false);
     }
   };
 
@@ -120,6 +159,7 @@ export default function CatalogItemForm({
             value={data.brand}
             onChange={(e) => setData(prev => ({ ...prev, brand: e.target.value }))}
             className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-evergreen"
+            placeholder="e.g., LEGO, Barbie, Hot Wheels"
           />
         </div>
 
@@ -263,8 +303,40 @@ export default function CatalogItemForm({
         />
       </div>
 
+      {/* NEW: Brand Logo Upload Section */}
+      {includeBrandLogoUpload && (
+        <div>
+          <label className="block text-sm font-medium mb-1">Brand Logo (Optional)</label>
+          <div className="space-y-2">
+            <input
+              type="url"
+              value={data.brandLogoUrl}
+              onChange={(e) => setData(prev => ({ ...prev, brandLogoUrl: e.target.value }))}
+              placeholder="Brand logo URL or upload below..."
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-evergreen"
+            />
+            <ImageUpload
+              onUpload={handleBrandLogoUpload}
+              uploading={uploadingBrandLogo}
+              currentImage={data.brandLogoUrl}
+              isAdminMode={true}
+            />
+            {data.brandLogoUrl && (
+              <div className="mt-2 p-2 border rounded-lg bg-gray-50">
+                <p className="text-xs text-gray-600 mb-2">Brand Logo Preview:</p>
+                <img
+                  src={data.brandLogoUrl}
+                  alt="Brand logo"
+                  className="h-12 w-auto object-contain"
+                />
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
       <div>
-        <label className="block text-sm font-medium mb-1">Image</label>
+        <label className="block text-sm font-medium mb-1">Product Image</label>
         <div className="space-y-2">
           <input
             type="url"
@@ -296,7 +368,7 @@ export default function CatalogItemForm({
       <div className="flex justify-end">
         <Button
           type="submit"
-          disabled={loading || uploadingImage}
+          disabled={loading || uploadingImage || uploadingBrandLogo}
           className="bg-evergreen hover:bg-green-600"
         >
           <FaSave className="mr-2" />

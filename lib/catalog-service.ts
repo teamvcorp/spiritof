@@ -102,7 +102,7 @@ export async function findOrCreateCatalogItem(
       const uploadResult = await uploadImageToBlob(productData.imageUrl, filename);
       
       if (uploadResult.success && uploadResult.blobUrl) {
-        newCatalogData.blobUrl = uploadResult.blobUrl;
+        newCatalogData.imageUrl = uploadResult.blobUrl;
         newCatalogData.imageStoredAt = new Date();
         console.log(`✅ Image uploaded to blob for: ${productData.title}`);
       } else {
@@ -198,12 +198,9 @@ export async function getCatalogItemById(catalogId: string): Promise<MasterCatal
 }
 
 /**
- * Get the best image URL for a catalog item (blob first, then original)
+ * Get the best image URL for a catalog item
  */
 export function getBestImageUrl(item: MasterCatalogItem): string {
-  if (item.blobUrl) {
-    return item.blobUrl;
-  }
   if (item.imageUrl) {
     return item.imageUrl;
   }

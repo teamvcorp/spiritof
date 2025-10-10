@@ -31,18 +31,17 @@ export async function GET() {
     // Get a sample of catalog items with their image data
     const samples = await MasterCatalog.find({ isActive: true })
       .limit(10)
-      .select('title imageUrl blobUrl sourceType retailer')
+      .select('title imageUrl sourceType retailer')
       .lean();
 
     const imageAnalysis = samples.map(item => ({
       title: item.title,
       imageUrl: item.imageUrl || null,
-      blobUrl: item.blobUrl || null,
       sourceType: item.sourceType,
       retailer: item.retailer,
-      hasBlobUrl: !!item.blobUrl,
-      blobUrlValid: item.blobUrl && item.blobUrl.trim() && item.blobUrl.includes('vercel-storage.com'),
-      needsImageUpload: !item.blobUrl && item.sourceType === 'manual',
+      hasImageUrl: !!item.imageUrl,
+      imageUrlValid: item.imageUrl && item.imageUrl.trim() && item.imageUrl.includes('vercel-storage.com'),
+      needsImageUpload: !item.imageUrl && item.sourceType === 'manual',
     }));
 
     return NextResponse.json({
@@ -51,8 +50,8 @@ export async function GET() {
       items: imageAnalysis,
       summary: {
         totalItems: samples.length,
-        withBlobUrl: imageAnalysis.filter(i => i.hasBlobUrl).length,
-        withValidBlobUrl: imageAnalysis.filter(i => i.blobUrlValid).length,
+        withImageUrl: imageAnalysis.filter(i => i.hasImageUrl).length,
+        withValidImageUrl: imageAnalysis.filter(i => i.imageUrlValid).length,
         needingImageUpload: imageAnalysis.filter(i => i.needsImageUpload).length,
       }
     });

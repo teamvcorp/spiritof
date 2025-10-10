@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { dbConnect } from "@/lib/db";
-import { CatalogItem } from "@/models/CatalogItem";
+import { MasterCatalog } from "@/models/MasterCatalog";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -10,16 +10,28 @@ export async function GET(req: NextRequest) {
 
   const q = (req.nextUrl.searchParams.get("q") || "").trim();
   const genderRaw = (req.nextUrl.searchParams.get("gender") || "").toLowerCase();
-  const gender = ["boy", "girl", "neutral"].includes(genderRaw) ? (genderRaw as "boy" | "girl" | "neutral") : undefined;
+  const gender = ["boy", "girl", "neutral"].includes(genderRaw) ? (genderRaw as "boy" | "girl" | "neutral") : "neutral";
+  const brand = req.nextUrl.searchParams.get("brand"); // NEW: Brand filter
 
   const age = Number(req.nextUrl.searchParams.get("age") || "");
   const minPrice = Number(req.nextUrl.searchParams.get("minPrice") || "");
   const maxPrice = Number(req.nextUrl.searchParams.get("maxPrice") || "");
-  const cursor = Number(req.nextUrl.searchParams.get("cursor") || "0"); // offset
-  const limit = Math.max(6, Math.min(48, Number(req.nextUrl.searchParams.get("limit") || "24")));
+  const page = Number(req.nextUrl.searchParams.get("page") || "0");
+  const limit = Math.max(6, Math.min(48, Number(req.nextUrl.searchParams.get("limit") || "10")));
 
-  const $and: Record<string, unknown>[] = [];
-  if (gender) $and.push({ gender });
+  const $and: Record<string, unknown>[] = [
+    { isActive: true } // Only show active items from MasterCatalog
+  ];
+  
+  // Filter by EITHER brand OR gender (not both - less restrictive)
+  if (brand && brand.trim()) {
+    // If brand is selected, ignore gender filter
+    $and.push({ brand: { $regex: new RegExp(`^${brand.trim()}$`, "i") } });
+  } else if (gender) {
+    // Only filter by gender if no brand is selected
+    $and.push({ gender });
+  }
+  
   if (!Number.isNaN(age)) {
     $and.push({
       $or: [
@@ -37,37 +49,36 @@ export async function GET(req: NextRequest) {
   if (!Number.isNaN(minPrice)) $and.push({ $or: [{ price: { $gte: minPrice } }, { price: { $exists: false } }] });
   if (!Number.isNaN(maxPrice) && maxPrice > 0) $and.push({ price: { $lte: maxPrice } });
 
-  const filter = $and.length ? { $and } : {};
+  const filter = { $and };
 
-  let query = CatalogItem.find(filter).select("title gender price retailer productUrl imageUrl brand model category");
+  let query = MasterCatalog.find(filter).select("title gender price retailer productUrl imageUrl brand model category sourceType tags popularity brandLogoUrl");
 
   if (q) {
     // lightweight text search; boosts title matches
-    query = CatalogItem.find({
+    query = MasterCatalog.find({
       $and: [
-        filter,
+        ...filter.$and,
         {
           $or: [
-            { $text: { $search: q } },
             { title: { $regex: q, $options: "i" } },
+            { brand: { $regex: q, $options: "i" } },
             { tags: { $in: [new RegExp(q, "i")] } },
           ],
         },
       ],
-    }).select("title gender price retailer productUrl imageUrl brand model category score")
-      .sort({ score: { $meta: "textScore" }, updatedAt: -1 });
+    }).select("title gender price retailer productUrl imageUrl brand model category sourceType tags popularity brandLogoUrl")
+      .sort({ popularity: -1, updatedAt: -1 });
   } else {
-    query = query.sort({ updatedAt: -1 });
+    query = query.sort({ popularity: -1, updatedAt: -1 });
   }
 
-  const total = await CatalogItem.countDocuments(filter);
-  const page = await query.skip(cursor).limit(limit).lean();
+  const total = await MasterCatalog.countDocuments(filter);
+  const items = await query.skip(page * limit).limit(limit).lean();
 
-  const hasMore = cursor + page.length < total;
+  const hasMore = (page + 1) * limit < total;
 
   return NextResponse.json({
-    results: page,
-    cursor: hasMore ? cursor + page.length : null,
+    items, // Changed from "results" to "items" to match SimpleGiftBuilder
     hasMore,
     total,
   });

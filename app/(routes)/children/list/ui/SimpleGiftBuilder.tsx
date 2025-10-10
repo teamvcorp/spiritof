@@ -1,11 +1,12 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
-import { FaHeart, FaCheck, FaSpinner } from "react-icons/fa";
+import React, { useState, useEffect, useRef } from "react";
+import { FaHeart, FaCheck, FaSpinner, FaChevronLeft, FaChevronRight } from "react-icons/fa";
 import Button from "@/components/ui/Button";
 import Image from "next/image";
 import RequestNewToy from "./RequestNewToy";
 import { addItemToChildGiftList, getChildExistingGifts } from "../actions-new";
+import { MasterCatalogItem } from "@/models/MasterCatalog";
 
 type ChildLite = { 
   id: string; 
@@ -14,31 +15,19 @@ type ChildLite = {
   magicPoints?: number; 
 };
 
-type CatalogItem = {
-  _id: string;
-  title: string;
-  brand?: string;
-  category?: string;
-  gender?: string;
-  price?: number;
-  retailer?: string;
-  productUrl?: string;
-  imageUrl?: string;
-  tags?: string[];
-  popularity?: number;
-  sourceType?: string;
-};
-
-interface SimpleGiftBuilderProps {
-  initialChildren: ChildLite[];
-}
-
 type GenderFilter = "boy" | "girl" | "neutral";
 
-export default function SimpleGiftBuilder({ initialChildren }: SimpleGiftBuilderProps) {
+interface Brand {
+  brand: string;
+  logoUrl?: string;
+}
+
+export default function SimpleGiftBuilder({ initialChildren }: { initialChildren: ChildLite[] }) {
   const [selectedChild, setSelectedChild] = useState<string>(initialChildren[0]?.id || "");
   const [selectedGender, setSelectedGender] = useState<GenderFilter>("neutral");
-  const [items, setItems] = useState<CatalogItem[]>([]);
+  const [selectedBrand, setSelectedBrand] = useState<string | null>(null);
+  const [availableBrands, setAvailableBrands] = useState<Brand[]>([]);
+  const [items, setItems] = useState<MasterCatalogItem[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
@@ -47,8 +36,27 @@ export default function SimpleGiftBuilder({ initialChildren }: SimpleGiftBuilder
   const [processingItems, setProcessingItems] = useState<Set<string>>(new Set());
   const [sessionAddedItems, setSessionAddedItems] = useState<Set<string>>(new Set());
   const [childMagicPoints, setChildMagicPoints] = useState<number>(0);
+  const brandScrollRef = useRef<HTMLDivElement>(null);
+  const [showLeftArrow, setShowLeftArrow] = useState(false);
+  const [showRightArrow, setShowRightArrow] = useState(false);
 
-  // Load items by gender
+  // Fetch available brands
+  useEffect(() => {
+    const fetchBrands = async () => {
+      try {
+        const res = await fetch("/api/catalog/brands");
+        if (res.ok) {
+          const data = await res.json();
+          setAvailableBrands(data.brands || []);
+        }
+      } catch (error) {
+        console.error("Failed to fetch brands:", error);
+      }
+    };
+    fetchBrands();
+  }, []);
+
+  // Load items by gender and brand
   const loadItems = async (gender: GenderFilter, page: number = 0, append: boolean = false) => {
     if (page === 0) {
       setIsLoading(true);
@@ -62,8 +70,12 @@ export default function SimpleGiftBuilder({ initialChildren }: SimpleGiftBuilder
         page: page.toString(),
         limit: "10"
       });
-
-      const response = await fetch(`/api/catalog/by-gender?${params}`);
+      
+      if (selectedBrand) {
+        params.append("brand", selectedBrand);
+      }
+      
+      const response = await fetch(`/api/catalog?${params}`);
       const data = await response.json();
 
       if (response.ok) {
@@ -106,6 +118,11 @@ export default function SimpleGiftBuilder({ initialChildren }: SimpleGiftBuilder
     loadItems(gender, 0, false);
   };
 
+  const handleBrandChange = (brand: string | null) => {
+    setSelectedBrand(brand);
+    setCurrentPage(0);
+  };
+
   // Load existing gifts when child changes
   useEffect(() => {
     const loadExistingGifts = async () => {
@@ -130,7 +147,12 @@ export default function SimpleGiftBuilder({ initialChildren }: SimpleGiftBuilder
   // Load initial items
   useEffect(() => {
     loadItems(selectedGender, 0, false);
-  }, []);
+  }, [selectedGender]);
+
+  // Reload items when brand filter changes
+  useEffect(() => {
+    loadItems(selectedGender, 0, false);
+  }, [selectedBrand, selectedGender]);
 
   const refreshChildData = () => {
     const loadData = async () => {
@@ -146,18 +168,20 @@ export default function SimpleGiftBuilder({ initialChildren }: SimpleGiftBuilder
     loadData();
   };
 
-  const isGiftInList = (item: CatalogItem) => {
+  const isGiftInList = (item: MasterCatalogItem) => {
+    const itemId = item._id?.toString() || "";
     return existingGifts.has(item.productUrl || "") || 
            existingGifts.has(item.title.toLowerCase().trim()) ||
-           sessionAddedItems.has(item._id);
+           sessionAddedItems.has(itemId);
   };
 
-  const handleAddToList = async (item: CatalogItem) => {
-    if (isGiftInList(item) || processingItems.has(item._id)) {
+  const handleAddToList = async (item: MasterCatalogItem) => {
+    const itemId = item._id?.toString() || "";
+    if (isGiftInList(item) || processingItems.has(itemId)) {
       return;
     }
 
-    setProcessingItems(prev => new Set([...prev, item._id]));
+    setProcessingItems(prev => new Set([...prev, itemId]));
 
     try {
       const result = await addItemToChildGiftList(selectedChild, {
@@ -176,7 +200,7 @@ export default function SimpleGiftBuilder({ initialChildren }: SimpleGiftBuilder
       });
       
       if (result.success) {
-        setSessionAddedItems(prev => new Set([...prev, item._id]));
+        setSessionAddedItems(prev => new Set([...prev, itemId]));
         if (item.productUrl) {
           setExistingGifts(prev => new Set([...prev, item.productUrl!]));
         }
@@ -190,11 +214,50 @@ export default function SimpleGiftBuilder({ initialChildren }: SimpleGiftBuilder
     } finally {
       setProcessingItems(prev => {
         const newSet = new Set(prev);
-        newSet.delete(item._id);
+        newSet.delete(itemId);
         return newSet;
       });
     }
   };
+
+  // Check scroll position for arrows
+  const updateArrowVisibility = () => {
+    if (brandScrollRef.current) {
+      const { scrollLeft, scrollWidth, clientWidth } = brandScrollRef.current;
+      setShowLeftArrow(scrollLeft > 0);
+      setShowRightArrow(scrollLeft < scrollWidth - clientWidth - 10);
+    }
+  };
+
+  // Scroll brand buttons
+  const scrollBrands = (direction: 'left' | 'right') => {
+    if (brandScrollRef.current) {
+      const scrollAmount = 200;
+      const newScrollLeft = direction === 'left' 
+        ? brandScrollRef.current.scrollLeft - scrollAmount
+        : brandScrollRef.current.scrollLeft + scrollAmount;
+      
+      brandScrollRef.current.scrollTo({
+        left: newScrollLeft,
+        behavior: 'smooth'
+      });
+    }
+  };
+
+  // Update arrows on scroll and when brands load
+  useEffect(() => {
+    const scrollContainer = brandScrollRef.current;
+    if (scrollContainer) {
+      updateArrowVisibility();
+      scrollContainer.addEventListener('scroll', updateArrowVisibility);
+      window.addEventListener('resize', updateArrowVisibility);
+      
+      return () => {
+        scrollContainer.removeEventListener('scroll', updateArrowVisibility);
+        window.removeEventListener('resize', updateArrowVisibility);
+      };
+    }
+  }, [availableBrands]);
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-white to-gray-50 py-8">
@@ -259,6 +322,85 @@ export default function SimpleGiftBuilder({ initialChildren }: SimpleGiftBuilder
           </div>
         )}
 
+        {/* Brand Filter Row */}
+        {availableBrands.length > 0 && (
+          <div className="bg-white rounded-xl p-4 sm:p-6 shadow-sm border mb-6">
+            <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-3 sm:mb-4">
+              Filter by Brand
+            </h3>
+            
+            {/* Brand Scroll Container */}
+            <div className="relative">
+              {/* Left Arrow */}
+              {showLeftArrow && (
+                <button
+                  onClick={() => scrollBrands('left')}
+                  className="absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-white shadow-lg rounded-full p-2 hover:bg-gray-100 transition-colors border border-gray-200"
+                  aria-label="Scroll left"
+                >
+                  <FaChevronLeft className="text-gray-700" />
+                </button>
+              )}
+
+              {/* Scrollable Brand Buttons */}
+              <div
+                ref={brandScrollRef}
+                className="flex gap-2 sm:gap-3 overflow-x-auto scrollbar-none px-8 sm:px-10"
+                style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+              >
+                {/* All Brands Button */}
+                <Button
+                  onClick={() => handleBrandChange(null)}
+                  className={`px-4 sm:px-6 py-2 sm:py-3 text-xs sm:text-sm font-semibold whitespace-nowrap flex-shrink-0 ${
+                    selectedBrand === null
+                      ? "bg-santa text-white"
+                      : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                  }`}
+                >
+                  All Brands
+                </Button>
+
+                {/* Brand Buttons with Conditional Logo/Text Display */}
+                {availableBrands.map((brandItem) => (
+                  <Button
+                    key={brandItem.brand}
+                    onClick={() => handleBrandChange(brandItem.brand)}
+                    className={`px-4 sm:px-6 py-2 sm:py-3 text-xs sm:text-sm font-semibold whitespace-nowrap flex items-center gap-2 flex-shrink-0 ${
+                      selectedBrand === brandItem.brand
+                        ? "bg-santa text-white"
+                        : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                    }`}
+                  >
+                    {brandItem.logoUrl ? (
+                      <>
+                        <img
+                          src={brandItem.logoUrl}
+                          alt={brandItem.brand}
+                          className="h-5 sm:h-6 w-auto object-contain"
+                        />
+                        <span className="sr-only">{brandItem.brand}</span>
+                      </>
+                    ) : (
+                      <span>{brandItem.brand}</span>
+                    )}
+                  </Button>
+                ))}
+              </div>
+
+              {/* Right Arrow */}
+              {showRightArrow && (
+                <button
+                  onClick={() => scrollBrands('right')}
+                  className="absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-white shadow-lg rounded-full p-2 hover:bg-gray-100 transition-colors border border-gray-200"
+                  aria-label="Scroll right"
+                >
+                  <FaChevronRight className="text-gray-700" />
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+
         {/* Gender Filter Buttons */}
         <div className="bg-white rounded-xl p-6 mb-6 shadow-sm border">
           <h3 className="text-lg font-semibold text-gray-900 mb-4">Browse Toys</h3>
@@ -315,7 +457,7 @@ export default function SimpleGiftBuilder({ initialChildren }: SimpleGiftBuilder
             
             return (
               <div
-                key={item._id}
+                key={item._id?.toString()}
                 className="bg-white rounded-xl shadow-sm border hover:shadow-md transition-shadow overflow-hidden"
               >
                 {/* Image */}
@@ -333,7 +475,7 @@ export default function SimpleGiftBuilder({ initialChildren }: SimpleGiftBuilder
                   {/* Source indicator */}
                   {item.sourceType && (
                     <div className="absolute top-2 right-2 px-2 py-1 bg-black bg-opacity-60 text-white text-xs rounded">
-                      {item.sourceType === "master_catalog" ? "📦" : "🔍"}
+                      {item.sourceType === "manual" ? "📦" : "🔍"}
                     </div>
                   )}
                 </div>
@@ -366,16 +508,16 @@ export default function SimpleGiftBuilder({ initialChildren }: SimpleGiftBuilder
                   <div className="flex gap-2">
                     <Button
                       onClick={() => handleAddToList(item)}
-                      disabled={isGiftInList(item) || processingItems.has(item._id)}
+                      disabled={isGiftInList(item) || processingItems.has(item._id?.toString() || '')}
                       className={`flex-1 text-sm max-w-none ${
                         isGiftInList(item)
                           ? "bg-green-500 text-white cursor-default"
-                          : processingItems.has(item._id)
+                          : processingItems.has(item._id?.toString() || '')
                           ? "bg-gray-300 text-gray-600 cursor-not-allowed"
                           : "bg-santa text-white hover:bg-red-700"
                       }`}
                     >
-                      {processingItems.has(item._id) ? (
+                      {processingItems.has(item._id?.toString() || '') ? (
                         <>
                           <FaSpinner className="mr-1 animate-spin" />
                           Adding...
@@ -436,7 +578,7 @@ export default function SimpleGiftBuilder({ initialChildren }: SimpleGiftBuilder
               No toys found
             </h3>
             <p className="text-gray-600 mb-4">
-              Try selecting a different category
+              Try selecting a different category or brand
             </p>
           </div>
         )}

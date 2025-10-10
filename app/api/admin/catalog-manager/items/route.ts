@@ -51,11 +51,27 @@ export async function POST(request: NextRequest) {
   const data = await request.json();
   
   try {
+    // Check if item with this productUrl already exists
+    const existing = await MasterCatalog.findOne({ productUrl: data.productUrl });
+    if (existing) {
+      return NextResponse.json({ 
+        error: `This product URL already exists in the catalog. Item: "${existing.title}"` 
+      }, { status: 400 });
+    }
+    
     const item = new MasterCatalog(data);
     await item.save();
     return NextResponse.json({ success: true, item });
   } catch (error) {
     console.error('Error creating item:', error);
+    
+    // Handle duplicate key error specifically
+    if (error instanceof Error && error.message.includes('E11000')) {
+      return NextResponse.json({ 
+        error: 'This product URL already exists in the catalog. Please use a different URL or edit the existing item.' 
+      }, { status: 400 });
+    }
+    
     return NextResponse.json({ 
       error: error instanceof Error ? error.message : 'Failed to create item' 
     }, { status: 400 });

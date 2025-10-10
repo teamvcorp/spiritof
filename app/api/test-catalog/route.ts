@@ -24,7 +24,6 @@ export async function GET() {
       sampleItems: sampleItems.map(item => ({
         title: item.title,
         imageUrl: item.imageUrl,
-        blobUrl: item.blobUrl,
         productUrl: item.productUrl,
         sourceType: item.sourceType
       }))

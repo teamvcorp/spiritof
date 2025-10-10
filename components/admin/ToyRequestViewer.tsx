@@ -130,6 +130,7 @@ export default function ToyRequestViewer({ isOpen, onClose }: ToyRequestViewerPr
     setCatalogFormData({
       title: request.itemTitle,
       brand: '',
+      brandLogoUrl: '',
       category: '',
       description: request.itemDescription || '',
       gender: 'neutral',
