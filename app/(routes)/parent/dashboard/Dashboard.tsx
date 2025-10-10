@@ -50,10 +50,18 @@ async function createChildWrapper(formData: FormData) {
 
   if (!displayName) return { error: "Display name is required" };
 
-  const shareSlug = await generateUniqueShareSlug();
-
-  // Check if this parent already has children (meaning this is an additional child)
+  // Check existing budget allocation
   const existingChildren = await Child.find({ parentId: parent._id });
+  const currentTotalAllocation = existingChildren.reduce((sum, child) => sum + (child.percentAllocation || 0), 0);
+  const newTotalAllocation = currentTotalAllocation + percentAllocation;
+  
+  if (newTotalAllocation > 100) {
+    return { 
+      error: `Budget exceeded! You've already allocated ${currentTotalAllocation}% to existing children. You can only allocate ${100 - currentTotalAllocation}% more.` 
+    };
+  }
+
+  const shareSlug = await generateUniqueShareSlug();
   const hasCompletedOrder = parent.welcomePacketOrders?.some(order => order.status === 'completed');
 
   if (hasCompletedOrder && existingChildren.length > 0) {
@@ -199,6 +207,8 @@ type DashboardProps = {
     payment?: string;
     session_id?: string;
     welcome_packet?: string;
+    child_welcome_packet?: string;
+    child?: string;
   };
 };
 

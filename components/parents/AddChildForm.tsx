@@ -13,11 +13,66 @@ interface AddChildFormProps {
   } | void>;
 }
 
+interface WelcomePacketItem {
+  id: string;
+  name: string;
+  description: string;
+  price: number;
+}
+
+const WELCOME_PACKET_ITEMS: WelcomePacketItem[] = [
+  {
+    id: 'shirt',
+    name: 'Christmas Spirit T-Shirt',
+    description: 'Festive holiday shirt to spread Christmas cheer',
+    price: 25,
+  },
+  {
+    id: 'cocoa-mug',
+    name: 'Hot Cocoa Mug',
+    description: 'Perfect for warming up with hot chocolate',
+    price: 10,
+  },
+  {
+    id: 'santa-hat',
+    name: 'Santa Hat',
+    description: 'Classic red Santa hat for the holidays',
+    price: 10,
+  },
+  {
+    id: 'cozy-hoodie',
+    name: 'Cozy Holiday Hoodie',
+    description: 'Warm and comfortable hoodie for cold winter days',
+    price: 35,
+  }
+];
+
+const ENROLLMENT_FEE = 5;
+
 export default function AddChildForm({ onSubmit }: AddChildFormProps) {
   const [childName, setChildName] = useState("");
   const [percentAllocation, setPercentAllocation] = useState(0);
   const [avatarUrl, setAvatarUrl] = useState("");
   const [uploadingImage, setUploadingImage] = useState(false);
+  const [selectedItems, setSelectedItems] = useState<string[]>([]);
+
+  // Toggle item selection
+  const toggleItem = (itemId: string) => {
+    setSelectedItems(prev => 
+      prev.includes(itemId) 
+        ? prev.filter(id => id !== itemId)
+        : [...prev, itemId]
+    );
+  };
+
+  // Calculate total
+  const calculateTotal = () => {
+    const itemsTotal = selectedItems.reduce((total, itemId) => {
+      const item = WELCOME_PACKET_ITEMS.find(i => i.id === itemId);
+      return total + (item?.price || 0);
+    }, 0);
+    return ENROLLMENT_FEE + itemsTotal;
+  };
 
   // Validation helpers
   const isNameValid = childName.trim().length > 0;
@@ -65,6 +120,7 @@ export default function AddChildForm({ onSubmit }: AddChildFormProps) {
     formData.append('displayName', childName);
     formData.append('percentAllocation', percentAllocation.toString());
     formData.append('avatarUrl', avatarUrl);
+    formData.append('selectedItems', JSON.stringify(selectedItems));
     
     const result = await onSubmit(formData);
     
@@ -195,6 +251,82 @@ export default function AddChildForm({ onSubmit }: AddChildFormProps) {
           />
         </div>
         <p className="text-xs text-gray-500">Upload a photo to personalize their profile</p>
+      </div>
+
+      {/* Welcome Packet Items Selection */}
+      <div className="space-y-3">
+        <label className="flex items-center text-sm font-medium text-gray-700">
+          <span className="text-santa mr-2">🎁</span>
+          Welcome Packet Items
+        </label>
+        <div className="bg-white/80 rounded-lg p-4 border border-gray-200 space-y-3">
+          {/* Required Welcome Letter */}
+          <div className="flex items-start space-x-3 p-3 bg-green-50 rounded-lg border border-green-200">
+            <div className="flex items-center h-5">
+              <input
+                type="checkbox"
+                checked={true}
+                disabled={true}
+                className="w-5 h-5 text-green-600 border-gray-300 rounded focus:ring-green-500 cursor-not-allowed"
+              />
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center justify-between">
+                <p className="text-sm font-semibold text-green-900">
+                  Welcome Letter Package
+                  <span className="ml-2 text-xs bg-green-600 text-white px-2 py-0.5 rounded-full">Required</span>
+                </p>
+                <p className="text-sm font-bold text-green-900">${ENROLLMENT_FEE}</p>
+              </div>
+              <p className="text-xs text-green-700 mt-1">
+                Personalized welcome letter and login instructions for {childName || 'your child'}
+              </p>
+            </div>
+          </div>
+
+          {/* Optional Items */}
+          {WELCOME_PACKET_ITEMS.map((item) => (
+            <div
+              key={item.id}
+              className={`flex items-start space-x-3 p-3 rounded-lg border cursor-pointer transition-all ${
+                selectedItems.includes(item.id)
+                  ? 'bg-santa-50 border-santa-300'
+                  : 'bg-white hover:bg-gray-50 border-gray-200'
+              }`}
+              onClick={() => toggleItem(item.id)}
+            >
+              <div className="flex items-center h-5">
+                <input
+                  type="checkbox"
+                  checked={selectedItems.includes(item.id)}
+                  onChange={() => toggleItem(item.id)}
+                  className="w-5 h-5 text-santa border-gray-300 rounded focus:ring-santa cursor-pointer"
+                />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center justify-between">
+                  <p className="text-sm font-semibold text-gray-900">{item.name}</p>
+                  <p className="text-sm font-bold text-gray-900">${item.price}</p>
+                </div>
+                <p className="text-xs text-gray-600 mt-1">{item.description}</p>
+              </div>
+            </div>
+          ))}
+
+          {/* Total */}
+          <div className="pt-3 border-t border-gray-200">
+            <div className="flex items-center justify-between">
+              <p className="text-base font-bold text-gray-900">Total Welcome Packet Cost:</p>
+              <p className="text-xl font-bold text-santa">${calculateTotal()}</p>
+            </div>
+            <p className="text-xs text-gray-500 mt-1">
+              {selectedItems.length === 0 
+                ? "Select additional items to customize the welcome packet"
+                : `${selectedItems.length} additional item${selectedItems.length === 1 ? '' : 's'} selected`
+              }
+            </p>
+          </div>
+        </div>
       </div>
 
       {/* Preview Section */}

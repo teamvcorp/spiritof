@@ -55,7 +55,7 @@ export function GameModal({ isOpen, onClose, game }: GameModalProps) {
       <div 
         data-game-modal
         tabIndex={-1}
-        className="bg-white rounded-xl shadow-2xl relative flex flex-col overflow-hidden outline-none"
+        className="bg-evergreen rounded-xl shadow-2xl relative flex flex-col overflow-hidden outline-none"
         style={{ 
           width: modalWidth,
           height: modalHeight,

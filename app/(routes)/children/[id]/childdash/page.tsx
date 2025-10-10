@@ -94,8 +94,8 @@ const {id: childId} = await params;
         <Cards className="mt-10 mb-10">
           <Card className="flex flex-col justify-between p-6 text-center text-center bg-santa border-0 text-white md:flex-row flex-wrap ">
           <div className="flex-1 space-y-2 md:items-start md:justify-center">
-            <h2 className="text-xl sm:text-2xl font-semibold">My Naughty Nice Meter</h2>
-            <p className="text-sm opacity-90">
+            <h2 className="text-xl sm:text-2xl uppercase font-semibold">My Naughty Nice Meter</h2>
+            <p className="text-md opacity-90 mb-10">
               {nicenessPercentage >= 80 
                 ? "You're being amazing! Santa is very impressed!" 
                 : nicenessPercentage >= 50 
@@ -108,7 +108,7 @@ const {id: childId} = await params;
                 {/* Animated Naughty Nice Meter */}
                 <NaughtyNiceMeter percentage={nicenessPercentage} />
               </div>
-              <div className='flex flex-col items-center gap-3 sm:gap-4'>
+              <div className='flex flex-col items-center  gap-3 sm:gap-4'>
                 <h3 className='text-lg sm:text-xl'>Latest Vote</h3>
                 <FaThumbsUp className="shrink-0" size={36} />
               </div>
@@ -116,7 +116,7 @@ const {id: childId} = await params;
           </Card>
 
           <Card className="flex flex-col justify-between  text-center bg-evergreen border-0 text-white">
-            <h2 className="text-2xl font-semibold">My Christmas Magic</h2>
+            <h2 className="text-2xl uppercase font-semibold">My Christmas Magic</h2>
             <div className='flex justify-center gap-x-20 items-center '>
               <Image
                 src="/images/christmasMagic.png"
@@ -148,7 +148,7 @@ const {id: childId} = await params;
 
         <Cards>
           <Card className="flex flex-col justify-between text-center bg-berryPink border-0 text-white">
-            <h1 className="text-2xl font-semibold pb-6 ">My Christmas List</h1>
+            <h2 className="text-2xl font-semibold uppercase pb-6 ">My Christmas List</h2>
             
             {giftList.length > 0 ? (
               <>
@@ -209,7 +209,7 @@ const {id: childId} = await params;
                 </div>
                 <div className='flex justify-center items-center pt-6'>
                   <Link href="/children/list">
-                    <Button className='bg-santa min-w-40'>
+                    <Button className='link-btn santa-btn'>
                       <FaPlus className="mr-2" />
                       Add Your First Gift
                     </Button>
@@ -222,9 +222,9 @@ const {id: childId} = await params;
 
         {/* Fun Games Section */}
         <Cards className="mt-6">
-          <Card className="bg-gradient-to-r from-blueberry to-berryPink border-0 text-white">
-            <div className="text-center p-6">
-              <h2 className="text-2xl font-semibold mb-4">🎮 Christmas Games</h2>
+          <Card className="bg-blueberry border-0 text-white ">
+            <div className="text-center p-6 flex flex-col items-center justify-center">
+              <h2 className="text-2xl font-semibold mb-4 uppercase">Christmas Games</h2>
               <p className="text-white/90 mb-6">
                 Take a break and play some fun Christmas games while you wait for Santa!
               </p>
@@ -232,7 +232,7 @@ const {id: childId} = await params;
               <GameButton 
                 showAllGames={true}
                 variant="button"
-                className="bg-white text-blueberry hover:bg-gray-100 font-bold px-8 py-3 text-lg"
+                className="link-btn santa-btn hover:bg-gray-100 font-bold px-8 py-3 text-lg"
               />
             </div>
           </Card>

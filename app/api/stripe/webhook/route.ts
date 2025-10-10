@@ -45,6 +45,11 @@ export async function POST(req: NextRequest) {
         await handleCheckoutCompleted(event.data.object as Stripe.Checkout.Session);
         break;
       
+      case 'checkout.session.expired':
+        console.log(`⏰ Processing checkout expired/cancelled`);
+        await handleCheckoutExpired(event.data.object as Stripe.Checkout.Session);
+        break;
+      
       case 'setup_intent.succeeded':
         console.log(`🔐 Processing setup intent succeeded`);
         await handleSetupIntentSucceeded(event.data.object as Stripe.SetupIntent);
@@ -292,6 +297,63 @@ async function handleChildWelcomePacketOrder(session: Stripe.Checkout.Session) {
       childName: order.childName,
       amount: order.totalAmount 
     })));
+  }
+}
+
+async function handleCheckoutExpired(session: Stripe.Checkout.Session) {
+  const { metadata } = session;
+  
+  console.log(`⏰ Webhook: Checkout expired/cancelled - Type: ${metadata?.type}, Session: ${session.id}`);
+  
+  // Only handle child welcome packet cancellations (cleanup needed)
+  if (metadata?.type === 'child_welcome_packet') {
+    const parentId = metadata.parentId;
+    const childId = metadata.childId;
+    const childName = metadata.childName;
+    
+    console.log(`🧹 Cleaning up cancelled child welcome packet - Parent: ${parentId}, Child: ${childName}`);
+    
+    if (!parentId || !childId) {
+      console.log(`❌ Missing parentId (${parentId}) or childId (${childId})`);
+      return;
+    }
+    
+    const parent = await Parent.findById(parentId);
+    if (!parent) {
+      console.log(`❌ Parent not found: ${parentId}`);
+      return;
+    }
+    
+    // Remove the pending welcome packet order
+    if (parent.welcomePacketOrders) {
+      const orderIndex = parent.welcomePacketOrders.findIndex(
+        order => order.stripeSessionId === session.id && order.status === 'pending'
+      );
+      
+      if (orderIndex >= 0) {
+        parent.welcomePacketOrders.splice(orderIndex, 1);
+        await parent.save();
+        console.log(`✅ Removed pending welcome packet order for session ${session.id}`);
+      } else {
+        console.log(`⚠️  No pending order found to remove for session ${session.id}`);
+      }
+    }
+    
+    // Delete the child that was created
+    try {
+      const deletedChild = await Child.findByIdAndDelete(childId);
+      if (deletedChild) {
+        console.log(`✅ Deleted child ${childName} (${childId}) - payment was cancelled`);
+      } else {
+        console.log(`⚠️  Child ${childId} not found (may have been already deleted)`);
+      }
+    } catch (error) {
+      console.error(`❌ Error deleting child ${childId}:`, error);
+    }
+    
+    console.log(`🎯 Cleanup complete for cancelled child welcome packet - Child ${childName} removed`);
+  } else {
+    console.log(`ℹ️  Checkout expired for type: ${metadata?.type} - no cleanup needed`);
   }
 }
 

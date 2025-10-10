@@ -14,6 +14,8 @@ type PageProps = {
     payment?: string; 
     session_id?: string;
     welcome_packet?: string;
+    child_welcome_packet?: string;
+    child?: string;
   }>;
 };
 

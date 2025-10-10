@@ -45,7 +45,7 @@ export function GameButton({
         {targetGame ? (
           <button
             onClick={() => openGame(targetGame)}
-            className={`bg-gradient-to-r from-blueberry to-berryPink text-white px-6 py-3 rounded-xl font-bold shadow-lg hover:scale-105 active:scale-95 transition-all duration-200 flex items-center gap-2 ${className}`}
+            className={`bg-santa text-white px-6 py-3 rounded-xl font-bold shadow-lg hover:scale-105 active:scale-95 transition-all duration-200 flex items-center gap-2 ${className}`}
           >
             <Play size={20} />
             Play {targetGame.title}
@@ -97,11 +97,11 @@ export function GameButton({
       <>
         <div 
           onClick={() => openGame(targetGame)}
-          className={`bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-200 cursor-pointer hover:scale-105 active:scale-95 overflow-hidden ${className}`}
+          className={`bg-evergreen rounded-2xl shadow-lg hover:shadow-xl transition-all duration-200 cursor-pointer hover:scale-105 active:scale-95 overflow-hidden ${className}`}
         >
-          <div className="bg-gradient-to-br from-santa/20 to-berryPink/20 p-6">
+          <div className=" p-6">
             <div className="flex items-start justify-between mb-4">
-              <div className="bg-white p-3 rounded-lg shadow-sm">
+              <div className=" p-3 rounded-lg shadow-sm">
                 <Gamepad2 size={24} className="text-santa" />
               </div>
               {targetGame.difficulty && (
@@ -163,7 +163,7 @@ export function GameButton({
         ) : showAllGames ? (
           <button
             onClick={openGameSelector}
-            className={`bg-gradient-to-r from-evergreen to-blueberry text-white px-4 py-2 rounded-lg font-semibold hover:scale-105 active:scale-95 transition-all duration-200 flex items-center gap-2 text-sm ${className}`}
+            className={` text-white px-4 py-2 rounded-lg font-semibold hover:scale-105 active:scale-95 transition-all duration-200 flex items-center gap-2 text-sm ${className}`}
           >
             <Gamepad2 size={16} />
             Games
@@ -212,13 +212,13 @@ function GameSelectorModal({ isOpen, onClose, onSelectGame }: GameSelectorModalP
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-      <div className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col">
+      <div className="bg-evergreen rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col">
         {/* Header */}
         <div className="bg-gradient-to-r from-evergreen to-blueberry text-white p-6">
           <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-2xl font-bold mb-2">Choose a Game to Play!</h2>
-              <p className="text-white/90">Pick any game you'd like to play</p>
+            <div className='flex flex-col items-start'>
+              <h2 className="lg:text-4xl text-xl lg:font-semibold uppercase mb-2">Choose a Game to Play!</h2>
+              <p className="text-white left">Pick any game you'd like to play</p>
             </div>
             <button
               onClick={onClose}
@@ -239,7 +239,7 @@ function GameSelectorModal({ isOpen, onClose, onSelectGame }: GameSelectorModalP
                 className={`px-3 py-1 rounded-full text-sm font-medium transition-colors ${
                   selectedCategory === category
                     ? 'bg-santa text-white'
-                    : 'bg-white text-gray-600 hover:bg-gray-100'
+                    : ' text-gray-600 hover:bg-gray-200'
                 }`}
               >
                 {category === 'all' ? 'All Games' : (category || '').charAt(0).toUpperCase() + (category || '').slice(1)}

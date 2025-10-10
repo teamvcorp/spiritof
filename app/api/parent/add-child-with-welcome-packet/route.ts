@@ -50,7 +50,7 @@ const WELCOME_PACKET_ITEMS: WelcomePacketItem[] = [
   }
 ];
 
-const ENROLLMENT_FEE = 10;
+const ENROLLMENT_FEE = 5;
 const ENROLLMENT_PRODUCT_ID = 'prod_TBOjbHfeic8jZb';
 
 export async function POST(req: NextRequest) {
@@ -88,13 +88,38 @@ export async function POST(req: NextRequest) {
     const displayName = formData.get('displayName')?.toString()?.trim();
     const percentAllocation = Number(formData.get('percentAllocation') || 0);
     const avatarUrl = formData.get('avatarUrl')?.toString()?.trim();
+    const selectedItemsJson = formData.get('selectedItems')?.toString();
+    
+    // Parse custom selected items from form data
+    let customSelectedItems: string[] = [];
+    if (selectedItemsJson) {
+      try {
+        customSelectedItems = JSON.parse(selectedItemsJson);
+      } catch (error) {
+        console.error('Failed to parse selectedItems:', error);
+        customSelectedItems = [];
+      }
+    }
 
     if (!displayName || !displayName.trim()) {
       console.log("❌ Missing displayName in form data");
       return NextResponse.json({ error: "Child name is required" }, { status: 400 });
     }
 
-    console.log(`👶 Adding child: ${displayName}, allocation: ${percentAllocation}%, avatar: ${avatarUrl || 'none'}`);
+    // Check existing budget allocation
+    const existingChildren = await Child.find({ parentId: parent._id });
+    const currentTotalAllocation = existingChildren.reduce((sum, child) => sum + (child.percentAllocation || 0), 0);
+    const newTotalAllocation = currentTotalAllocation + percentAllocation;
+    
+    if (newTotalAllocation > 100) {
+      console.log(`❌ Budget exceeded: current ${currentTotalAllocation}%, trying to add ${percentAllocation}%, total would be ${newTotalAllocation}%`);
+      return NextResponse.json({ 
+        error: `Budget exceeded! You've already allocated ${currentTotalAllocation}% to existing children. You can only allocate ${100 - currentTotalAllocation}% more.` 
+      }, { status: 400 });
+    }
+
+    console.log(`👶 Adding child: ${displayName}, allocation: ${percentAllocation}%, avatar: ${avatarUrl || 'none'}, items: ${customSelectedItems.join(', ') || 'none'}`);
+    console.log(`💰 Budget check passed: ${currentTotalAllocation}% used, adding ${percentAllocation}%, total: ${newTotalAllocation}%`);
 
     // Generate unique share slug with collision handling
     const shareSlug = await generateUniqueShareSlug();
@@ -137,9 +162,9 @@ export async function POST(req: NextRequest) {
 
     console.log(`👶 Created new child: ${displayName}`);
 
-    // Get the original welcome packet order to determine what items to include
+    // Get the original welcome packet order for shipping address
     const originalOrder = parent.welcomePacketOrders?.find(order => order.status === 'completed');
-    console.log(`🔍 Found original order:`, originalOrder ? 'Yes' : 'No');
+    console.log(`🔍 Found original order for shipping address:`, originalOrder ? 'Yes' : 'No');
     
     if (!originalOrder) {
       // This shouldn't happen if hasWelcomePacket check passed, but just in case
@@ -150,9 +175,9 @@ export async function POST(req: NextRequest) {
       }, { status: 400 });
     }
 
-    // Calculate total for this child's welcome packet (same items as original)
-    const selectedItems = originalOrder.selectedItems || [];
-    const itemsTotal = selectedItems.reduce((total, itemId) => {
+    // Calculate total for this child's welcome packet (use custom selected items)
+    console.log(`🎁 Using custom selected items for ${displayName}: ${customSelectedItems.join(', ') || 'none'}`);
+    const itemsTotal = customSelectedItems.reduce((total, itemId) => {
       const item = WELCOME_PACKET_ITEMS.find(i => i.id === itemId);
       return total + (item?.price || 0);
     }, 0);
@@ -180,8 +205,8 @@ export async function POST(req: NextRequest) {
       }
     ];
 
-    // Add the same selected items from original order
-    selectedItems.forEach((itemId: string) => {
+    // Add the custom selected items
+    customSelectedItems.forEach((itemId: string) => {
       const item = WELCOME_PACKET_ITEMS.find(i => i.id === itemId);
       if (item) {
         lineItems.push({
@@ -218,7 +243,7 @@ export async function POST(req: NextRequest) {
         parentId: parent._id.toString(),
         childId: newChild._id.toString(),
         childName: displayName,
-        selectedItems: JSON.stringify(selectedItems),
+        selectedItems: JSON.stringify(customSelectedItems),
         totalAmount: totalAmount.toString()
       },
       customer_email: session.user.email || undefined,
@@ -235,7 +260,7 @@ export async function POST(req: NextRequest) {
 
     parent.welcomePacketOrders.push({
       stripeSessionId: checkoutSession.id,
-      selectedItems: selectedItems,
+      selectedItems: customSelectedItems,
       totalAmount,
       status: 'pending',
       shippingAddress: originalOrder.shippingAddress, // Pre-populate with existing address
@@ -260,7 +285,7 @@ export async function POST(req: NextRequest) {
         checkoutUrl: checkoutSession.url,
         sessionId: checkoutSession.id,
         totalAmount,
-        items: selectedItems
+        items: customSelectedItems
       }
     });
 

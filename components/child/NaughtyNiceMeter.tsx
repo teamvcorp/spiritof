@@ -28,7 +28,7 @@ export default function NaughtyNiceMeter({ percentage, className = "" }: Naughty
       {/* Base meter image */}
       <div className="relative w-full max-w-sm mx-auto">
         <Image
-          src="/images/meter.png"
+          src="/images/meterNoNeedle.png"
           alt="Naughty Nice Meter"
           width={300}
           height={200}
@@ -101,11 +101,11 @@ export default function NaughtyNiceMeter({ percentage, className = "" }: Naughty
       </div>
 
       {/* Percentage display below the meter */}
-      <div className="text-center mt-3">
-        <div className="text-2xl font-bold text-gray-700">
+      <div className="text-center mt-3 ">
+        <div className="text-2xl font-bold text-white">
           {Math.round(animatedPercentage)}%
         </div>
-        <div className="text-sm font-medium text-gray-600">
+        <div className="text-sm font-medium text-white">
           {animatedPercentage >= 67 ? "Nice!" : 
            animatedPercentage >= 34 ? "Could Be Better" : 
            "Naughty"}
