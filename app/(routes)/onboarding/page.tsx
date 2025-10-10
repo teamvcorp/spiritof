@@ -42,7 +42,7 @@ async function submitOnboarding(formData: FormData) {
   if (user.parentId) {
     user.isParentOnboarded = true;
     await user.save();
-    redirect("/parent/dashboard");
+    redirect("/children/list");
   }
 
   // Check if a parent with this email already exists
@@ -61,7 +61,7 @@ async function submitOnboarding(formData: FormData) {
       { new: true, runValidators: true }
     );
     
-    redirect("/parent/dashboard");
+    redirect("/children/list");
   }
 
   // Create new parent with Stripe customer ID from verification
@@ -124,7 +124,7 @@ export default async function OnboardingPage({
   const user = await User.findById(session.user.id).lean();
   
   if (user?.isParentOnboarded) {
-    redirect("/parent/dashboard");
+    redirect("/children/list");
   }
 
   const { verified, customer_id, error } = await searchParams;

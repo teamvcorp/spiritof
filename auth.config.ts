@@ -115,8 +115,12 @@ export const authConfig = {
       if (user?.email) {
         await dbConnect();
         
+        // Check what provider is being used
+        console.log('🔐 JWT callback - provider:', account?.provider, 'email:', user.email);
+        
         // For Google OAuth and Email (magic link), ensure user exists (credentials users already exist from signup)
-        if (account?.provider === "google" || account?.provider === "resend") {
+        // Resend provider ID is "resend" or might be "email"
+        if (account?.provider === "google" || account?.provider === "resend" || account?.provider === "email") {
           await ensureUser(user.email, user.name ?? undefined, user.image ?? undefined);
         }
 
@@ -125,11 +129,14 @@ export const authConfig = {
           .lean<{ _id: Types.ObjectId; isParentOnboarded?: boolean; parentId?: Types.ObjectId | null; admin?: boolean }>();
 
         if (dbUser) {
+          console.log('👤 Found user in DB:', dbUser._id, 'isParentOnboarded:', dbUser.isParentOnboarded);
           token.uid = String(dbUser._id);
           token.role = "user";
           token.isParentOnboarded = !!dbUser.isParentOnboarded;
           token.parentId = dbUser.parentId ? String(dbUser.parentId) : null;
           token.admin = !!dbUser.admin;
+        } else {
+          console.log('❌ No user found in DB for email:', user.email);
         }
       } else if (token.uid) {
         // Subsequent requests: refresh flags from database

@@ -9,7 +9,7 @@ export default async function AuthPage() {
   // If already logged in, redirect appropriately
   if (session) {
     if (session.isParentOnboarded) {
-      redirect("/parent/dashboard");
+      redirect("/children/list");
     } else {
       redirect("/onboarding");
     }

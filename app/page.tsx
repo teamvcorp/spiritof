@@ -38,11 +38,11 @@ export default async function Home() {
         </Link>
       );
     } else {
-      // Fully set up - go to dashboard
+      // Fully set up - go to children list (no PIN required, child-friendly)
       return (
-        <Link href="/parent/dashboard">
+        <Link href="/children/list">
           <Button className='bg-santa uppercase text-white mt-2 self-center md:self-start'>
-            Go to Dashboard<FaArrowAltCircleRight/>
+            View Christmas Lists<FaArrowAltCircleRight/>
           </Button>
         </Link>
       );
