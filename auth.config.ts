@@ -1,6 +1,7 @@
 import type { NextAuthConfig, Session, Account, User as NextAuthUser } from "next-auth";
 import type { JWT } from "next-auth/jwt";
 import Google from "next-auth/providers/google";
+import Resend from "next-auth/providers/resend";
 import Credentials from "next-auth/providers/credentials";
 import { NextRequest, NextResponse } from "next/server";
 import { ensureUser } from "@/lib/auth/ensureUser";
@@ -110,12 +111,12 @@ export const authConfig = {
       user?: NextAuthUser | undefined;
       account?: Account | null | undefined;
     }): Promise<AppJWT> {
-      // On first login (Google OR Credentials) we ensure a DB user, then read flags from DB.
+      // On first login (Google, Email, OR Credentials) we ensure a DB user, then read flags from DB.
       if (user?.email) {
         await dbConnect();
         
-        // For Google OAuth, ensure user exists (credentials users already exist from signup)
-        if (account?.provider === "google") {
+        // For Google OAuth and Email (magic link), ensure user exists (credentials users already exist from signup)
+        if (account?.provider === "google" || account?.provider === "resend") {
           await ensureUser(user.email, user.name ?? undefined, user.image ?? undefined);
         }
 
@@ -188,6 +189,11 @@ export const authConfig = {
           response_type: "code",
         },
       },
+    }),
+
+    Resend({
+      apiKey: process.env.RESEND_API_KEY!,
+      from: process.env.RESEND_FROM_EMAIL || "noreply@spiritofsanta.club",
     }),
 
     Credentials({
