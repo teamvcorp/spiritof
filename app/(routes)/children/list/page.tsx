@@ -3,7 +3,7 @@ import { auth } from "@/auth";
 import { redirect } from "next/navigation";
 import { Parent } from "@/models/Parent";
 import { Child } from "@/models/Child";
-import SimpleGiftBuilder from "./ui/SimpleGiftBuilder";
+import { StyledGiftBuilder } from "./ui/StyledGiftBuilder";
 import type { IChild } from "@/types/childType";
 
 export default async function ChildrenListPage() {
@@ -32,7 +32,7 @@ export default async function ChildrenListPage() {
   }));
 
   return (
-    <SimpleGiftBuilder 
+    <StyledGiftBuilder 
       initialChildren={childrenFormatted} 
     />
   );
