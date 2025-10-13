@@ -52,7 +52,7 @@ export default function Footer({
   const year = new Date().getFullYear();
 
   return (
-    <footer role="contentinfo" className={cn("fixed bottom-0 left-0 right-0 bg-gradient-to-r from-[#005574] to-[#032255] text-white z-30 border-t border-white/10 shadow-[0_-4px_12px_rgba(0,0,0,0.15)]", className)}>
+    <footer role="contentinfo" className={cn("hidden md:block fixed bottom-0 left-0 right-0 bg-gradient-to-r from-[#005574] to-[#032255] text-white z-30 border-t border-white/10 shadow-[0_-4px_12px_rgba(0,0,0,0.15)]", className)}>
       <Container py="sm" px="md">
         {/* Compact footer for fixed positioning */}
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4">

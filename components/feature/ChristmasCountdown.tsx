@@ -111,7 +111,7 @@ export default function ChristmasCountdown() {
           top: `${position.y}px`,
           zIndex: 9999,
         }}
-        className={`${isDragging ? 'cursor-grabbing' : 'cursor-grab'}`}
+        className={`hidden md:block ${isDragging ? 'cursor-grabbing' : 'cursor-grab'}`}
       >
         <div
           onMouseDown={handleMouseDown}
@@ -136,7 +136,7 @@ export default function ChristmasCountdown() {
         top: `${position.y}px`,
         zIndex: 9999,
       }}
-      className={`${isDragging ? 'cursor-grabbing' : 'cursor-grab'}`}
+      className={`hidden md:block ${isDragging ? 'cursor-grabbing' : 'cursor-grab'}`}
     >
       <div
         onMouseDown={handleMouseDown}

@@ -53,12 +53,12 @@ export default function MobileMenu() {
           </div>
 
           {/* Auth Section */}
-          <div className="mb-6 pb-6 border-b border-gray-200">
+          <div className="mb-6 pb-6 border-b border-gray-200 flex flex-col items-stretch">
             <HeaderAuth />
           </div>
 
           {/* Navigation Links */}
-          <nav className="space-y-4">
+          <nav className="flex flex-col space-y-4">
             <Link
               href="/"
               onClick={closeMenu}

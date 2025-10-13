@@ -29,6 +29,17 @@ Enable parents to manage children's Christmas lists while fostering community ge
 
 ## 🎨 Design System & Brand Identity
 
+### **Winter/Northern Lights Theme**
+- **Background Gradient**: Deep ocean colors transitioning from teal to dark blue
+  - Primary: `#005574` (deep teal)
+  - Mid: `#032255` (deep blue)
+  - Dark: `#001a33` (darker blue)
+- **Frosted Glass Containers**: `bg-white/95 backdrop-blur-sm rounded-lg`
+- **Ice Sheet Effects**: White translucent containers with diagonal light reflection overlays
+- **Depth Shadows**: Consistent `shadow-[0_4px_12px_rgba(0,0,0,0.15)]` across cards
+- **Northern Lights**: Animated aurora borealis effects with pulse animations
+- **Falling Snow**: Customizable snow intensity (light/heavy/blizzard) via draggable widget
+
 ### **Christmas Color Palette**
 ```css
 --santa: #ea1938        /* Primary red for CTAs */
@@ -49,12 +60,16 @@ Enable parents to manage children's Christmas lists while fostering community ge
 - **Active States**: `active:scale-95` for tactile feedback
 - **Focus**: Ring-based focus indicators for accessibility
 - **Responsive**: Mobile-first design with `sm:`, `md:` breakpoints
+- **Fixed Header**: Header fixed to viewport top with centered navigation
+- **Draggable Widgets**: Christmas countdown with integrated snow controls
 
 ### **Component Architecture**
 - **Server Components**: Data fetching, authentication checks
 - **Client Components**: Interactive elements, forms, modals
 - **Shared UI**: Reusable Button, Card, Container components
 - **Feature Components**: Domain-specific logic (child/, parents/, auth/)
+- **Effect Components**: Northern lights, falling snow, fairy dust animations
+- **Fixed Elements**: Header (z-50) with centered flex navigation layout
 
 ## 📊 Data Models & Business Logic
 
@@ -209,12 +224,15 @@ Enable parents to manage children's Christmas lists while fostering community ge
 - **Wallet Management**: Balance display, Stripe top-up, transaction history
 - **Child Oversight**: Score voting, budget allocation, gift approval
 - **Settings Management**: PIN updates, child limits, donation controls
+- **Winter Theme**: Ice sheet containers with frosted glass effects
 
 ### **2. Child Interface**
-- **Gift Discovery**: AI-powered catalog search with filters
+- **Gift Discovery**: AI-powered catalog search with filters on winter-themed pages
 - **List Management**: Add/remove gifts with parent-set limits
-- **Magic Tracking**: Score display with Christmas countdown
+- **Shelf Display**: Toys organized on virtual shelves (5 per shelf) with Christmas lights
+- **Magic Tracking**: Score display with Christmas countdown and fairy dust animation
 - **Sharing**: QR code generation for community support
+- **Winter Aesthetic**: Deep ocean gradients with ice sheet effect containers
 
 ### **3. Community Sharing**
 - **Public Pages**: `/share/[slug]` for external donations
@@ -275,6 +293,13 @@ npm run dev:stripe   # Stripe webhook listener
 - [x] Admin catalog management tools
 - [x] Responsive UI with Christmas theming
 - [x] Vercel Blob image storage integration
+- [x] Winter/Northern Lights theme with deep ocean gradients
+- [x] Frosted glass containers with ice sheet effects
+- [x] Fixed header with centered navigation layout
+- [x] Draggable Christmas countdown widget with integrated snow controls
+- [x] Shelf system for toy display (5 items per shelf with Christmas lights)
+- [x] Fairy dust animation effects on magic score displays
+- [x] Northern lights and falling snow background effects
 
 ### **🔄 Active Development**
 - Mobile API for Flutter companion app
