@@ -24,38 +24,54 @@ export default async function ChildrenPickerPage() {
     .lean<IChild[]>();
 
   return (
-    <main className="min-h-[80vh] flex flex-col items-center justify-center px-4  bg-evergreen ">
-      <h1 className="text-3xl sm:text-4xl font-semibold mb-8 text-white">🎄 Choose Your Little Elf 🎄</h1>
-      
-      {children.length === 0 ? (
-        <div className="text-sm text-muted-foreground border rounded-lg p-6 text-white">
-          No children found yet. Add children from your <Link href="/parent/dashboard" className="underline">Parent Dashboard</Link>.
+    <main className="min-h-screen bg-gradient-to-b from-[#005574] via-[#032255] to-[#001a33] flex flex-col items-center justify-center px-4 py-16">
+      {/* Ice sheet container */}
+      <div className="relative bg-white/95 backdrop-blur-sm rounded-2xl shadow-[0_4px_12px_rgba(0,0,0,0.15)] p-8 sm:p-12 max-w-6xl w-full">
+        {/* Light reflection overlay */}
+        <div className="absolute inset-0 rounded-2xl overflow-hidden pointer-events-none">
+          <div className="absolute top-0 left-0 right-0 h-32 bg-gradient-to-b from-white/20 to-transparent transform -skew-y-3"></div>
         </div>
-      ) : (
-        <ul className="flex justify-center flex-wrap gap-20 max-w-5xl w-full">
-          {children.map((c) => {
-            const id = String(c._id);
-            return (
-              <li key={id} className="flex flex-col items-center gap-3">
-                <Link href={`/children/${id}/childdash`} className="group focus:outline-none">
-                  <div className="h-28 w-28 sm:h-32 sm:w-32 rounded-full overflow-hidden ring-2 ring-transparent group-hover:ring-primary transition-all duration-200 transform hover:scale-110 shadow-md bg-white text-santa">
-                    {c.avatarUrl ? (
-                      <img src={c.avatarUrl} alt={c.displayName} className="h-full w-full object-cover" />
-                    ) : (
-                      <div className="h-full w-full bg-muted flex items-center justify-center text-5xl font-semibold">
-                        {c.displayName?.[0]?.toUpperCase() ?? "?"}
+
+        {/* Content */}
+        <div className="relative z-10">
+          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-paytone-one text-center mb-12 text-gray-800">
+            🎄 Choose Your Little Elf 🎄
+          </h1>
+          
+          {children.length === 0 ? (
+            <div className="text-center bg-blueberry/10 border-2 border-blueberry/20 rounded-lg p-8 text-gray-700">
+              <p className="text-lg mb-2">No children found yet.</p>
+              <p className="text-sm">Add children from your <Link href="/parent/dashboard" className="text-santa font-semibold hover:underline">Parent Dashboard</Link>.</p>
+            </div>
+          ) : (
+            <ul className="flex justify-center flex-wrap gap-12 sm:gap-16 lg:gap-20">
+              {children.map((c) => {
+                const id = String(c._id);
+                return (
+                  <li key={id} className="flex flex-col items-center gap-4">
+                    <Link href={`/children/${id}/childdash`} className="group focus:outline-none">
+                      <div className="relative h-32 w-32 sm:h-40 sm:w-40 rounded-full overflow-hidden ring-4 ring-white shadow-[0_4px_12px_rgba(0,0,0,0.2)] group-hover:ring-santa transition-all duration-300 transform hover:scale-110 bg-gradient-to-br from-santa/20 to-evergreen/20">
+                        {c.avatarUrl ? (
+                          <img src={c.avatarUrl} alt={c.displayName} className="h-full w-full object-cover" />
+                        ) : (
+                          <div className="h-full w-full bg-gradient-to-br from-santa to-berryPink flex items-center justify-center text-6xl font-bold text-white">
+                            {c.displayName?.[0]?.toUpperCase() ?? "?"}
+                          </div>
+                        )}
+                        {/* Hover glow effect */}
+                        <div className="absolute inset-0 bg-gradient-to-t from-santa/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                       </div>
-                    )}
-                  </div>
-                  <div className="mt-2 text-center text-sm text-white sm:text-base font-medium group-hover:opacity-90">
-                    {c.displayName}
-                  </div>
-                </Link>
-              </li>
-            );
-          })}
-        </ul>
-      )}
+                      <div className="mt-3 text-center text-base sm:text-lg font-semibold text-gray-800 group-hover:text-santa transition-colors duration-300">
+                        {c.displayName}
+                      </div>
+                    </Link>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </div>
+      </div>
     </main>
   );
 }

@@ -41,7 +41,7 @@ export default function HeaderAuth() {
         <Button
           onClick={handleSignIn}
           disabled={actionLoading}
-          className="bg-mint rounded-lg flex items-center justify-center px-6 font-semibold text-white w-full md:w-auto"
+          className="bg-mint rounded-lg flex items-center justify-center px-6 font-semibold text-white w-full md:w-auto max-w-none md:max-w-60"
           style={{ height: '30px' }}
           aria-label="Login to get started"
         >
@@ -53,7 +53,7 @@ export default function HeaderAuth() {
       // Logged in but needs onboarding
       return (
         <Link href="/onboarding" className="w-full md:w-auto">
-          <Button className="bg-santa text-white rounded-lg flex items-center justify-center px-6 font-semibold w-full" style={{ height: '30px' }}>
+          <Button className="bg-santa text-white rounded-lg flex items-center justify-center px-6 font-semibold w-full max-w-none md:max-w-60" style={{ height: '30px' }}>
             Complete Setup
             <FaArrowAltCircleRight className="ml-1" />
           </Button>
@@ -87,14 +87,14 @@ export default function HeaderAuth() {
 
           {/* Dashboard quick access */}
           <Link href="/parent/dashboard" className="w-full md:w-auto">
-            <Button className="bg-evergreen text-white rounded-lg flex items-center justify-center px-6 font-semibold w-full" style={{ height: '30px' }}>
+            <Button className="bg-evergreen text-white rounded-lg flex items-center justify-center px-6 font-semibold w-full max-w-none md:max-w-60" style={{ height: '30px' }}>
               Dashboard
             </Button>
           </Link>
 
           {/* Small sign out button */}
           <Button 
-            className="bg-gray-500 text-white rounded-lg flex items-center justify-center px-6 font-semibold w-full md:w-auto" 
+            className="bg-gray-500 text-white rounded-lg flex items-center justify-center px-6 font-semibold w-full md:w-auto max-w-none md:max-w-60" 
             style={{ height: '30px' }}
             onClick={handleSignOut} 
             aria-label="Sign out"

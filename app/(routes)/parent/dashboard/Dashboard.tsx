@@ -4,7 +4,6 @@ import { dbConnect } from "@/lib/db";
 import { Parent } from "@/models/Parent";
 import { Child } from "@/models/Child";
 import { User } from "@/models/User";
-import Container from "@/components/ui/Container";
 import Button from "@/components/ui/Button";
 import { revalidatePath } from "next/cache";
 import { Types } from "mongoose";
@@ -232,8 +231,8 @@ export default async function ParentDashboardPage({ searchParams }: DashboardPro
   const hasWelcomePacket = await hasCompletedWelcomePacket(parent._id.toString());
 
   return (
-    <Container className="min-w-full bg-evergreen">
-      <main className="mx-auto max-w-5xl px-4 py-8 space-y-8 bg-white">
+    <div className="min-h-screen bg-gradient-to-b from-[#005574] via-[#032255] to-[#001a33]">
+      <main className="mx-auto max-w-5xl px-4 py-8 space-y-8">
         {/* Client-side Christmas Setup and Header */}
         <DashboardClient
           parentId={parent._id.toString()}
@@ -242,16 +241,16 @@ export default async function ParentDashboardPage({ searchParams }: DashboardPro
         />
 
         {/* Summary cards */}
-        <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 ">
-          <Card className="bg-[rgba(70,213,151,0.3)] backdrop-blur-sm rounded-lg p-4" title="Magic Budget (Monthly)">
-            <div className="text-2xl font-bold ">{formatCents(parent.magicBudgetCents)}</div>
-            <div className="text-xs text-muted-foreground">Source of truth for allocations</div>
+        <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <Card className="bg-santa text-white shadow-[0_4px_12px_rgba(0,0,0,0.15)]" title="Magic Budget (Monthly)">
+            <div className="text-2xl font-bold">{formatCents(parent.magicBudgetCents)}</div>
+            <div className="text-xs text-white/80">Source of truth for allocations</div>
           </Card>
-          <Card className="bg-[rgba(70,213,151,0.3)] backdrop-blur-sm rounded-lg p-4" title="Wallet Balance">
+          <Card className="bg-evergreen text-white shadow-[0_4px_12px_rgba(0,0,0,0.15)]" title="Wallet Balance">
             <div className="text-2xl font-bold">{formatCents(parent.walletBalanceCents ?? 0)}</div>
-            <div className="text-xs text-muted-foreground">Top-ups & adjustments</div>
+            <div className="text-xs text-white/80">Top-ups & adjustments</div>
           </Card>
-          <Card className="bg-[rgba(70,213,151,0.3)] backdrop-blur-sm rounded-lg p-4" title="Gift Settings">
+          <Card className="bg-blueberry text-white shadow-[0_4px_12px_rgba(0,0,0,0.15)]" title="Gift Settings">
             <div className="text-sm">
               <div>Min: {parent.giftSettings?.minGifts ?? 1}</div>
               <div>Max: {parent.giftSettings?.maxGifts ?? 5}</div>
@@ -261,15 +260,15 @@ export default async function ParentDashboardPage({ searchParams }: DashboardPro
         </section>
 
         {/* Wallet Top-up Section */}
-        <section>
-          <h2 className="text-xl font-semibold mb-3">Wallet Management</h2>
+        <section className="bg-white/95 backdrop-blur-sm rounded-lg p-6 shadow-[0_4px_12px_rgba(0,0,0,0.15)]">
+          <h2 className="text-xl font-semibold mb-3 text-gray-800">Wallet Management</h2>
           <WalletTopup currentBalance={parent.walletBalanceCents ?? 0} />
         </section>
 
         {/* Christmas List Finalization */}
         {parent.christmasSettings?.setupCompleted && (
-          <section>
-            <h2 className="text-xl lg:text-3xl ml-3 mb-3">Christmas List Finalization</h2>
+          <section className="bg-white/95 backdrop-blur-sm rounded-lg p-6 shadow-[0_4px_12px_rgba(0,0,0,0.15)]">
+            <h2 className="text-xl lg:text-3xl mb-3 text-gray-800">Christmas List Finalization</h2>
             <ChristmasFinalization
               isFinalized={!!parent.christmasSettings?.listsFinalized}
               finalizedAt={parent.christmasSettings?.listsFinalizedAt?.toISOString()}
@@ -283,9 +282,9 @@ export default async function ParentDashboardPage({ searchParams }: DashboardPro
         )}
 
         {/* Children list */}
-        <section className="space-y-3">
+        <section className="bg-white/95 backdrop-blur-sm rounded-lg p-6 shadow-[0_4px_12px_rgba(0,0,0,0.15)] space-y-4">
           <div className="flex items-center justify-between">
-            <h2 className="text-xl font-semibold">Children</h2>
+            <h2 className="text-xl font-semibold text-gray-800">Children</h2>
             {children.length > 0 && (
               <Link href="/parent/vote">
                 <Button className="bg-santa hover:bg-red-700 text-white">
@@ -304,7 +303,7 @@ export default async function ParentDashboardPage({ searchParams }: DashboardPro
               {children.map((c) => {
                 const id = String(c._id);
                 return (
-                  <li key={id} className="rounded-lg border p-4 space-y-4">
+                  <li key={id} className="bg-white rounded-lg border border-gray-200 p-4 space-y-4 shadow-[0_2px_8px_rgba(0,0,0,0.1)]">
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 items-start">
                       {/* Left: avatar + name */}
                       <div className="flex items-center gap-3">
@@ -409,55 +408,57 @@ export default async function ParentDashboardPage({ searchParams }: DashboardPro
         </section>
 
         {/* Welcome Packet & Add Child Section */}
-        <section className="space-y-4">
+        <section className="bg-white/95 backdrop-blur-sm rounded-lg shadow-[0_4px_12px_rgba(0,0,0,0.15)]">
           {!hasWelcomePacket ? (
-            <div>
-
+            <div className="p-6">
               <WelcomePacketButton
                 hasCompletedWelcomePacket={hasWelcomePacket}
                 className="mb-6"
               />
             </div>
           ) : (
-            <div>
-              <h2 className="text-2xl font-paytone-one text-santa">Add a New Child</h2>
+            <details className="group">
+              <summary className="cursor-pointer list-none p-6 hover:bg-white/50 transition-colors rounded-lg">
+                <div className="flex items-center justify-between">
+                  <h2 className="text-2xl font-paytone-one text-santa">Add a New Child</h2>
+                  <span className="text-2xl text-santa group-open:rotate-180 transition-transform">▼</span>
+                </div>
+              </summary>
+              
+              <div className="px-6 pb-6">
+                <div className="bg-gradient-to-br from-santa/10 via-evergreen/10 to-blueberry/10 rounded-2xl border-2 border-santa/20 overflow-hidden">
+                  <div className="bg-white/60 backdrop-blur-sm p-6">
+                    <AddChildFormWrapper createChildAction={createChildWrapper} />
 
-              <div className="bg-gradient-to-br from-santa-50 via-evergreen-50 to-blueberry-50 rounded-2xl border-2 border-santa-200 overflow-hidden">
-                <div className="bg-white/60 backdrop-blur-sm p-6">
-                  <div className="flex items-center justify-center mb-6">
-
-                  </div>
-
-                  <AddChildFormWrapper createChildAction={createChildWrapper} />
-
-                  {/* Tips Section */}
-                  <div className="mt-6 bg-blueberry-50 rounded-lg p-4 border-l-4 border-blueberry-400">
-                    <h5 className="text-sm font-medium text-blueberry-800 mb-2 flex items-center">
-                      <span className="mr-2">💡</span>
-                      Tips for Setting Up Your Child
-                    </h5>
-                    <ul className="text-xs text-blueberry-700 space-y-1">
-                      <li>• You can always edit their information later</li>
-                      <li>• Budget percentages should add up to 100% across all children</li>
-                      <li>• Each child gets their own Christmas list and magic score</li>
-                      <li>• Profile pictures make the experience more personal and fun!</li>
-                    </ul>
+                    {/* Tips Section */}
+                    <div className="mt-6 bg-blueberry/10 rounded-lg p-4 border-l-4 border-blueberry">
+                      <h5 className="text-sm font-medium text-blueberry mb-2 flex items-center">
+                        <span className="mr-2">💡</span>
+                        Tips for Setting Up Your Child
+                      </h5>
+                      <ul className="text-xs text-gray-700 space-y-1">
+                        <li>• You can always edit their information later</li>
+                        <li>• Budget percentages should add up to 100% across all children</li>
+                        <li>• Each child gets their own Christmas list and magic score</li>
+                        <li>• Profile pictures make the experience more personal and fun!</li>
+                      </ul>
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
+            </details>
           )}
         </section>
       </main>
-    </Container>
+    </div>
   );
 }
 
 // Small presentational helpers
 function Card({ title, children, className }: { title: string; children: React.ReactNode; className?: string }) {
   return (
-    <div className={`rounded-lg border p-4 space-y-2 bg-background ${className || ''}`}>
-      <div className="text-sm font-medium text-muted-foreground">{title}</div>
+    <div className={`rounded-lg p-4 space-y-2 ${className || ''}`}>
+      <div className="text-sm font-medium opacity-90">{title}</div>
       {children}
     </div>
   );
