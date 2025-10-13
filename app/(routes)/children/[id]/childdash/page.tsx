@@ -87,12 +87,14 @@ const {id: childId} = await params;
   const allowFriendGifts = christmasSettings?.allowFriendGifts !== false; // Default to true
 
   return (
-    <div className="min-h-screen p-6 bg-[linear-gradient(to_bottom,_#ea1938_0%,_#ea1938_50%,_#49c5fc_50%,_#49c5fc_100%)] py-10">
-      <Container className="text-center bg-white rounded-2xl  sm:px-6 md:px-10">
+    <div className="min-h-screen p-6 bg-gradient-to-b from-[#005574] via-[#032255] to-[#001a33] py-10">
+      <Container className="text-center bg-gradient-to-br from-white/90 via-blue-50/80 to-white/85 backdrop-blur-md rounded-lg sm:px-6 md:px-10 shadow-2xl border-2 border-white/40 relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/30 to-transparent pointer-events-none" style={{ transform: 'rotate(-15deg) scale(1.5)' }}></div>
+        <div className="relative z-10">
         <h1 className='text-evergreen text-2xl sm:text-3xl md:text-4xl uppercase font-bold pt-10'>Welcome back, {child.displayName}! </h1>
 
         <Cards className="mt-10 mb-10">
-          <Card className="flex flex-col justify-between p-6 text-center text-center bg-santa border-0 text-white md:flex-row flex-wrap ">
+          <Card className="flex flex-col justify-between p-6 text-center text-center bg-santa border-0 text-white md:flex-row flex-wrap shadow-[0_4px_12px_rgba(0,0,0,0.15)]">
           <div className="flex-1 space-y-2 md:items-start md:justify-center">
             <h2 className="text-xl sm:text-2xl uppercase font-semibold">My Naughty Nice Meter</h2>
             <p className="text-md opacity-90 mb-10">
@@ -115,7 +117,59 @@ const {id: childId} = await params;
             </div>
           </Card>
 
-          <Card className="flex flex-col justify-between  text-center bg-evergreen border-0 text-white">
+          <Card className="relative flex flex-col justify-between text-center bg-evergreen border-0 text-white shadow-[0_4px_12px_rgba(0,0,0,0.15)] overflow-hidden">
+            {/* Flowing fairy dust background */}
+            <div className="absolute inset-0 pointer-events-none">
+              {[...Array(150)].map((_, i) => {
+                const size = Math.random() * 4 + 1;
+                const startX = Math.random() * 100;
+                const startY = Math.random() * 100;
+                const duration = Math.random() * 4 + 3;
+                const delay = Math.random() * 5;
+                
+                return (
+                  <div
+                    key={i}
+                    className="absolute rounded-full bg-white"
+                    style={{
+                      width: `${size}px`,
+                      height: `${size}px`,
+                      left: `${startX}%`,
+                      top: `${startY}%`,
+                      animation: `fairyDust ${duration}s ease-in-out infinite ${delay}s`,
+                      boxShadow: `0 0 ${size * 3}px rgba(255, 255, 255, 0.8), 0 0 ${size * 6}px rgba(255, 255, 255, 0.4)`,
+                      filter: 'blur(0.5px)',
+                    }}
+                  />
+                );
+              })}
+            </div>
+            <style dangerouslySetInnerHTML={{__html: `
+              @keyframes fairyDust {
+                0% { 
+                  opacity: 0; 
+                  transform: translate(0, 0) scale(0.5); 
+                }
+                25% { 
+                  opacity: 0.8; 
+                  transform: translate(${Math.random() * 40 - 20}px, ${Math.random() * 40 - 20}px) scale(1); 
+                }
+                50% { 
+                  opacity: 1; 
+                  transform: translate(${Math.random() * 60 - 30}px, ${Math.random() * 60 - 30}px) scale(1.2); 
+                }
+                75% { 
+                  opacity: 0.6; 
+                  transform: translate(${Math.random() * 40 - 20}px, ${Math.random() * 40 - 20}px) scale(0.9); 
+                }
+                100% { 
+                  opacity: 0; 
+                  transform: translate(0, 0) scale(0.5); 
+                }
+              }
+            `}} />
+            
+            <div className="relative z-10">
             <h2 className="text-2xl uppercase font-semibold">My Christmas Magic</h2>
             <div className='flex justify-center gap-x-20 items-center '>
               <Image
@@ -143,11 +197,12 @@ const {id: childId} = await params;
                 shareSlug={child.shareSlug}
               />
             </div>
+            </div>
           </Card>
         </Cards>
 
         <Cards>
-          <Card className="flex flex-col justify-between text-center bg-berryPink border-0 text-white">
+          <Card className="flex flex-col justify-between text-center bg-berryPink border-0 text-white shadow-[0_4px_12px_rgba(0,0,0,0.15)]">
             <h2 className="text-2xl font-semibold uppercase pb-6 ">My Christmas List</h2>
             
             {giftList.length > 0 ? (
@@ -222,7 +277,7 @@ const {id: childId} = await params;
 
         {/* Fun Games Section */}
         <Cards className="mt-6">
-          <Card className="bg-blueberry border-0 text-white ">
+          <Card className="bg-blueberry border-0 text-white shadow-[0_4px_12px_rgba(0,0,0,0.15)]">
             <div className="text-center p-6 flex flex-col items-center justify-center">
               <h2 className="text-2xl font-semibold mb-4 uppercase">Christmas Games</h2>
               <p className="text-white/90 mb-6">
@@ -241,7 +296,7 @@ const {id: childId} = await params;
         {/* Special Christmas Features */}
         {(allowEarlyGifts || allowFriendGifts) && (
           <Cards className="mt-6">
-            <Card className="bg-gradient-to-r from-yellow-400 to-orange-400 border-0 text-white">
+            <Card className="bg-orange-400 border-0 text-white shadow-[0_4px_12px_rgba(0,0,0,0.15)]">
               <div className="text-center p-6">
                 <h2 className="text-2xl font-semibold mb-4">🎁 Special Christmas Features</h2>
                 <div className={`grid gap-4 ${(allowEarlyGifts && allowFriendGifts) ? 'grid-cols-1 md:grid-cols-2' : 'grid-cols-1 place-items-center'}`}>
@@ -273,6 +328,7 @@ const {id: childId} = await params;
         <Link href="/parent/dashboard">
           <Button className='bg-frostyBlue max-w-full my-6 text-white'><MdOutlineGroup/> Parent Portal</Button>
         </Link>
+        </div>
       </Container>
 
       {/* Add your page content here */}

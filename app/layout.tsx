@@ -4,7 +4,6 @@ import "./globals.css";
 import Header from "@/components/Header.server";
 import Footer from "@/components/Footer";
 import Providers from "@/components/Providers.client";
-import SnowControlsHeader from "@/components/effects/SnowControlsHeader";
 const paytoneOne = Paytone_One({
   variable: "--font-paytone-one",
   subsets: ["latin"],
@@ -43,8 +42,7 @@ export default function RootLayout({
       >
         <Providers>
           <Header />
-          <SnowControlsHeader />
-          <main className="pb-24">
+          <main className="pt-[72px] pb-24">
             {children}
           </main>
           <Footer />

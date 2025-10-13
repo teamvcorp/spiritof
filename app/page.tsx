@@ -50,19 +50,17 @@ export default async function Home() {
   };
   return (<>
     
-    <div className="min-h-[100dvh] bg-[linear-gradient(to_bottom,_#37776c_0%,_#37776c_33%,_#EA1938_33%,_#EA1938_66%,_#0084B5_66%,_#0084B5_100%)] py-10 px-6 sm:px-8 md:px-4">
+    <div className="min-h-[100dvh] bg-gradient-to-b from-[#005574] via-[#032255] to-[#001a33] py-10 px-6 sm:px-8 md:px-4">
       
       {/* Christmas Countdown Section */}
       <div className="mx-4 sm:mx-6 md:mx-0 mb-10">
-        <Container className="py-6">
-          <ChristmasCountdown />
-        </Container>
+        <ChristmasCountdown />
       </div>
 
       <div className="mx-4 sm:mx-6 md:mx-0">
-      <Container className="py-10 mb-10 text-center bg-white rounded-2xl text-evergreen px-4 sm:px-8">
+      <Container className="py-10 mb-10 text-center bg-white/95 backdrop-blur-sm rounded-lg text-evergreen px-4 sm:px-8 shadow-[0_4px_12px_rgba(0,0,0,0.15)]">
         <Cards> 
-          <Card className='flex flex-col md:flex-row flex-wrap items-center gap-6 md:gap-8 mx-0 md:mx-10'>
+          <Card className='flex flex-col md:flex-row flex-wrap items-center gap-6 md:gap-8 mx-0 md:mx-10 bg-transparent border-0 shadow-none'>
             <div className="flex flex-col items-center md:items-start md:justify-center gap-y-6 min-w-0 flex-1 text-center md:text-left">
             <h1 className="text-santa md:text-5xl text-4xl lg:text-5xl">Welcome to Spirit of Santa</h1>
             <p className="mt-3 text-evergreen w-full lg:text-lg md:min-w-2/3 md:mx-0 mx-auto"> Find out if you have been naughty or nice with the Spirit of Santa Naughty/Nice Meter! Once you’ve checked your holiday status, 
@@ -87,9 +85,9 @@ export default async function Home() {
       </Container>
       </div>
       <div className="mx-4 sm:mx-6 md:mx-0">
-      <Container className='bg-white mb-10 rounded-2xl pt-8 px-4 sm:px-8'>
+      <Container className='bg-white/95 backdrop-blur-sm mb-10 rounded-lg pt-8 px-4 sm:px-8 shadow-[0_4px_12px_rgba(0,0,0,0.15)]'>
         <Cards>
-          <Card className='bg-santa border-0 p-8 md:p-10 md:min-h-[360px]'>
+          <Card className='bg-santa border-0 p-8 md:p-10 md:min-h-[360px] shadow-[0_4px_12px_rgba(0,0,0,0.15)]'>
             <div className='flex flex-col md:flex-row items-center gap-6 md:gap-10'>
                <div className="shrink-0 w-40 sm:w-56 md:w-[300px]">
             <Image
@@ -110,7 +108,7 @@ export default async function Home() {
           </Card>
         </Cards>
         <Cards className="mt-10 mb-10 ">
-          <Card className="flex flex-col justify-between text-center bg-blueberry border-0 text-white p-6 md:p-8">
+          <Card className="flex flex-col justify-between text-center bg-blueberry border-0 text-white p-6 md:p-8 shadow-[0_4px_12px_rgba(0,0,0,0.15)]">
             <div className="w-full mx-auto flex justify-center ">
             <Image
               src="/images/meter.png"
@@ -125,7 +123,7 @@ export default async function Home() {
             <h2 >Naughty Nice Meter</h2>
             <p className="mt-2 ">You can check your naughty nice meter everyday to see if you got your nice point for the day. If not, no sweat, you can do better tomorrow, but don&rsquo;t forget Christmas is coming. </p>
           </Card>
-          <Card className="text-center bg-evergreen border-0 text-white p-6 md:p-8">
+          <Card className="text-center bg-evergreen border-0 text-white p-6 md:p-8 shadow-[0_4px_12px_rgba(0,0,0,0.15)]">
              <div className="min-w-0 w-32 sm:w-40 md:w-[300px] mx-auto">
             <Image
               src="/images/christmasMagic.png"
@@ -141,7 +139,7 @@ export default async function Home() {
           </Card>
         </Cards>
         <Cards className="mb-10">
-          <Card className="flex flex-col md:flex-row items-center mb-10 md:items-center gap-6 md:gap-10 bg-berryPink text-white p-6 md:p-8">
+          <Card className="flex flex-col md:flex-row items-center mb-10 md:items-center gap-6 md:gap-10 bg-berryPink text-white p-6 md:p-8 shadow-[0_4px_12px_rgba(0,0,0,0.15)]">
             <div className=" min-w-0 w-32 shrink-0 sm:w-40 md:w-[300px] mx-auto md:mx-0">
             <Image
               src="/images/elfGift.png"

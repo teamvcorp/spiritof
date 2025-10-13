@@ -195,9 +195,9 @@ export function StyledGiftBuilder({ initialChildren, selectedChildId }: StyledGi
 
   const isGiftInList = (item: MasterCatalogItem) => {
     const itemId = item._id?.toString() || "";
-    return existingGifts.has(item.productUrl || "") || 
-           existingGifts.has(item.title.toLowerCase().trim()) ||
-           sessionAddedItems.has(itemId);
+    return existingGifts.has(item.productUrl || "") ||
+      existingGifts.has(item.title.toLowerCase().trim()) ||
+      sessionAddedItems.has(itemId);
   };
 
   const handleAddToList = async (item: MasterCatalogItem) => {
@@ -223,7 +223,7 @@ export function StyledGiftBuilder({ initialChildren, selectedChildId }: StyledGi
         searchQuery: "",
         sourceType: item.sourceType as "live_search" | "manual" | "curated" | "trending",
       });
-      
+
       if (result.success) {
         setSessionAddedItems(prev => new Set([...prev, itemId]));
         if (item.productUrl) {
@@ -246,7 +246,7 @@ export function StyledGiftBuilder({ initialChildren, selectedChildId }: StyledGi
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-white to-gray-50 py-8">
+    <div className="min-h-screen bg-gradient-to-b from-[#005574] via-[#032255] to-[#001a33] py-8">
       <style jsx>{`
         @keyframes sway {
           0%, 100% { transform: translateX(0) rotate(0deg); }
@@ -300,9 +300,10 @@ export function StyledGiftBuilder({ initialChildren, selectedChildId }: StyledGi
             inset 0 -2px 4px rgba(255,255,255,0.1),
             0 6px 12px rgba(0,0,0,0.3);
           border-radius: 12px;
-          padding: 2rem;
-          margin-bottom: 2rem;
+          padding: 2rem 2rem 3rem 2rem;
+          margin-bottom: 3rem;
           border: 3px solid #4a2c15;
+          border-bottom-width: 20px;
           position: relative;
         }
         .shelf-board::before {
@@ -320,18 +321,62 @@ export function StyledGiftBuilder({ initialChildren, selectedChildId }: StyledGi
           );
           border-radius: 12px 12px 0 0;
         }
+        .shelf-board::after {
+          content: "";
+          position: absolute;
+          bottom: -20px;
+          left: 0;
+          right: 0;
+          height: 20px;
+          background: linear-gradient(to bottom, #6b4423 0%, #4a2c15 100%);
+          border-radius: 0 0 8px 8px;
+          box-shadow: 
+            inset 0 2px 4px rgba(0,0,0,0.5),
+            0 4px 8px rgba(0,0,0,0.4);
+        }
+        .shelf-lights {
+          position: absolute;
+          bottom: -15px;
+          left: 0;
+          right: 0;
+          display: flex;
+          justify-content: space-evenly;
+          align-items: center;
+          padding: 0 2rem;
+          z-index: 10;
+        }
+        .shelf-bulb {
+          width: 12px;
+          height: 18px;
+          border-radius: 40% 40% 50% 50%;
+          position: relative;
+          animation: sway 3s ease-in-out infinite, blink 2s ease-in-out infinite;
+          box-shadow: 0 0 10px currentColor;
+        }
+        .shelf-bulb::before {
+          content: "";
+          position: absolute;
+          top: -6px;
+          left: 50%;
+          transform: translateX(-50%);
+          width: 5px;
+          height: 6px;
+          background: linear-gradient(to bottom, #555 0%, #333 100%);
+          border-radius: 1px;
+          box-shadow: 0 1px 2px rgba(0,0,0,0.3);
+        }
       `}</style>
 
       <div className="max-w-7xl mx-auto px-4">
         {/* Header with Christmas Lights */}
         <div className="text-center mb-8">
-          <h1 className="text-4xl font-paytone-one text-santa mb-2">
-            🎁 Build Your Christmas List
+          <h1 className="text-4xl font-paytone-one text-white mb-2">
+            Build Your Christmas List
           </h1>
-          <p className="text-gray-600 text-lg mb-6">
+          <p className="text-white/80 text-lg mb-6">
             Browse toys by category and add them to your list
           </p>
-          
+
           {/* Christmas Lights Garland */}
           <div className="garland">
             <div className="bulb"><span className="bulb-glow"></span></div>
@@ -347,7 +392,7 @@ export function StyledGiftBuilder({ initialChildren, selectedChildId }: StyledGi
 
         {/* Request New Toy Section */}
         {selectedChild && (
-          <div className="bg-white rounded-xl p-6 mb-6 shadow-sm border">
+          <div className="bg-white/95 backdrop-blur-sm rounded-lg p-6 mb-6 shadow-[0_4px_12px_rgba(0,0,0,0.15)] border-0">
             <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
               <div className="text-center sm:text-left">
                 <h3 className="text-lg font-semibold text-gray-800 mb-1">
@@ -356,14 +401,7 @@ export function StyledGiftBuilder({ initialChildren, selectedChildId }: StyledGi
                 <p className="text-sm text-gray-600">
                   Request Santa to add a new toy to the catalog
                 </p>
-                <div className="mt-2 flex items-center gap-2 justify-center sm:justify-start">
-                  <span className="text-sm text-evergreen font-medium">
-                    Building for: {initialChildren.find(c => c.id === selectedChild)?.name}
-                  </span>
-                  <span className="text-sm text-blue-600">
-                    ✨ {childMagicPoints} magic points
-                  </span>
-                </div>
+               
               </div>
               <RequestNewToy
                 childId={selectedChild}
@@ -377,9 +415,11 @@ export function StyledGiftBuilder({ initialChildren, selectedChildId }: StyledGi
 
         {/* Child Selection */}
         {initialChildren.length > 1 && (
-          <div className="bg-white rounded-xl p-4 mb-6 shadow-sm border">
+          <div className="bg-white/95 backdrop-blur-sm rounded-lg p-4 mb-6 shadow-[0_4px_12px_rgba(0,0,0,0.15)] border-0">
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Building list for:
+              Building list for: <span className="text-sm text-blue-600">
+                {childMagicPoints} magic points
+              </span>
             </label>
             <select
               value={selectedChild}
@@ -396,11 +436,11 @@ export function StyledGiftBuilder({ initialChildren, selectedChildId }: StyledGi
         )}
 
         {/* Filter Row - Brand and Category Dropdowns */}
-        <div className="bg-white rounded-xl p-4 sm:p-6 shadow-sm border mb-6">
+        <div className="bg-white/95 backdrop-blur-sm rounded-lg p-4 sm:p-6 shadow-[0_4px_12px_rgba(0,0,0,0.15)] border-0 mb-6">
           <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-3 sm:mb-4">
             Filter Toys
           </h3>
-          
+
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {/* Brand Dropdown */}
             {availableBrands.length > 0 && (
@@ -449,84 +489,113 @@ export function StyledGiftBuilder({ initialChildren, selectedChildId }: StyledGi
         {/* Loading State */}
         {isLoading && (
           <div className="flex justify-center items-center py-12">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-santa"></div>
-            <span className="ml-3 text-gray-600">Loading toys...</span>
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div>
+            <span className="ml-3 text-white">Loading toys...</span>
           </div>
         )}
 
         {/* Toy Shelf with Results Grid */}
         {!isLoading && items.length > 0 && (
-          <div className="shelf-board">
+          <div className="space-y-6">
             {/* Toy Count Display */}
-            <div className="text-center mb-4 text-white font-semibold">
+            <div className="text-center mb-4 text-white font-semibold text-lg">
               Showing {items.length} of {totalCount} toys
             </div>
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
-              {items.map((item) => {
-                // Use imageUrl for master catalog items (contains blob URLs)
-                let bestImageUrl = "/images/christmasMagic.png";
-                if (item.imageUrl && item.imageUrl.trim()) {
-                  bestImageUrl = item.imageUrl;
-                }
-                
-                return (
-                  <div
-                    key={item._id?.toString()}
-                    className="bg-white rounded-lg shadow-sm border hover:shadow-lg transition-all hover:scale-105 overflow-hidden flex flex-col"
-                  >
-                    {/* Image */}
-                    <div className="h-32 sm:h-40 bg-gray-100 flex items-center justify-center relative">
-                      <Image
-                        src={bestImageUrl}
-                        alt={item.title}
-                        width={200}
-                        height={200}
-                        className="h-full w-full object-contain p-2"
-                        onError={(e) => {
-                          e.currentTarget.src = "/images/christmasMagic.png";
-                        }}
-                      />
-                    </div>
-
-                    {/* Content */}
-                    <div className="p-3 flex flex-col flex-1">
-                      <h3 className="font-medium text-gray-900 text-sm mb-3 line-clamp-2 flex-1">
-                        {item.title}
-                      </h3>
-
-                      {/* Add to List Button */}
-                      <Button
-                        onClick={() => handleAddToList(item)}
-                        disabled={isGiftInList(item) || processingItems.has(item._id?.toString() || '')}
-                        className={`w-full text-xs py-2 max-w-none ${
-                          isGiftInList(item)
-                            ? "bg-green-500 text-white cursor-default"
-                            : processingItems.has(item._id?.toString() || '')
-                            ? "bg-gray-300 text-gray-600 cursor-not-allowed"
-                            : "bg-santa text-white hover:bg-red-700"
-                        }`}
-                      >
-                        {processingItems.has(item._id?.toString() || '') ? (
-                          <>
-                            <FaSpinner className="inline animate-spin" />
-                          </>
-                        ) : isGiftInList(item) ? (
-                          <>
-                            <FaCheck className="inline mr-1" />
-                            Added
-                          </>
-                        ) : (
-                          <>
-                            <FaHeart className="inline mr-1" />
-                            Add to List
-                          </>
-                        )}
-                      </Button>
-                    </div>
+            
+            {/* Create shelves with 5 items each */}
+            {Array.from({ length: Math.ceil(items.length / 5) }, (_, shelfIndex) => {
+              const startIndex = shelfIndex * 5;
+              const shelfItems = items.slice(startIndex, startIndex + 5);
+              
+              return (
+                <div key={shelfIndex} className="shelf-board">
+                  {/* Christmas lights along the bottom */}
+                  <div className="shelf-lights">
+                    {[...Array(8)].map((_, bulbIndex) => {
+                      const colors = ['#e63946', '#2d6a4f', '#457b9d', '#f4a261', '#f72585', '#9d4edd', '#ff6b35', '#06d6a0'];
+                      const color = colors[bulbIndex % colors.length];
+                      const delay = bulbIndex * 0.3;
+                      return (
+                        <div
+                          key={bulbIndex}
+                          className="shelf-bulb"
+                          style={{
+                            background: color,
+                            color: color,
+                            animationDelay: `${delay}s, ${delay * 0.7}s`
+                          }}
+                        />
+                      );
+                    })}
                   </div>
-                );
-              })}
-            </div>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                    {shelfItems.map((item) => {
+                      // Use imageUrl for master catalog items (contains blob URLs)
+                      let bestImageUrl = "/images/christmasMagic.png";
+                      if (item.imageUrl && item.imageUrl.trim()) {
+                        bestImageUrl = item.imageUrl;
+                      }
+
+                      return (
+                        <div
+                          key={item._id?.toString()}
+                          className="bg-white rounded-lg shadow-[0_4px_12px_rgba(0,0,0,0.15)] border-0 hover:shadow-xl transition-all hover:scale-105 overflow-hidden flex flex-col"
+                        >
+                          {/* Image */}
+                          <div className="h-32 sm:h-40 bg-gray-100 flex items-center justify-center relative">
+                            <Image
+                              src={bestImageUrl}
+                              alt={item.title}
+                              width={200}
+                              height={200}
+                              className="h-full w-full object-contain p-2"
+                              onError={(e) => {
+                                e.currentTarget.src = "/images/christmasMagic.png";
+                              }}
+                            />
+                          </div>
+
+                          {/* Content */}
+                          <div className="p-3 flex flex-col flex-1">
+                            <h3 className="font-medium text-gray-900 text-sm mb-3 line-clamp-2 flex-1">
+                              {item.title}
+                            </h3>
+
+                            {/* Add to List Button */}
+                            <Button
+                              onClick={() => handleAddToList(item)}
+                              disabled={isGiftInList(item) || processingItems.has(item._id?.toString() || '')}
+                              className={`w-full text-xs py-2 max-w-none ${isGiftInList(item)
+                                  ? "bg-green-500 text-white cursor-default"
+                                  : processingItems.has(item._id?.toString() || '')
+                                    ? "bg-gray-300 text-gray-600 cursor-not-allowed"
+                                    : "bg-santa text-white hover:bg-red-700"
+                                }`}
+                            >
+                              {processingItems.has(item._id?.toString() || '') ? (
+                                <>
+                                  <FaSpinner className="inline animate-spin" />
+                                </>
+                              ) : isGiftInList(item) ? (
+                                <>
+                                  <FaCheck className="inline mr-1" />
+                                  Added
+                                </>
+                              ) : (
+                                <>
+                                  <FaHeart className="inline mr-1" />
+                                  Add to List
+                                </>
+                              )}
+                            </Button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })}
           </div>
         )}
 
@@ -552,7 +621,7 @@ export function StyledGiftBuilder({ initialChildren, selectedChildId }: StyledGi
 
         {/* Empty State */}
         {!isLoading && items.length === 0 && (
-          <div className="text-center py-12">
+          <div className="text-center py-12 bg-white/95 backdrop-blur-sm rounded-lg p-8 shadow-[0_4px_12px_rgba(0,0,0,0.15)]">
             <div className="text-6xl mb-4">🎁</div>
             <h3 className="text-xl font-medium text-gray-900 mb-2">
               No toys found

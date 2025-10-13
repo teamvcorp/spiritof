@@ -23,6 +23,7 @@ export async function POST(req: NextRequest) {
   await dbConnect();
 
   try {
+    console.log(`🎯 Webhook received: ${event.type}`);
     
     // Silent events - informational only, no action needed
     const silentEvents = [
@@ -34,31 +35,38 @@ export async function POST(req: NextRequest) {
     ];
     
     if (silentEvents.includes(event.type)) {
+      console.log(`ℹ️  Silent event (no action needed): ${event.type}`);
       return NextResponse.json({ received: true });
     }
     
     switch (event.type) {
       case 'checkout.session.completed':
+        console.log(`💳 Processing checkout completed`);
         await handleCheckoutCompleted(event.data.object as Stripe.Checkout.Session);
         break;
       
       case 'checkout.session.expired':
+        console.log(`⏰ Processing checkout expired/cancelled`);
         await handleCheckoutExpired(event.data.object as Stripe.Checkout.Session);
         break;
       
       case 'setup_intent.succeeded':
+        console.log(`🔐 Processing setup intent succeeded`);
         await handleSetupIntentSucceeded(event.data.object as Stripe.SetupIntent);
         break;
       
       case 'payment_intent.succeeded':
+        console.log(`✅ Processing payment succeeded`);
         await handlePaymentSucceeded(event.data.object as Stripe.PaymentIntent);
         break;
       
       case 'payment_intent.payment_failed':
+        console.log(`❌ Processing payment failed`);
         await handlePaymentFailed(event.data.object as Stripe.PaymentIntent);
         break;
       
       default:
+        console.log(`🤷 Unhandled event type: ${event.type}`);
     }
 
     return NextResponse.json({ received: true });
@@ -91,14 +99,20 @@ async function handleWalletTopup(session: Stripe.Checkout.Session) {
   const parentId = metadata?.parentId;
   const amount = parseInt(metadata?.amount || '0');
   
+  console.log(`🎁 Webhook: Processing wallet topup - Parent: ${parentId}, Amount: $${amount / 100}, Session: ${session.id}`);
+  
   if (!parentId || !amount) {
+    console.log(`❌ Webhook: Missing parentId (${parentId}) or amount (${amount})`);
     return;
   }
 
   const parent = await Parent.findById(parentId);
   if (!parent) {
+    console.log(`❌ Webhook: Parent not found: ${parentId}`);
     return;
   }
+
+  console.log(`📊 Webhook: Parent found, wallet ledger has ${parent.walletLedger?.length || 0} entries`);
 
   // Find the pending ledger entry and mark as succeeded
   const pendingEntry = parent.walletLedger.find(
@@ -106,6 +120,7 @@ async function handleWalletTopup(session: Stripe.Checkout.Session) {
   );
 
   if (pendingEntry) {
+    console.log(`✅ Webhook: Found pending entry, updating to SUCCEEDED`);
     (pendingEntry as { status: string; stripePaymentIntentId?: string }).status = 'SUCCEEDED';
     (pendingEntry as { status: string; stripePaymentIntentId?: string }).stripePaymentIntentId = session.payment_intent as string;
     
@@ -114,10 +129,15 @@ async function handleWalletTopup(session: Stripe.Checkout.Session) {
     parent.recomputeWalletBalance();
     const newBalance = parent.walletBalanceCents;
     
+    console.log(`💰 Webhook: Balance updated from $${oldBalance / 100} to $${newBalance / 100}`);
+    
     await parent.save();
+    
+    console.log(`🎉 Webhook: Wallet topped up successfully - Parent ${parentId}, Amount: $${amount / 100}`);
   } else {
-    console.log(`📋 Webhook: Available entries:`, parent.walletLedger.map((e: { status: string; amountCents: number }) => ({
-       
+    console.log(`❌ Webhook: No pending entry found for session ${session.id}`);
+    console.log(`📋 Webhook: Available entries:`, parent.walletLedger.map((e: { stripeCheckoutSessionId?: string; status: string; amountCents: number }) => ({ 
+      sessionId: e.stripeCheckoutSessionId, 
       status: e.status,
       amount: e.amountCents 
     })));
@@ -155,6 +175,8 @@ async function handleDonation(session: Stripe.Checkout.Session) {
     // Recompute neighbor balance
     child.recomputeNeighborBalance();
     await child.save();
+    
+    console.log(`Donation processed: Child ${childId}, Amount: $${amount / 100}, Magic: +${magicPointsToAdd}`);
   }
 }
 
@@ -163,12 +185,16 @@ async function handleWelcomePacketOrder(session: Stripe.Checkout.Session) {
   const parentId = metadata?.parentId;
   const totalAmount = parseInt(metadata?.totalAmount || '0');
   
+  console.log(`🎁 Webhook: Processing welcome packet order - Parent: ${parentId}, Amount: $${totalAmount}, Session: ${session.id}`);
+  
   if (!parentId || !totalAmount) {
+    console.log(`❌ Webhook: Missing parentId (${parentId}) or totalAmount (${totalAmount})`);
     return;
   }
 
   const parent = await Parent.findById(parentId);
   if (!parent) {
+    console.log(`❌ Webhook: Parent not found: ${parentId}`);
     return;
   }
 
@@ -178,6 +204,7 @@ async function handleWelcomePacketOrder(session: Stripe.Checkout.Session) {
   );
 
   if (pendingOrder) {
+    console.log(`✅ Webhook: Found pending welcome packet order, updating to completed`);
     
     // Update order status
     pendingOrder.status = 'completed';
@@ -198,7 +225,15 @@ async function handleWelcomePacketOrder(session: Stripe.Checkout.Session) {
     }
     
     await parent.save();
+    
+    console.log(`🎉 Webhook: Welcome packet order completed successfully - Parent ${parentId}, Amount: $${totalAmount}`);
   } else {
+    console.log(`❌ Webhook: No pending welcome packet order found for session ${session.id}`);
+    console.log(`📋 Webhook: Available orders:`, parent.welcomePacketOrders?.map(order => ({ 
+      sessionId: order.stripeSessionId, 
+      status: order.status,
+      amount: order.totalAmount 
+    })));
   }
 }
 
@@ -209,12 +244,16 @@ async function handleChildWelcomePacketOrder(session: Stripe.Checkout.Session) {
   const childName = metadata?.childName;
   const totalAmount = parseInt(metadata?.totalAmount || '0');
   
+  console.log(`🎁 Webhook: Processing child welcome packet order - Parent: ${parentId}, Child: ${childName}, Amount: $${totalAmount}, Session: ${session.id}`);
+  
   if (!parentId || !childId || !totalAmount) {
+    console.log(`❌ Webhook: Missing parentId (${parentId}), childId (${childId}), or totalAmount (${totalAmount})`);
     return;
   }
 
   const parent = await Parent.findById(parentId);
   if (!parent) {
+    console.log(`❌ Webhook: Parent not found: ${parentId}`);
     return;
   }
 
@@ -226,6 +265,7 @@ async function handleChildWelcomePacketOrder(session: Stripe.Checkout.Session) {
   );
 
   if (pendingOrder) {
+    console.log(`✅ Webhook: Found pending child welcome packet order, updating to completed`);
     
     // Update order status
     pendingOrder.status = 'completed';
@@ -246,12 +286,24 @@ async function handleChildWelcomePacketOrder(session: Stripe.Checkout.Session) {
     }
     
     await parent.save();
+    
+    console.log(`🎉 Webhook: Child welcome packet order completed successfully - Parent ${parentId}, Child: ${childName}, Amount: $${totalAmount}`);
   } else {
+    console.log(`❌ Webhook: No pending child welcome packet order found for session ${session.id} and child ${childId}`);
+    console.log(`📋 Webhook: Available orders:`, parent.welcomePacketOrders?.map(order => ({ 
+      sessionId: order.stripeSessionId, 
+      status: order.status,
+      childId: order.childId?.toString(),
+      childName: order.childName,
+      amount: order.totalAmount 
+    })));
   }
 }
 
 async function handleCheckoutExpired(session: Stripe.Checkout.Session) {
   const { metadata } = session;
+  
+  console.log(`⏰ Webhook: Checkout expired/cancelled - Type: ${metadata?.type}, Session: ${session.id}`);
   
   // Only handle child welcome packet cancellations (cleanup needed)
   if (metadata?.type === 'child_welcome_packet') {
@@ -259,12 +311,16 @@ async function handleCheckoutExpired(session: Stripe.Checkout.Session) {
     const childId = metadata.childId;
     const childName = metadata.childName;
     
+    console.log(`🧹 Cleaning up cancelled child welcome packet - Parent: ${parentId}, Child: ${childName}`);
+    
     if (!parentId || !childId) {
+      console.log(`❌ Missing parentId (${parentId}) or childId (${childId})`);
       return;
     }
     
     const parent = await Parent.findById(parentId);
     if (!parent) {
+      console.log(`❌ Parent not found: ${parentId}`);
       return;
     }
     
@@ -277,7 +333,9 @@ async function handleCheckoutExpired(session: Stripe.Checkout.Session) {
       if (orderIndex >= 0) {
         parent.welcomePacketOrders.splice(orderIndex, 1);
         await parent.save();
+        console.log(`✅ Removed pending welcome packet order for session ${session.id}`);
       } else {
+        console.log(`⚠️  No pending order found to remove for session ${session.id}`);
       }
     }
     
@@ -285,21 +343,28 @@ async function handleCheckoutExpired(session: Stripe.Checkout.Session) {
     try {
       const deletedChild = await Child.findByIdAndDelete(childId);
       if (deletedChild) {
+        console.log(`✅ Deleted child ${childName} (${childId}) - payment was cancelled`);
       } else {
+        console.log(`⚠️  Child ${childId} not found (may have been already deleted)`);
       }
     } catch (error) {
       console.error(`❌ Error deleting child ${childId}:`, error);
     }
+    
+    console.log(`🎯 Cleanup complete for cancelled child welcome packet - Child ${childName} removed`);
   } else {
+    console.log(`ℹ️  Checkout expired for type: ${metadata?.type} - no cleanup needed`);
   }
 }
 
 async function handleSetupIntentSucceeded(setupIntent: Stripe.SetupIntent) {
+  console.log(`🔐 Setup intent succeeded: ${setupIntent.id}`);
   
   const customerId = setupIntent.customer as string;
   const paymentMethodId = setupIntent.payment_method as string;
   
   if (!customerId || !paymentMethodId) {
+    console.log(`❌ Setup intent missing customer (${customerId}) or payment method (${paymentMethodId})`);
     return;
   }
   
@@ -307,6 +372,7 @@ async function handleSetupIntentSucceeded(setupIntent: Stripe.SetupIntent) {
     // Find parent by Stripe customer ID
     const parent = await Parent.findOne({ stripeCustomerId: customerId });
     if (!parent) {
+      console.log(`❌ Parent not found for customer: ${customerId}`);
       return;
     }
     
@@ -320,12 +386,15 @@ async function handleSetupIntentSucceeded(setupIntent: Stripe.SetupIntent) {
     // Update parent record
     parent.stripeDefaultPaymentMethodId = paymentMethodId;
     await parent.save();
+    
+    console.log(`✅ Payment method set for parent ${parent._id}: ${paymentMethodId}`);
   } catch (error) {
     console.error(`❌ Error processing setup intent: ${error}`);
   }
 }
 
 async function handlePaymentSucceeded(paymentIntent: Stripe.PaymentIntent) {
+  console.log(`Payment succeeded: ${paymentIntent.id}`);
   
   // Handle Christmas finalization payments
   if (paymentIntent.metadata?.type === 'christmas_finalization') {
@@ -344,6 +413,7 @@ async function handlePaymentSucceeded(paymentIntent: Stripe.PaymentIntent) {
             pendingEntry.status = 'SUCCEEDED';
             parent.recomputeWalletBalance();
             await parent.save();
+            console.log(`✅ Christmas finalization payment succeeded for parent ${parentId}`);
           }
         }
       } catch (error) {
@@ -372,6 +442,7 @@ async function handlePaymentFailed(paymentIntent: Stripe.PaymentIntent) {
           if (pendingEntry) {
             pendingEntry.status = 'FAILED';
             await parent.save();
+            console.log(`❌ Christmas finalization payment failed for parent ${parentId}`);
           }
         }
       } catch (error) {
@@ -392,6 +463,8 @@ async function handlePaymentFailed(paymentIntent: Stripe.PaymentIntent) {
       { "neighborLedger.stripeCheckoutSessionId": checkoutSessionId },
       { $set: { "neighborLedger.$.status": "FAILED" } }
     );
+    
+    console.log(`Payment failed: ${paymentIntent.id}`);
   }
 }
 
@@ -403,7 +476,10 @@ async function handleBigMagicDonation(session: Stripe.Checkout.Session) {
   const logoUrl = metadata?.logoUrl || undefined;
   const paymentMethod = metadata?.paymentMethod || 'card';
   
+  console.log(`🏢 Webhook: Processing Big Magic donation - Company: ${companyName}, Amount: $${amount / 100}, Session: ${session.id}`);
+  
   if (!companyName || !amount) {
+    console.log(`❌ Webhook: Missing company name or amount`);
     return;
   }
 
@@ -421,6 +497,8 @@ async function handleBigMagicDonation(session: Stripe.Checkout.Session) {
     logoUrl: logoUrl || undefined,
     completedAt: new Date(),
   });
+  
+  console.log(`💾 Saved Big Magic donation to database: ${donation._id}`);
   
   // Send admin notification
   const { sendAdminNotification } = await import("@/lib/admin-notifications");
@@ -440,4 +518,6 @@ async function handleBigMagicDonation(session: Stripe.Checkout.Session) {
       donationId: String(donation._id),
     },
   });
+  
+  console.log(`🎉 Webhook: Big Magic donation completed - Company: ${companyName}, Amount: $${amount / 100}`);
 }

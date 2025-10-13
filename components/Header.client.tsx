@@ -41,7 +41,8 @@ export default function HeaderAuth() {
         <Button
           onClick={handleSignIn}
           disabled={actionLoading}
-          className="bg-mint link-btn-sm"
+          className="bg-mint rounded-lg flex items-center justify-center px-6 font-semibold text-white"
+          style={{ height: '30px' }}
           aria-label="Login to get started"
         >
           {actionLoading ? "Signing in..." : "Login"}
@@ -52,7 +53,7 @@ export default function HeaderAuth() {
       // Logged in but needs onboarding
       return (
         <Link href="/onboarding">
-          <Button className="bg-santa text-white uppercase text-sm px-4 py-2">
+          <Button className="bg-santa text-white rounded-lg flex items-center justify-center px-6 font-semibold" style={{ height: '30px' }}>
             Complete Setup
             <FaArrowAltCircleRight className="ml-1" />
           </Button>
@@ -66,7 +67,8 @@ export default function HeaderAuth() {
           <Button
             onClick={handleSignOut}
             aria-label={`Sign out ${userName}`}
-            className="overflow-hidden p-1" // ensure img fills circle
+            className="overflow-hidden p-1 rounded-full"
+            style={{ height: '32px', width: '32px' }}
           >
             {session.user?.image ? (
               <Image
@@ -85,14 +87,15 @@ export default function HeaderAuth() {
 
           {/* Dashboard quick access */}
           <Link href="/parent/dashboard">
-            <Button className="bg-evergreen text-white text-sm px-3 py-2">
+            <Button className="bg-evergreen text-white rounded-lg flex items-center justify-center px-6 font-semibold" style={{ height: '30px' }}>
               Dashboard
             </Button>
           </Link>
 
           {/* Small sign out button */}
           <Button 
-            className="bg-gray-500 text-white text-sm px-3 py-2" 
+            className="bg-gray-500 text-white rounded-lg flex items-center justify-center px-6 font-semibold" 
+            style={{ height: '30px' }}
             onClick={handleSignOut} 
             aria-label="Sign out"
           >
