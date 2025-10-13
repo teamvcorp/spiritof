@@ -41,8 +41,8 @@ export default function HeaderAuth() {
         <Button
           onClick={handleSignIn}
           disabled={actionLoading}
-          className="bg-mint rounded-lg flex items-center justify-center px-6 font-semibold text-white w-full md:w-auto max-w-none md:max-w-60"
-          style={{ height: '30px' }}
+          className="bg-mint rounded-lg flex items-center justify-center px-6 font-semibold text-white w-full md:w-auto max-w-none md:max-w-60 min-h-[44px]"
+          style={{ height: 'auto', minHeight: '44px' }}
           aria-label="Login to get started"
         >
           {actionLoading ? "Signing in..." : "Login"}
@@ -53,7 +53,7 @@ export default function HeaderAuth() {
       // Logged in but needs onboarding
       return (
         <Link href="/onboarding" className="w-full md:w-auto">
-          <Button className="bg-santa text-white rounded-lg flex items-center justify-center px-6 font-semibold w-full max-w-none md:max-w-60" style={{ height: '30px' }}>
+          <Button className="bg-santa text-white rounded-lg flex items-center justify-center px-6 font-semibold w-full max-w-none md:max-w-60 min-h-[44px]" style={{ height: 'auto', minHeight: '44px' }}>
             Complete Setup
             <FaArrowAltCircleRight className="ml-1" />
           </Button>
@@ -70,32 +70,20 @@ export default function HeaderAuth() {
             className="overflow-hidden p-1 rounded-full mx-auto md:mx-0"
             style={{ height: '32px', width: '32px' }}
           >
-            {session.user?.image ? (
-              <Image
-                src={session.user.image}
-                alt={session.user?.name ?? "User avatar"}
-                width={32}
-                height={32}
-                className="w-8 h-8 rounded-full"
-              />
-            ) : (
-              <div className="w-8 h-8 flex items-center justify-center bg-gray-200 text-xs text-gray-700 rounded-full">
-                {fallbackInitial}
-              </div>
-            )}
+         
           </Button>
 
           {/* Dashboard quick access */}
           <Link href="/parent/dashboard" className="w-full md:w-auto">
-            <Button className="bg-evergreen text-white rounded-lg flex items-center justify-center px-6 font-semibold w-full max-w-none md:max-w-60" style={{ height: '30px' }}>
+            <Button className="bg-evergreen text-white rounded-lg flex items-center justify-center px-6 font-semibold w-full max-w-none md:max-w-60 min-h-[44px]" style={{ height: 'auto', minHeight: '44px' }}>
               Dashboard
             </Button>
           </Link>
 
           {/* Small sign out button */}
           <Button 
-            className="bg-gray-500 text-white rounded-lg flex items-center justify-center px-6 font-semibold w-full md:w-auto max-w-none md:max-w-60" 
-            style={{ height: '30px' }}
+            className="bg-gray-500 text-white rounded-lg flex items-center justify-center px-6 font-semibold w-full md:w-auto max-w-none md:max-w-60 min-h-[44px]" 
+            style={{ height: 'auto', minHeight: '44px' }}
             onClick={handleSignOut} 
             aria-label="Sign out"
           >
@@ -110,9 +98,11 @@ export default function HeaderAuth() {
     <div className="flex flex-col md:flex-row items-stretch md:items-center gap-3 w-full">
       {/* Loading state: show spinner */}
       {loading ? (
-        <Button loading aria-label="Auth loading" className="bg-santa text-white" />
+        <Button loading aria-label="Auth loading" className="bg-santa text-white min-h-[44px] md:h-auto" />
       ) : (
-        getCallToAction()
+        <div className="flex flex-col md:flex-row items-stretch md:items-center gap-3 w-full">
+          {getCallToAction()}
+        </div>
       )}
     </div>
   );
