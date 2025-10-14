@@ -231,7 +231,7 @@ export default async function ParentDashboardPage({ searchParams }: DashboardPro
   const hasWelcomePacket = await hasCompletedWelcomePacket(parent._id.toString());
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-[#005574] via-[#032255] to-[#001a33]">
+    <div className="min-h-screen bg-gradient-to-b from-[#005574] via-[#032255] to-[#001a33] pt-35 lg:pt-15">
       <main className="mx-auto max-w-5xl px-4 py-8 space-y-8">
         {/* Client-side Christmas Setup and Header */}
         <DashboardClient
@@ -351,8 +351,8 @@ export default async function ParentDashboardPage({ searchParams }: DashboardPro
                         </details>
 
                         {/* Modal content controlled by peer checkbox */}
-                        <div className="hidden peer-checked:flex fixed inset-0 bg-black/40 items-center justify-center z-50">
-                          <div className="w-full max-w-md rounded-lg border bg-background p-4 shadow-xl" role="dialog" aria-modal="true">
+                        <div className="hidden peer-checked:flex fixed inset-0 bg-black/40 items-center justify-center z-[200]">
+                          <div className="w-full max-w-md rounded-lg border bg-background p-4 shadow-xl relative z-[201]" role="dialog" aria-modal="true">
                             <div className="flex items-center justify-between mb-3">
                               <h3 className="text-lg font-semibold">Edit {c.displayName}</h3>
                               <label htmlFor={`edit-${id}`} className="inline-flex items-center rounded-md border px-3 py-2 text-sm hover:bg-muted cursor-pointer">

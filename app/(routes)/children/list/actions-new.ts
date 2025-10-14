@@ -71,6 +71,14 @@ export async function addItemToChildGiftList(
     throw new Error("Child not found or not authorized");
   }
 
+  // Check if gift list is locked (finalized)
+  if (child.giftListLocked) {
+    return {
+      success: false,
+      message: "Gift list has been finalized for Christmas and can no longer be modified. Happy Holidays! 🎄"
+    };
+  }
+
   // Find or create the catalog item
   const catalogResult = await findOrCreateCatalogItem({
     ...itemData,
@@ -137,6 +145,14 @@ export async function removeItemFromChildGiftList(
   });
   if (!child) {
     throw new Error("Child not found or not authorized");
+  }
+
+  // Check if gift list is locked (finalized)
+  if (child.giftListLocked) {
+    return {
+      success: false,
+      message: "Gift list has been finalized for Christmas and can no longer be modified. Happy Holidays! 🎄"
+    };
   }
 
   // Remove from child's gift list using Mongoose updateOne

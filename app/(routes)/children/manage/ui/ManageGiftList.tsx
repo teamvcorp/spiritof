@@ -26,9 +26,11 @@ interface Gift {
 interface ManageGiftListProps {
   childId: string;
   childName: string;
+  isLocked?: boolean;
+  listsFinalized?: boolean;
 }
 
-export default function ManageGiftList({ childId, childName }: ManageGiftListProps) {
+export default function ManageGiftList({ childId, childName, isLocked, listsFinalized }: ManageGiftListProps) {
   const [gifts, setGifts] = useState<Gift[]>([]);
   const [loading, setLoading] = useState(true);
   const [removingItems, setRemovingItems] = useState<Set<string>>(new Set());
@@ -105,6 +107,23 @@ export default function ManageGiftList({ childId, childName }: ManageGiftListPro
         </p>
       </div>
 
+      {/* List Finalized Message */}
+      {listsFinalized && (
+        <div className="bg-gradient-to-r from-evergreen via-santa to-evergreen rounded-lg p-6 shadow-lg border-4 border-white/30">
+          <div className="text-center">
+            <h3 className="text-2xl font-paytone-one text-white mb-2">
+              🎄 Happy Holidays! 🎄
+            </h3>
+            <p className="text-white text-base mb-1">
+              This Christmas list has been finalized and sent to Santa's workshop!
+            </p>
+            <p className="text-white/90 text-sm">
+              No changes can be made until after Christmas Day ✨
+            </p>
+          </div>
+        </div>
+      )}
+
       {gifts.length === 0 ? (
         <div className="text-center py-12">
           <div className="text-6xl mb-4">🎁</div>
@@ -178,10 +197,11 @@ export default function ManageGiftList({ childId, childName }: ManageGiftListPro
                 <div className="flex justify-end">
                   <Button
                     onClick={() => handleRemoveGift(gift._id)}
-                    disabled={removingItems.has(gift._id)}
+                    disabled={removingItems.has(gift._id) || isLocked || listsFinalized}
                     className={`bg-red-500 hover:bg-red-600 text-white text-sm px-4 py-2 max-w-none ${
-                      removingItems.has(gift._id) ? "opacity-50 cursor-not-allowed" : ""
+                      removingItems.has(gift._id) || isLocked || listsFinalized ? "opacity-50 cursor-not-allowed" : ""
                     }`}
+                    title={isLocked || listsFinalized ? "List is locked for Christmas" : "Remove gift"}
                   >
                     {removingItems.has(gift._id) ? (
                       <>

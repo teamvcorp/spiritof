@@ -50,7 +50,7 @@ export default async function Home() {
   };
   return (<>
     
-    <div className="min-h-[100dvh] bg-gradient-to-b from-[#005574] via-[#032255] to-[#001a33] py-10 px-6 sm:px-8 md:px-4">
+    <div className="min-h-[100dvh] bg-gradient-to-b from-[#005574] via-[#032255] to-[#001a33] py-10  lg:mt-10 px-6 sm:px-8 md:px-4">
       
       {/* Christmas Countdown Section */}
       <div className="mx-4 sm:mx-6 md:mx-0 mb-10">

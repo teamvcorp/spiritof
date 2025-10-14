@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import Button from '@/components/ui/Button';
 import { FaPlus, FaSpinner, FaCheckCircle, FaExclamationTriangle } from 'react-icons/fa';
 
@@ -25,11 +26,16 @@ export default function RequestNewItemButton({
   const [showModal, setShowModal] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [toast, setToast] = useState<ToastMessage | null>(null);
+  const [mounted, setMounted] = useState(false);
   const [formData, setFormData] = useState({
     itemTitle: '',
     itemDescription: '',
     itemUrl: ''
   });
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const showToast = (type: 'success' | 'error', message: string) => {
     setToast({ type, message });
@@ -61,7 +67,7 @@ export default function RequestNewItemButton({
       const result = await response.json();
 
       if (response.ok) {
-        showToast('success', result.message || 'Your request has been sent to Santa! 🎅');
+        showToast('success', result.message || 'Your request has been sent to Santa!' );
         setShowModal(false);
         setFormData({ itemTitle: '', itemDescription: '', itemUrl: '' });
         onRequestSent?.();
@@ -118,9 +124,9 @@ export default function RequestNewItemButton({
         </div>
       )}
 
-      {showModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl max-w-md w-full p-6">
+      {mounted && showModal && createPortal(
+        <div className="fixed inset-0 bg-[#001a33] bg-opacity-80 flex items-center justify-center z-[9999] p-4">
+          <div className="relative z-[10000] bg-white rounded-xl max-w-md w-full p-6">
             <h2 className="text-2xl font-bold text-evergreen mb-4">
               🎅 Request New Item for {childName}
             </h2>
@@ -202,7 +208,8 @@ export default function RequestNewItemButton({
               </div>
             </form>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </>
   );

@@ -31,7 +31,7 @@ export default async function ManageListPage({ searchParams }: PageProps) {
   }
 
   const children = await Child.find({ parentId: parent._id })
-    .select("_id displayName")
+    .select("_id displayName giftListLocked giftListLockedAt")
     .lean<IChild[]>();
 
   if (children.length === 0) {
@@ -47,6 +47,10 @@ export default async function ManageListPage({ searchParams }: PageProps) {
   if (!selectedChild) {
     redirect(`/children/manage?child=${children[0]._id.toString()}`);
   }
+
+  // Check if lists are finalized
+  const listsFinalized = parent.christmasSettings?.listsFinalized || false;
+  const isLocked = selectedChild.giftListLocked || false;
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-white to-gray-50 py-8">
@@ -96,7 +100,9 @@ export default async function ManageListPage({ searchParams }: PageProps) {
         {/* Gift List Management */}
         <ManageGiftList 
           childId={selectedChildId} 
-          childName={selectedChild.displayName} 
+          childName={selectedChild.displayName}
+          isLocked={isLocked}
+          listsFinalized={listsFinalized}
         />
       </Container>
     </div>

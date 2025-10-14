@@ -87,15 +87,15 @@ export default async function Header() {
               className="w-40 h-auto drop-shadow-lg brightness-110"
             />
           </div>
-          
+
           {/* Mobile Menu Component with Hamburger */}
           <MobileMenu />
         </div>
       ) : (
         // Desktop Layout - Winter Northern Lights Theme
-        <div className="relative flex items-end justify-between gap-8 z-10 w-full">
+        <div className="relative flex items-end justify-between gap-12 z-10 w-full">
           {/* Left: Logo + Text aligned to bottom */}
-          <div className="flex items-end gap-4 flex-shrink-0">
+          <div className="flex items-center gap-4 flex-shrink-0 p-4">
             {/* Logo with warm flame glow */}
             <div className="relative">
               <div className="absolute -inset-2 bg-gradient-to-r from-orange-500/30 to-amber-500/30 rounded-full blur-md animate-pulse" style={{ animationDuration: '3s' }}></div>
@@ -112,13 +112,13 @@ export default async function Header() {
               <Image
                 src="/images/logoTxt.svg"
                 alt="Spirit of Santa"
-                width={50}
-                height={20}
-                className="w-64 md:w-20 lg:w-40 h-auto drop-shadow-2xl brightness-110"
+                width={200}
+                height={80}
+                className="w-[60%] max-w-[200px] h-auto drop-shadow-2xl brightness-110"
               />
             </div>
           </div>
-     
+
           {/* Center: Navigation with aurora/flame theme */}
           <div className="flex items-center justify-center flex-1">
             <div className="flex gap-4">
@@ -131,7 +131,6 @@ export default async function Header() {
                   boxShadow: '0 0 20px rgba(249, 115, 22, 0.3)',
                   height: '30px',
                 }}
-                type="button"
               >
                 <span className="relative z-10">Home</span>
                 <div className="absolute inset-0 bg-gradient-to-r from-amber-500 to-orange-600 opacity-0 group-hover:opacity-100 transition-opacity"></div>
@@ -146,7 +145,6 @@ export default async function Header() {
                   boxShadow: '0 0 20px rgba(236, 72, 153, 0.3)',
                   height: '30px',
                 }}
-                type="Link"
               >
                 <span className="relative z-10">Kids Dashboard</span>
                 <div className="absolute inset-0 bg-gradient-to-r from-pink-600 to-purple-600 opacity-0 group-hover:opacity-100 transition-opacity"></div>
@@ -161,7 +159,6 @@ export default async function Header() {
                   boxShadow: '0 0 20px rgba(6, 182, 212, 0.3)',
                   height: '30px',
                 }}
-                type="Link"
               >
                 <span className="relative z-10">Parent Dashboard</span>
                 <div className="absolute inset-0 bg-gradient-to-r from-cyan-600 to-blue-600 opacity-0 group-hover:opacity-100 transition-opacity"></div>
@@ -176,7 +173,6 @@ export default async function Header() {
                   boxShadow: '0 0 20px rgba(16, 185, 129, 0.3)',
                   height: '30px',
                 }}
-                type="Link"
               >
                 <span className="relative z-10">The List</span>
                 <div className="absolute inset-0 bg-gradient-to-r from-emerald-600 to-cyan-600 opacity-0 group-hover:opacity-100 transition-opacity"></div>

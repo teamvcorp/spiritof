@@ -51,11 +51,11 @@ export function GameModal({ isOpen, onClose, game }: GameModalProps) {
   );
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-2">
+    <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/70 backdrop-blur-sm p-2">
       <div 
         data-game-modal
         tabIndex={-1}
-        className="bg-evergreen rounded-xl shadow-2xl relative flex flex-col overflow-hidden outline-none"
+        className="relative z-[201] bg-evergreen rounded-xl shadow-2xl flex flex-col overflow-hidden outline-none"
         style={{ 
           width: modalWidth,
           height: modalHeight,

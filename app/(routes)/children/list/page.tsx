@@ -21,7 +21,7 @@ export default async function ChildrenListPage() {
   }
 
   const children = await Child.find({ parentId: parent._id })
-    .select("_id displayName avatarUrl score365")
+    .select("_id displayName avatarUrl score365 giftListLocked giftListLockedAt")
     .lean<IChild[]>();
 
   const childrenFormatted = children.map(child => ({
@@ -29,11 +29,17 @@ export default async function ChildrenListPage() {
     name: child.displayName,
     avatarUrl: child.avatarUrl,
     magicPoints: child.score365 || 0,
+    isLocked: child.giftListLocked || false,
+    lockedAt: child.giftListLockedAt?.toISOString(),
   }));
+
+  // Check if lists are finalized
+  const listsFinalized = parent.christmasSettings?.listsFinalized || false;
 
   return (
     <StyledGiftBuilder 
-      initialChildren={childrenFormatted} 
+      initialChildren={childrenFormatted}
+      listsFinalized={listsFinalized}
     />
   );
 }

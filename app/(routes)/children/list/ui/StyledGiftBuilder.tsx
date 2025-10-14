@@ -33,11 +33,17 @@ interface CategoryItem {
 }
 
 interface StyledGiftBuilderProps {
-  initialChildren: Array<{ id: string; name: string }>;
+  initialChildren: Array<{ 
+    id: string; 
+    name: string;
+    isLocked?: boolean;
+    lockedAt?: string;
+  }>;
   selectedChildId?: string;
+  listsFinalized?: boolean;
 }
 
-export function StyledGiftBuilder({ initialChildren, selectedChildId }: StyledGiftBuilderProps) {
+export function StyledGiftBuilder({ initialChildren, selectedChildId, listsFinalized }: StyledGiftBuilderProps) {
   const [selectedChild, setSelectedChild] = useState(selectedChildId || initialChildren[0]?.id || "");
   const [selectedBrand, setSelectedBrand] = useState<string | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
@@ -390,8 +396,28 @@ export function StyledGiftBuilder({ initialChildren, selectedChildId }: StyledGi
           </div>
         </div>
 
+        {/* List Finalized Message */}
+        {listsFinalized && (
+          <div className="bg-gradient-to-r from-evergreen via-santa to-evergreen rounded-lg p-8 mb-8 shadow-[0_8px_16px_rgba(0,0,0,0.3)] border-4 border-white/30">
+            <div className="text-center">
+              <h2 className="text-3xl sm:text-4xl font-paytone-one text-white mb-4">
+                🎄 Happy Holidays! 🎄
+              </h2>
+              <p className="text-white text-lg mb-2">
+                Your Christmas lists have been finalized and sent to Santa's workshop!
+              </p>
+              <p className="text-white/90 text-base">
+                No more changes can be made this year. We'll see you next Christmas! ✨
+              </p>
+              <div className="mt-4 text-white/80 text-sm">
+                <p>Lists will be ready to update again after Christmas Day</p>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Request New Toy Section */}
-        {selectedChild && (
+        {selectedChild && !listsFinalized && (
           <div className="bg-white/95 backdrop-blur-sm rounded-lg p-6 mb-6 shadow-[0_4px_12px_rgba(0,0,0,0.15)] border-0">
             <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
               <div className="text-center sm:text-left">
@@ -415,7 +441,7 @@ export function StyledGiftBuilder({ initialChildren, selectedChildId }: StyledGi
 
         {/* Child Selection */}
         {initialChildren.length > 1 && (
-          <div className="bg-white/95 backdrop-blur-sm rounded-lg p-4 mb-6 shadow-[0_4px_12px_rgba(0,0,0,0.15)] border-0">
+          <div className="bg-white/95 backdrop-blur-sm rounded-lg p-4 mb-6 shadow-[0_4px_12px_rgba(0,0,0,0.15)] border-0 ">
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Building list for: <span className="text-sm text-blue-600">
                 {childMagicPoints} magic points
@@ -436,14 +462,15 @@ export function StyledGiftBuilder({ initialChildren, selectedChildId }: StyledGi
         )}
 
         {/* Filter Row - Brand and Category Dropdowns */}
-        <div className="bg-white/95 backdrop-blur-sm rounded-lg p-4 sm:p-6 shadow-[0_4px_12px_rgba(0,0,0,0.15)] border-0 mb-6">
-          <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-3 sm:mb-4">
-            Filter Toys
-          </h3>
+        {!listsFinalized && (
+          <div className="bg-white/95 backdrop-blur-sm rounded-lg p-4 sm:p-6 shadow-[0_4px_12px_rgba(0,0,0,0.15)] border-0 mb-6">
+            <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-3 sm:mb-4">
+              Filter Toys
+            </h3>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {/* Brand Dropdown */}
-            {availableBrands.length > 0 && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {/* Brand Dropdown */}
+              {availableBrands.length > 0 && (
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   By Brand
@@ -485,9 +512,10 @@ export function StyledGiftBuilder({ initialChildren, selectedChildId }: StyledGi
             )}
           </div>
         </div>
+        )}
 
         {/* Loading State */}
-        {isLoading && (
+        {!listsFinalized && isLoading && (
           <div className="flex justify-center items-center py-12">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div>
             <span className="ml-3 text-white">Loading toys...</span>
@@ -495,7 +523,7 @@ export function StyledGiftBuilder({ initialChildren, selectedChildId }: StyledGi
         )}
 
         {/* Toy Shelf with Results Grid */}
-        {!isLoading && items.length > 0 && (
+        {!listsFinalized && !isLoading && items.length > 0 && (
           <div className="space-y-6">
             {/* Toy Count Display */}
             <div className="text-center mb-4 text-white font-semibold text-lg">
@@ -620,7 +648,7 @@ export function StyledGiftBuilder({ initialChildren, selectedChildId }: StyledGi
         )}
 
         {/* Empty State */}
-        {!isLoading && items.length === 0 && (
+        {!listsFinalized && !isLoading && items.length === 0 && (
           <div className="text-center py-12 bg-white/95 backdrop-blur-sm rounded-lg p-8 shadow-[0_4px_12px_rgba(0,0,0,0.15)]">
             <div className="text-6xl mb-4">🎁</div>
             <h3 className="text-xl font-medium text-gray-900 mb-2">

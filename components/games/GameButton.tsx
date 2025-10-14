@@ -211,8 +211,8 @@ function GameSelectorModal({ isOpen, onClose, onSelectGame }: GameSelectorModalP
     : GAMES_CONFIG.filter(g => g.category === selectedCategory);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-      <div className="bg-evergreen rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col">
+    <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+      <div className="bg-evergreen rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col relative z-[201]">
         {/* Header */}
         <div className="bg-gradient-to-r from-evergreen to-blueberry text-white p-6">
           <div className="flex items-center justify-between">

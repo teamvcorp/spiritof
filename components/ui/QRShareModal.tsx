@@ -233,8 +233,8 @@ export default function QRShareModal({
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <Card className="bg-white max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-[200]">
+      <Card className="bg-white max-w-2xl w-full max-h-[90vh] overflow-y-auto relative z-[201]">
         <div className="p-6">
           {/* Header */}
           <div className="flex justify-between items-center mb-6">

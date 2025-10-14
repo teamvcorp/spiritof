@@ -60,17 +60,17 @@ export function Container<T extends React.ElementType = "div">({
 }: ContainerProps<T>) {
   const Comp = as ?? "div";
   const maxW = size === "prose" ? "max-w-prose" : sizeToClass[size];
-  const paddingX = bleed ? "px-0" : pxToClass[px];
-  const paddingY = pyToClass[py];
+  const paddingX = bleed ? "px-2" : pxToClass[px];
+  
 
   return (
     <Comp
       data-container=""
       className={cn(
-        "mx-auto w-full",
+        "mx-auto w-full py-10",
         maxW,
         paddingX,
-        paddingY,
+        
         "transition-[padding]",
         className
       )}

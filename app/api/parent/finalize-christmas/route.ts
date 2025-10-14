@@ -6,6 +6,9 @@ import { Child } from "@/models/Child";
 import { MasterCatalog } from "@/models/MasterCatalog";
 import { stripe } from "@/lib/stripe";
 import { Types } from "mongoose";
+import { Resend } from "resend";
+
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 export async function POST(req: NextRequest) {
   try {
@@ -64,7 +67,7 @@ export async function POST(req: NextRequest) {
       }, { status: 400 });
     }
 
-    // Calculate total cost for all children's gifts
+    // Calculate total cost for all children's gifts (MasterCatalog prices are in dollars)
     let totalGiftCostCents = 0;
     const childrenWithGifts = [];
 
@@ -74,7 +77,8 @@ export async function POST(req: NextRequest) {
           _id: { $in: child.giftList }
         }).lean();
         
-        const childGiftCost = gifts.reduce((sum, gift) => sum + (gift.price || 0), 0);
+        // Convert dollars to cents for internal calculations
+        const childGiftCost = gifts.reduce((sum, gift) => sum + Math.round((gift.price || 0) * 100), 0);
         totalGiftCostCents += childGiftCost;
         
         childrenWithGifts.push({
@@ -85,7 +89,7 @@ export async function POST(req: NextRequest) {
           gifts: gifts.map(g => ({ 
             id: g._id, 
             name: g.title || 'Unknown Gift', 
-            price: g.price || 0 
+            price: Math.round((g.price || 0) * 100) // Store in cents
           }))
         });
       }
@@ -97,12 +101,20 @@ export async function POST(req: NextRequest) {
       }, { status: 400 });
     }
 
-    // Calculate current successful wallet balance
+    // Calculate current successful wallet balance (parent's wallet)
     const successfulEntries = parent.walletLedger.filter(entry => entry.status === "SUCCEEDED");
-    const currentBalanceCents = successfulEntries.reduce((sum, entry) => sum + entry.amountCents, 0);
+    const parentWalletBalanceCents = successfulEntries.reduce((sum, entry) => sum + entry.amountCents, 0);
+    
+    // Calculate total neighbor donations across all children
+    const totalNeighborDonationsCents = children.reduce((sum, child) => {
+      return sum + (child.neighborBalanceCents || 0);
+    }, 0);
+    
+    // Calculate total available funds (parent wallet + all neighbor donations)
+    const totalAvailableFundsCents = parentWalletBalanceCents + totalNeighborDonationsCents;
     
     // Check if additional payment is needed
-    const shortfallCents = Math.max(0, totalGiftCostCents - currentBalanceCents);
+    const shortfallCents = Math.max(0, totalGiftCostCents - totalAvailableFundsCents);
     
     let paymentResult = null;
     
@@ -167,6 +179,20 @@ export async function POST(req: NextRequest) {
     // Recompute wallet balance to reflect any new payments
     parent.recomputeWalletBalance();
     
+    // Deduct the amount covered by parent's wallet (NOT neighbor donations)
+    // Neighbor donations stay with the children and are handled separately
+    const amountFromWallet = Math.min(totalGiftCostCents - totalNeighborDonationsCents, parentWalletBalanceCents + shortfallCents);
+    if (amountFromWallet > 0) {
+      parent.addLedgerEntry({
+        type: "ADJUSTMENT",
+        amountCents: -amountFromWallet, // Negative to deduct
+        status: "SUCCEEDED"
+      });
+      
+      // Recompute to reflect the deduction
+      parent.recomputeWalletBalance();
+    }
+    
     await parent.save();
 
     // Lock all children's gift lists (prevent further modifications)
@@ -180,6 +206,120 @@ export async function POST(req: NextRequest) {
       }
     );
 
+    // Send receipt email via Resend
+    try {
+      await resend.emails.send({
+        from: process.env.RESEND_FROM_EMAIL || 'Spirit of Santa <noreply@spiritofsanta.com>',
+        to: parent.email,
+        subject: '🎄 Christmas List Finalized - Order Confirmation',
+        html: `
+          <!DOCTYPE html>
+          <html>
+            <head>
+              <style>
+                body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+                .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+                .header { background: linear-gradient(135deg, #CC001E 0%, #8B0000 100%); color: white; padding: 30px; text-align: center; border-radius: 8px 8px 0 0; }
+                .content { background: #f9f9f9; padding: 30px; border-radius: 0 0 8px 8px; }
+                .summary-box { background: white; padding: 20px; margin: 20px 0; border-radius: 8px; border-left: 4px solid #CC001E; }
+                .child-section { background: white; padding: 15px; margin: 10px 0; border-radius: 6px; }
+                .total-row { font-size: 18px; font-weight: bold; padding: 15px; background: #e8f5e9; border-radius: 6px; margin-top: 15px; }
+                .footer { text-align: center; padding: 20px; color: #666; font-size: 12px; }
+                .gift-item { padding: 8px 0; border-bottom: 1px solid #eee; }
+              </style>
+            </head>
+            <body>
+              <div class="container">
+                <div class="header">
+                  <h1 style="margin: 0;">🎅 Christmas List Finalized!</h1>
+                  <p style="margin: 10px 0 0 0; opacity: 0.9;">Your order has been confirmed</p>
+                </div>
+                
+                <div class="content">
+                  <p>Hi ${parent.name},</p>
+                  
+                  <p>Great news! Your Christmas lists have been successfully finalized and submitted for fulfillment.</p>
+                  
+                  <div class="summary-box">
+                    <h2 style="margin-top: 0; color: #CC001E;">Order Summary</h2>
+                    <table style="width: 100%; border-collapse: collapse;">
+                      <tr>
+                        <td style="padding: 8px 0;">Total Gift Cost:</td>
+                        <td style="text-align: right; font-weight: bold;">$${(totalGiftCostCents / 100).toFixed(2)}</td>
+                      </tr>
+                      <tr>
+                        <td style="padding: 8px 0;">Your Wallet Balance:</td>
+                        <td style="text-align: right; color: #2e7d32;">$${(parentWalletBalanceCents / 100).toFixed(2)}</td>
+                      </tr>
+                      ${totalNeighborDonationsCents > 0 ? `
+                      <tr>
+                        <td style="padding: 8px 0;">Neighbor Donations:</td>
+                        <td style="text-align: right; color: #2e7d32;">$${(totalNeighborDonationsCents / 100).toFixed(2)}</td>
+                      </tr>
+                      ` : ''}
+                      <tr>
+                        <td style="padding: 8px 0; padding-top: 15px; border-top: 2px solid #ddd;"><strong>Amount Charged:</strong></td>
+                        <td style="text-align: right; font-size: 18px; font-weight: bold; color: #CC001E; padding-top: 15px; border-top: 2px solid #ddd;">
+                          $${((paymentResult?.amountCharged || 0) / 100).toFixed(2)}
+                        </td>
+                      </tr>
+                    </table>
+                  </div>
+                  
+                  <h3>Gift Details by Child:</h3>
+                  ${childrenWithGifts.map(child => `
+                    <div class="child-section">
+                      <h4 style="margin-top: 0; color: #1976d2;">${child.childName}</h4>
+                      <p style="margin: 5px 0;"><strong>${child.giftCount} gifts</strong> • Total: $${(child.giftCostCents / 100).toFixed(2)}</p>
+                      ${child.gifts.map(gift => `
+                        <div class="gift-item">
+                          <div>${gift.name}</div>
+                          <div style="color: #666; font-size: 14px;">$${(gift.price > 1000 ? gift.price / 100 : gift.price).toFixed(2)}</div>
+                        </div>
+                      `).join('')}
+                    </div>
+                  `).join('')}
+                  
+                  <div class="total-row">
+                    <div style="display: flex; justify-content: space-between;">
+                      <span>Total for All Children:</span>
+                      <span>$${(totalGiftCostCents / 100).toFixed(2)}</span>
+                    </div>
+                  </div>
+                  
+                  <div style="background: #fff3cd; padding: 15px; margin: 20px 0; border-radius: 6px; border-left: 4px solid #ffc107;">
+                    <p style="margin: 0;"><strong>🔒 Lists are now locked</strong></p>
+                    <p style="margin: 5px 0 0 0; font-size: 14px;">Gift lists can no longer be modified. Your order has been submitted to our logistics team for processing.</p>
+                  </div>
+                  
+                  <h3>What's Next?</h3>
+                  <ul>
+                    <li>Your order is being reviewed by our logistics team</li>
+                    <li>You'll receive shipment confirmation with tracking details</li>
+                    <li>All gifts will arrive in time for Christmas! 🎁</li>
+                  </ul>
+                  
+                  <p>If you have any questions, please contact our support team.</p>
+                  
+                  <p style="margin-top: 30px;">Merry Christmas! 🎄<br>
+                  The Spirit of Santa Team</p>
+                </div>
+                
+                <div class="footer">
+                  <p>Order Date: ${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString()}</p>
+                  <p>This is an automated message. Please do not reply to this email.</p>
+                </div>
+              </div>
+            </body>
+          </html>
+        `
+      });
+      console.log(`✅ Receipt email sent to ${parent.email}`);
+    } catch (emailError) {
+      console.error("Failed to send receipt email:", emailError);
+      // Don't fail the whole request if email fails
+    }
+
     return NextResponse.json({
       success: true,
       message: "Christmas lists finalized successfully!",
@@ -187,7 +327,9 @@ export async function POST(req: NextRequest) {
         totalChildren: children.length,
         childrenWithGifts: childrenWithGifts.length,
         totalGiftCostCents,
-        previousBalanceCents: currentBalanceCents,
+        parentWalletBalanceCents,
+        totalNeighborDonationsCents,
+        totalAvailableFundsCents,
         shortfallCents,
         finalBalanceCents: parent.walletBalanceCents,
         paymentCharged: paymentResult?.amountCharged || 0,
