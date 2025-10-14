@@ -6,9 +6,16 @@ import Image from "next/image";
 interface NaughtyNiceMeterProps {
   percentage: number;
   className?: string;
+  maxGifts?: number;
+  currentGiftCount?: number;
 }
 
-export default function NaughtyNiceMeter({ percentage, className = "" }: NaughtyNiceMeterProps) {
+export default function NaughtyNiceMeter({ 
+  percentage, 
+  className = "",
+  maxGifts = 5,
+  currentGiftCount = 0
+}: NaughtyNiceMeterProps) {
   const [animatedPercentage, setAnimatedPercentage] = useState(0);
 
   // Animate the needle on component mount
@@ -22,6 +29,41 @@ export default function NaughtyNiceMeter({ percentage, className = "" }: Naughty
   // Convert percentage to angle for needle rotation (0-180 degrees)
   // 0% = -90 degrees (left), 100% = 90 degrees (right)
   const needleAngle = -90 + (animatedPercentage / 100) * 180;
+
+  // Calculate earned gifts based on percentage
+  // At least 1 gift minimum, scale up to maxGifts at 100%
+  const earnedGifts = Math.max(1, Math.floor((animatedPercentage / 100) * maxGifts));
+  
+  // Calculate how many more gifts until next milestone (every 5%)
+  const percentagePerGift = 100 / maxGifts;
+  const nextMilestonePercentage = Math.ceil(animatedPercentage / 5) * 5;
+  const giftsAtNextMilestone = Math.max(1, Math.floor((nextMilestonePercentage / 100) * maxGifts));
+  const giftsUntilNext = Math.max(0, giftsAtNextMilestone - earnedGifts);
+  
+  // Get encouraging message based on percentage
+  const getMessage = () => {
+    if (animatedPercentage >= 95) {
+      return "🌟 Amazing! You're a Christmas superstar!";
+    } else if (animatedPercentage >= 85) {
+      return "✨ Fantastic! Santa is so proud of you!";
+    } else if (animatedPercentage >= 75) {
+      return "🎄 Great job! Keep up the excellent behavior!";
+    } else if (animatedPercentage >= 65) {
+      return "🎁 You're doing wonderful! Keep it up!";
+    } else if (animatedPercentage >= 55) {
+      return "⭐ Nice work! You're making Santa smile!";
+    } else if (animatedPercentage >= 45) {
+      return "🌠 Good progress! Keep being kind!";
+    } else if (animatedPercentage >= 35) {
+      return "💫 You're improving! Santa believes in you!";
+    } else if (animatedPercentage >= 25) {
+      return "🎅 Keep trying! Every good deed counts!";
+    } else if (animatedPercentage >= 15) {
+      return "❄️ You can do it! Start with small acts of kindness!";
+    } else {
+      return "🎄 New beginnings! Every day is a chance to be nice!";
+    }
+  };
 
   return (
     <div className={`relative ${className}`}>
@@ -101,15 +143,51 @@ export default function NaughtyNiceMeter({ percentage, className = "" }: Naughty
       </div>
 
       {/* Percentage display below the meter */}
-      <div className="text-center mt-3 ">
-        <div className="text-2xl font-bold text-white">
+      <div className="text-center mt-4 space-y-2">
+        <div className="text-3xl font-bold text-white">
           {Math.round(animatedPercentage)}%
         </div>
-        <div className="text-sm font-medium text-white">
-          {animatedPercentage >= 67 ? "Nice!" : 
-           animatedPercentage >= 34 ? "Could Be Better" : 
-           "Naughty"}
+        
+        {/* Encouraging message */}
+        <div className="text-base font-medium text-white/90">
+          {getMessage()}
         </div>
+        
+        {/* Earned presents display */}
+        <div className="bg-white/10 backdrop-blur-sm rounded-lg p-3 inline-block">
+          <div className="text-lg font-bold text-white">
+            🎁 {earnedGifts} of {maxGifts} Presents Earned
+          </div>
+          {earnedGifts < maxGifts && giftsUntilNext > 0 && (
+            <div className="text-sm text-white/80 mt-1">
+              Keep being good to earn {giftsUntilNext} more! 🌟
+            </div>
+          )}
+          {earnedGifts >= maxGifts && (
+            <div className="text-sm text-white/80 mt-1">
+              You've earned all your presents! 🎉
+            </div>
+          )}
+        </div>
+        
+        {/* Current list status if provided */}
+        {currentGiftCount > 0 && (
+          <div className="text-sm text-white/70">
+            {currentGiftCount > earnedGifts ? (
+              <span className="text-yellow-300">
+                ⚠️ You have {currentGiftCount - earnedGifts} too many gifts on your list
+              </span>
+            ) : currentGiftCount === earnedGifts ? (
+              <span className="text-green-300">
+                ✓ Your list matches your earned presents!
+              </span>
+            ) : (
+              <span className="text-blue-300">
+                You can add {earnedGifts - currentGiftCount} more gifts!
+              </span>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );

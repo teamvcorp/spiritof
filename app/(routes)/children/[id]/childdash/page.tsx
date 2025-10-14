@@ -108,7 +108,11 @@ const {id: childId} = await params;
             <div className='flex w-full md:w-auto flex-col sm:flex-row items-center justify-center gap-6 sm:gap-10'>
               <div className="relative">
                 {/* Animated Naughty Nice Meter */}
-                <NaughtyNiceMeter percentage={nicenessPercentage} />
+                <NaughtyNiceMeter 
+                  percentage={nicenessPercentage}
+                  maxGifts={parent.giftSettings?.maxGifts || 5}
+                  currentGiftCount={giftList.length}
+                />
               </div>
               <div className='flex flex-col items-center  gap-3 sm:gap-4'>
                 <h3 className='text-lg sm:text-xl'>Latest Vote</h3>
@@ -169,7 +173,7 @@ const {id: childId} = await params;
               }
             `}} />
             
-            <div className="relative z-10">
+            <div className="relative z-10 flex flex-col gap-y-10">
             <h2 className="text-2xl uppercase font-semibold">My Christmas Magic</h2>
             <div className='flex justify-center gap-x-20 items-center '>
               <Image

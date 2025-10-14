@@ -35,11 +35,17 @@ export default async function ChildrenListPage() {
 
   // Check if lists are finalized
   const listsFinalized = parent.christmasSettings?.listsFinalized || false;
+  
+  // Get gift settings
+  const maxGifts = parent.giftSettings?.maxGifts || 5;
+  const minGifts = parent.giftSettings?.minGifts || 1;
 
   return (
     <StyledGiftBuilder 
       initialChildren={childrenFormatted}
       listsFinalized={listsFinalized}
+      maxGifts={maxGifts}
+      minGifts={minGifts}
     />
   );
 }

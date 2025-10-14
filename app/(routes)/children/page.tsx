@@ -26,7 +26,7 @@ export default async function ChildrenPickerPage() {
   return (
     <main className="min-h-screen bg-gradient-to-b from-[#005574] via-[#032255] to-[#001a33] flex flex-col items-center justify-center px-4 py-16">
       {/* Ice sheet container */}
-      <div className="relative bg-gray-200 backdrop-blur-sm rounded-2xl shadow-[0_4px_12px_rgba(0,0,0,0.15)] p-8 sm:p-12 max-w-6xl w-full">
+      <div className="relative bg-white/95 backdrop-blur-sm rounded-2xl shadow-[0_4px_12px_rgba(0,0,0,0.15)] p-8 sm:p-12 max-w-6xl w-full">
         {/* Light reflection overlay */}
         <div className="absolute inset-0 rounded-2xl overflow-hidden pointer-events-none">
           <div className="absolute top-0 left-0 right-0 h-32 bg-gradient-to-b from-white/20 to-transparent transform -skew-y-3"></div>
@@ -48,18 +48,18 @@ export default async function ChildrenPickerPage() {
               {children.map((c) => {
                 const id = String(c._id);
                 return (
-                  <li key={id} className="flex flex-col items-center gap-4">
-                    <Link href={`/children/${id}/childdash`} className="group focus:outline-none">
-                      <div className="relative h-32 w-32 sm:h-40 sm:w-40 rounded-full overflow-hidden ring-4 ring-white shadow-[0_4px_12px_rgba(0,0,0,0.2)] group-hover:ring-santa transition-all duration-300 transform hover:scale-110 bg-gradient-to-br from-santa/20 to-evergreen/20">
+                  <li key={id} className="flex flex-col items-center gap-4 ">
+                    <Link href={`/children/${id}/childdash`} className="group focus:outline-none text-mint">
+                      <div className="relative h-32 w-32 sm:h-40 sm:w-40 rounded-full overflow-hidden ring-4 shadow-[0_4px_12px_rgba(0,0,0,0.2)] group-hover:ring-santa transition-all duration-300 transform hover:scale-110 bg-gradient-to-br from-santa/20 to-evergreen/20">
                         {c.avatarUrl ? (
                           <img src={c.avatarUrl} alt={c.displayName} className="h-full w-full object-cover" />
                         ) : (
-                          <div className="h-full w-full bg-gradient-to-br from-santa to-berryPink flex items-center justify-center text-6xl font-bold text-white">
+                          <div className="h-full w-full bg-gradient-to-br from-santa to-berryPink flex items-center justify-center text-6xl font-bold text-santa">
                             {c.displayName?.[0]?.toUpperCase() ?? "?"}
                           </div>
                         )}
                         {/* Hover glow effect */}
-                        <div className="absolute inset-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                        <div className="absolute inset-0 group-hover:opacity-100 transition-opacity duration-300 "></div>
                       </div>
                       <div className="mt-3 text-center text-base sm:text-lg font-semibold text-evergreen group-hover:text-evergreen transition-colors duration-300">
                         {c.displayName}

@@ -23,7 +23,7 @@ export default function EarnMagicButton({ childId, childName, shareSlug }: EarnM
     <>
       <Button
         onClick={() => setIsModalOpen(true)}
-        className="bg-santa min-w-40"
+        className="bg-santa p-2 min-w-40"
       >
         <span><ImMagicWand /></span>Earn Magic
       </Button>

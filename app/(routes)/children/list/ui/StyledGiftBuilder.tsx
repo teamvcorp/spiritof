@@ -36,14 +36,23 @@ interface StyledGiftBuilderProps {
   initialChildren: Array<{ 
     id: string; 
     name: string;
+    magicPoints?: number;
     isLocked?: boolean;
     lockedAt?: string;
   }>;
   selectedChildId?: string;
   listsFinalized?: boolean;
+  maxGifts?: number;
+  minGifts?: number;
 }
 
-export function StyledGiftBuilder({ initialChildren, selectedChildId, listsFinalized }: StyledGiftBuilderProps) {
+export function StyledGiftBuilder({ 
+  initialChildren, 
+  selectedChildId, 
+  listsFinalized,
+  maxGifts = 5,
+  minGifts = 1
+}: StyledGiftBuilderProps) {
   const [selectedChild, setSelectedChild] = useState(selectedChildId || initialChildren[0]?.id || "");
   const [selectedBrand, setSelectedBrand] = useState<string | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
@@ -57,6 +66,7 @@ export function StyledGiftBuilder({ initialChildren, selectedChildId, listsFinal
   const [hasMore, setHasMore] = useState(true);
   const [totalCount, setTotalCount] = useState(0);
   const [childMagicPoints, setChildMagicPoints] = useState(0);
+  const [currentGiftCount, setCurrentGiftCount] = useState(0);
   const [availableBrands, setAvailableBrands] = useState<BrandItem[]>([]);
   const [availableCategories, setAvailableCategories] = useState<CategoryItem[]>([]);
 
@@ -161,6 +171,7 @@ export function StyledGiftBuilder({ initialChildren, selectedChildId, listsFinal
         const result = await getChildExistingGifts(selectedChild);
         if (result.success) {
           setExistingGifts(new Set(result.existingItems));
+          setCurrentGiftCount(result.existingItems?.length || 0);
           if (result.magicPoints !== undefined) {
             setChildMagicPoints(result.magicPoints);
           }
@@ -189,8 +200,11 @@ export function StyledGiftBuilder({ initialChildren, selectedChildId, listsFinal
     const loadData = async () => {
       try {
         const result = await getChildExistingGifts(selectedChild);
-        if (result.success && result.magicPoints !== undefined) {
-          setChildMagicPoints(result.magicPoints);
+        if (result.success) {
+          setCurrentGiftCount(result.existingItems?.length || 0);
+          if (result.magicPoints !== undefined) {
+            setChildMagicPoints(result.magicPoints);
+          }
         }
       } catch (error) {
         console.error("Failed to refresh child data:", error);
@@ -198,6 +212,12 @@ export function StyledGiftBuilder({ initialChildren, selectedChildId, listsFinal
     };
     loadData();
   };
+
+  // Calculate earned gifts based on magic points percentage
+  // Score365 represents percentage (0-365 -> 0-100%)
+  const magicPercentage = Math.min(100, (childMagicPoints / 365) * 100);
+  const earnedGifts = Math.max(minGifts, Math.floor((magicPercentage / 100) * maxGifts));
+  const canAddMoreGifts = currentGiftCount < earnedGifts;
 
   const isGiftInList = (item: MasterCatalogItem) => {
     const itemId = item._id?.toString() || "";
@@ -209,6 +229,12 @@ export function StyledGiftBuilder({ initialChildren, selectedChildId, listsFinal
   const handleAddToList = async (item: MasterCatalogItem) => {
     const itemId = item._id?.toString() || "";
     if (isGiftInList(item) || processingItems.has(itemId)) {
+      return;
+    }
+
+    // Check if child has earned enough presents
+    if (!canAddMoreGifts) {
+      alert(`You've reached your gift limit! You've earned ${earnedGifts} presents based on your nice meter. Keep being good to earn more! 🌟`);
       return;
     }
 
@@ -236,6 +262,7 @@ export function StyledGiftBuilder({ initialChildren, selectedChildId, listsFinal
           setExistingGifts(prev => new Set([...prev, item.productUrl!]));
         }
         setExistingGifts(prev => new Set([...prev, item.title.toLowerCase().trim()]));
+        setCurrentGiftCount(prev => prev + 1);
       } else {
         alert(result.message || "Failed to add gift to list");
       }
@@ -411,6 +438,35 @@ export function StyledGiftBuilder({ initialChildren, selectedChildId, listsFinal
               </p>
               <div className="mt-4 text-white/80 text-sm">
                 <p>Lists will be ready to update again after Christmas Day</p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Gift Limit Banner */}
+        {selectedChild && !listsFinalized && (
+          <div className={`rounded-lg p-4 mb-6 shadow-[0_4px_12px_rgba(0,0,0,0.15)] ${
+            canAddMoreGifts 
+              ? 'bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-300' 
+              : 'bg-gradient-to-r from-orange-50 to-yellow-50 border-2 border-orange-300'
+          }`}>
+            <div className="flex items-center gap-3">
+              <div className="text-3xl">
+                {canAddMoreGifts ? '🎁' : '⚠️'}
+              </div>
+              <div className="flex-1">
+                <h3 className={`text-lg font-bold ${canAddMoreGifts ? 'text-green-800' : 'text-orange-800'}`}>
+                  {canAddMoreGifts 
+                    ? `You can add ${earnedGifts - currentGiftCount} more gift${earnedGifts - currentGiftCount === 1 ? '' : 's'}!`
+                    : `Gift Limit Reached!`
+                  }
+                </h3>
+                <p className={`text-sm ${canAddMoreGifts ? 'text-green-700' : 'text-orange-700'}`}>
+                  {canAddMoreGifts
+                    ? `Based on your nice meter (${Math.round(magicPercentage)}%), you've earned ${earnedGifts} presents. You have ${currentGiftCount} on your list.`
+                    : `You've reached your limit of ${earnedGifts} presents. Keep being good to earn more! 🌟`
+                  }
+                </p>
               </div>
             </div>
           </div>
