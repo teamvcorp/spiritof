@@ -26,7 +26,7 @@ export default async function ChildrenPickerPage() {
   return (
     <main className="min-h-screen bg-gradient-to-b from-[#005574] via-[#032255] to-[#001a33] flex flex-col items-center justify-center px-4 py-16">
       {/* Ice sheet container */}
-      <div className="relative bg-white/95 backdrop-blur-sm rounded-2xl shadow-[0_4px_12px_rgba(0,0,0,0.15)] p-8 sm:p-12 max-w-6xl w-full">
+      <div className="relative bg-gray-200 backdrop-blur-sm rounded-2xl shadow-[0_4px_12px_rgba(0,0,0,0.15)] p-8 sm:p-12 max-w-6xl w-full">
         {/* Light reflection overlay */}
         <div className="absolute inset-0 rounded-2xl overflow-hidden pointer-events-none">
           <div className="absolute top-0 left-0 right-0 h-32 bg-gradient-to-b from-white/20 to-transparent transform -skew-y-3"></div>
@@ -39,7 +39,7 @@ export default async function ChildrenPickerPage() {
           </h1>
           
           {children.length === 0 ? (
-            <div className="text-center bg-blueberry/10 border-2 border-blueberry/20 rounded-lg p-8 text-gray-700">
+            <div className="text-center bg-blueberry border-2 border-blueberry rounded-lg p-8 text-gray-700">
               <p className="text-lg mb-2">No children found yet.</p>
               <p className="text-sm">Add children from your <Link href="/parent/dashboard" className="text-santa font-semibold hover:underline">Parent Dashboard</Link>.</p>
             </div>
@@ -59,9 +59,9 @@ export default async function ChildrenPickerPage() {
                           </div>
                         )}
                         {/* Hover glow effect */}
-                        <div className="absolute inset-0 bg-gradient-to-t from-santa/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                        <div className="absolute inset-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                       </div>
-                      <div className="mt-3 text-center text-base sm:text-lg font-semibold text-gray-800 group-hover:text-santa transition-colors duration-300">
+                      <div className="mt-3 text-center text-base sm:text-lg font-semibold text-evergreen group-hover:text-evergreen transition-colors duration-300">
                         {c.displayName}
                       </div>
                     </Link>

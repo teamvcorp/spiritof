@@ -50,7 +50,6 @@ export default async function ParentDashboardPage({ searchParams }: PageProps) {
 
   // Get search parameters
   const params = await searchParams;
-  console.log('Page level - received searchParams:', params);
 
   return <Dashboard searchParams={params} />;
 }

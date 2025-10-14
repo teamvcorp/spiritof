@@ -38,16 +38,16 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if child has enough magic points
-    if (child.score365 < 5) {
+    if (child.score365 < 1) {
       return NextResponse.json({ 
-        error: 'Not enough magic points. You need 5 magic points to request a new item.',
-        required: 5,
+        error: 'Not enough magic points. You need 1 magic point to request a new item.',
+        required: 1,
         current: child.score365
       }, { status: 400 });
     }
 
-    // Deduct 5 magic points
-    child.score365 -= 5;
+    // Deduct 1 magic point
+    child.score365 -= 1;
     await child.save();
 
     // Save the request to database
@@ -59,7 +59,7 @@ export async function POST(request: NextRequest) {
       itemTitle,
       itemDescription: itemDescription || '',
       itemUrl: itemUrl || '',
-      magicPointsUsed: 5,
+      magicPointsUsed: 1,
       status: 'PENDING'
     });
 
@@ -88,7 +88,7 @@ export async function POST(request: NextRequest) {
       success: true,
       message: 'Your request has been sent to Santa! 🎅',
       remainingMagicPoints: child.score365,
-      pointsUsed: 5,
+      pointsUsed: 1,
       requestId: toyRequest._id
     });
 

@@ -31,7 +31,7 @@ export default function RequestNewToy({
     itemUrl: ''
   });
 
-  const canRequest = magicPoints >= 5;
+  const canRequest = magicPoints >= 1;
 
   const showToast = (type: 'success' | 'error', message: string) => {
     setToast({ type, message });
@@ -88,11 +88,11 @@ export default function RequestNewToy({
             ? 'bg-santa text-white hover:bg-red-700' 
             : 'bg-gray-300 text-gray-500 cursor-not-allowed'
         } flex items-center gap-2 px-6 py-3 max-w-none`}
-        title={!canRequest ? 'You need 5 magic points to request a new toy' : 'Request Santa to add a new toy (costs 5 magic points)'}
+        title={!canRequest ? 'You need 1 magic point to request a new toy' : 'Request Santa to add a new toy (costs 1 magic point)'}
       >
         <FaPlus />
         Request New Toy
-        {!canRequest && <span className="text-sm">(Need 5 ✨)</span>}
+        {!canRequest && <span className="text-sm">(Need 1 ✨)</span>}
       </Button>
 
       {/* Toast Notification */}
@@ -138,7 +138,7 @@ export default function RequestNewToy({
               <div className="flex items-center gap-2 mb-2">
                 <FaGift className="text-santa" />
                 <p className="text-sm font-medium text-santa-800">
-                  Cost: 5 magic points ✨
+                  Cost: 1 magic point ✨
                 </p>
               </div>
               <p className="text-sm text-santa-700">
@@ -210,7 +210,7 @@ export default function RequestNewToy({
                   ) : (
                     <>
                       <FaGift />
-                      Send to Santa (5 ✨)
+                      Send to Santa (1 ✨)
                     </>
                   )}
                 </Button>

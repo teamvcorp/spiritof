@@ -20,7 +20,6 @@ export default function DashboardClient({ parentId, hasChristmasSetup, searchPar
   const [statusMessage, setStatusMessage] = useState<{ type: 'success' | 'cancelled'; message: string } | null>(null);
 
   useEffect(() => {
-    console.log('DashboardClient useEffect - searchParams:', searchParams);
     let message: { type: 'success' | 'cancelled'; message: string } | null = null;
 
     // Check search params first (server-side), then URL params (client-side fallback)
@@ -28,7 +27,6 @@ export default function DashboardClient({ parentId, hasChristmasSetup, searchPar
     const sessionId = searchParams?.session_id || (typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('session_id') : null);
     const welcomePacket = searchParams?.welcome_packet || (typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('welcome_packet') : null);
     
-    console.log('Parsed values:', { payment, sessionId, welcomePacket });
     
     // Handle payment success/failure
     if (payment === 'success' && sessionId) {
@@ -59,7 +57,6 @@ export default function DashboardClient({ parentId, hasChristmasSetup, searchPar
       })
       .then(response => response.json())
       .then(data => {
-        console.log('✅ Welcome packet status check result:', data);
         if (data.updatedOrders) {
           console.log('🔄 Orders were updated, refreshing page...');
           // Refresh the page to show updated state
@@ -115,7 +112,7 @@ export default function DashboardClient({ parentId, hasChristmasSetup, searchPar
       )}
       {/* Header with Christmas Setup */}
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-semibold">Parent Dashboard</h1>
+        <h1 className="text-2xl lg:text-4xl text-white">Parent Dashboard</h1>
         <div className="flex items-center gap-4">
           {/* Christmas Setup Button */}
           <Button

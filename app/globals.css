@@ -163,6 +163,7 @@
     opacity: 0.6;
     pointer-events: none;
   }
+
   /* Toast notification animation */
   .animate-slide-in {
     animation: slideIn 0.3s ease-out;

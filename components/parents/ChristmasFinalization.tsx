@@ -132,7 +132,7 @@ export default function ChristmasFinalization({
         <div className="flex items-center mb-4">
           <FaCheck className="text-green-600 text-2xl mr-3" />
           <div>
-            <h3 className="text-lg  text-evergreen">
+            <h3 className="text-lg text-center uppercase text-evergreen">
               Christmas Lists Finalized
             </h3>
             <p className="text-green-600 text-sm">
@@ -142,9 +142,9 @@ export default function ChristmasFinalization({
         </div>
         
         <div className="space-y-2 text-sm gray-box">
-          <p>✅ All gift lists have been locked and submitted for fulfillment</p>
-          <p>✅ Payment has been processed for the total gift cost</p>
-          <p>✅ Your order is now in the logistics queue for shipment approval</p>
+          <p>✅ All gift lists have been locked and submitted for fulfillment.</p>
+          <p>✅ Payment has been processed for the total gift cost.</p>
+          <p>✅ Your order is now in the logistics queue for shipment approval.</p>
         </div>
         
         <div className="mt-4 p-3 bg-green-100 rounded-lg">
@@ -301,7 +301,7 @@ export default function ChristmasFinalization({
             <Button
               onClick={fetchPreview}
               disabled={!canFinalize() || loadingPreview}
-              className="bg-santa link-btn hover:bg-[#CC001E]"
+              className="bg-evergreen link-btn hover:bg-[#1E534A]"
             >
               {loadingPreview ? "Loading..." : (isBeforeLockDate() ? "Preview & Finalize" : "Preview & Finalize")}
             </Button>

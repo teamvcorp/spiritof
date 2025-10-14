@@ -39,7 +39,7 @@ export default function Button({
     <button
       type={type}
       className={cn(
-        "inline-flex max-w-60 items-center gap-2  rounded-xl px-4 py-4 text-lg justify-center transform transition-transform duration-300 ease-in-out hover:scale-110 active:scale-95 focus:outline-none focus:ring-2 focus:ring-offset-2",
+        "inline-flex max-w-60 items-center gap-2  rounded-xl text-lg justify-center transform transition-transform duration-300 ease-in-out hover:scale-110 active:scale-95 focus:outline-none ",
         "disabled:opacity-60 disabled:pointer-events-none",
         className
       )}

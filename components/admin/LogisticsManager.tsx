@@ -466,8 +466,9 @@ function FamilyLogisticsCard({ family, onApprove, onMarkShipped, onResetFinaliza
         {!family.christmasSettings.shipmentApproved && (
           <Button
             onClick={onApprove}
-            disabled={loading || !family.canAffordAllGifts}
+            disabled={loading}
             className="bg-evergreen hover:bg-green-700 text-white"
+            title={family.paymentCoverage < 100 ? `Payment coverage: ${family.paymentCoverage.toFixed(0)}%` : "Approve this order for shipment"}
           >
             {loading ? "Processing..." : "Approve for Shipment"}
           </Button>

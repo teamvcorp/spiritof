@@ -231,14 +231,14 @@ export default async function ParentDashboardPage({ searchParams }: DashboardPro
   const hasWelcomePacket = await hasCompletedWelcomePacket(parent._id.toString());
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-[#005574] via-[#032255] to-[#001a33] pt-35 lg:pt-15">
+    <div className="min-h-screen bg-gradient-to-b from-[#005574] via-[#032255] to-[#001a33] pt-35 lg:pt-25">
       <main className="mx-auto max-w-5xl px-4 py-8 space-y-8">
         {/* Client-side Christmas Setup and Header */}
         <DashboardClient
           parentId={parent._id.toString()}
           hasChristmasSetup={!!parent.christmasSettings?.setupCompleted}
           searchParams={searchParams}
-        />
+        />  
 
         {/* Summary cards */}
         <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -287,8 +287,8 @@ export default async function ParentDashboardPage({ searchParams }: DashboardPro
             <h2 className="text-xl font-semibold text-gray-800">Children</h2>
             {children.length > 0 && (
               <Link href="/parent/vote">
-                <Button className="bg-santa hover:bg-red-700 text-white">
-                  🗳️ Vote for Good Behavior
+                <Button className="bg-santa p-2 hover:bg-red-700 text-white">
+                  Vote for Good Behavior
                 </Button>
               </Link>
             )}

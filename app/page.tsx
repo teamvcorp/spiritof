@@ -23,7 +23,7 @@ export default async function Home() {
       // Not logged in - show login button
       return (
         <Link href="/auth">
-          <Button className='bg-santa link-btn '>
+          <Button className='bg-santa link-btn p-2 '>
              Get Started<FaArrowAltCircleRight/>
           </Button>
         </Link>
@@ -41,7 +41,7 @@ export default async function Home() {
       // Fully set up - go to children list (no PIN required, child-friendly)
       return (
         <Link href="/children/list">
-          <Button className='bg-santa uppercase text-white mt-2 self-center md:self-start'>
+          <Button className='bg-santa p-2 uppercase min-w-64 text-white mt-2 self-center md:self-start'>
             View Christmas Lists<FaArrowAltCircleRight/>
           </Button>
         </Link>
@@ -58,7 +58,7 @@ export default async function Home() {
       </div>
 
       <div className="mx-4 sm:mx-6 md:mx-0">
-      <Container className="py-10 mb-10 text-center bg-white/95 backdrop-blur-sm rounded-lg text-evergreen px-4 sm:px-8 shadow-[0_4px_12px_rgba(0,0,0,0.15)]">
+      <Container className="py-15 mt-15 mb-10 text-center bg-white/95 backdrop-blur-sm rounded-lg text-evergreen px-4 sm:px-8 shadow-[0_4px_12px_rgba(0,0,0,0.15)]">
         <Cards> 
           <Card className='flex flex-col md:flex-row flex-wrap items-center gap-6 md:gap-8 mx-0 md:mx-10 bg-transparent border-0 shadow-none'>
             <div className="flex flex-col items-center md:items-start md:justify-center gap-y-6 min-w-0 flex-1 text-center md:text-left">

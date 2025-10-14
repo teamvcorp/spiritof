@@ -63,27 +63,21 @@ export default function HeaderAuth() {
       // Fully set up - show user avatar and dashboard link
       return (
         <div className="flex flex-col md:flex-row items-center gap-3 w-full">
-          {/* Avatar as an icon-button (click avatar to sign out) */}
-          <Button
-            onClick={handleSignOut}
-            aria-label={`Sign out ${userName}`}
-            className="overflow-hidden p-1 rounded-full mx-auto md:mx-0"
-            style={{ height: '32px', width: '32px' }}
-          >
          
-          </Button>
 
           {/* Dashboard quick access */}
-          <Link href="/parent/dashboard" className="w-full md:w-auto">
-            <Button className="bg-evergreen text-white rounded-lg flex items-center justify-center px-6 font-semibold w-full max-w-none md:max-w-60 min-h-[44px]" style={{ height: 'auto', minHeight: '44px' }}>
+          <Link href="/parent/dashboard" className=" md:w-auto">
+            <Button  className="relative px-6 py-2 min-w-[12rem] rounded-lg font-semibold text-white  transition-all duration-300 hover:scale-105  overflow-hidden group flex items-center justify-center"
+                >
               Dashboard
             </Button>
           </Link>
 
           {/* Small sign out button */}
           <Button 
-            className="bg-gray-500 text-white rounded-lg flex items-center justify-center px-6 font-semibold w-full md:w-auto max-w-none md:max-w-60 min-h-[44px]" 
-            style={{ height: 'auto', minHeight: '44px' }}
+           className="relative px-6 py-2 min-w-[8rem] bg-santa rounded-lg font-semibold text-white transition-all duration-300 hover:scale-105 hover:shadow-lg overflow-hidden group flex items-center justify-center"
+           
+          
             onClick={handleSignOut} 
             aria-label="Sign out"
           >
