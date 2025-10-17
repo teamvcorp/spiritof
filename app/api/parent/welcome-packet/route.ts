@@ -2,11 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { dbConnect } from "@/lib/db";
 import { Parent } from "@/models/Parent";
+import { stripe } from "@/lib/stripe";
 import Stripe from "stripe";
-
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: "2025-08-27.basil",
-});
 
 interface WelcomePacketItem {
   id: string;

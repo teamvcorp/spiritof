@@ -5,11 +5,8 @@ import { Parent } from "@/models/Parent";
 import { Child } from "@/models/Child";
 import { User } from "@/models/User";
 import { hasCompletedWelcomePacket, generateUniqueShareSlug, clampInt } from "@/lib/welcome-packet-helpers";
+import { stripe } from "@/lib/stripe";
 import Stripe from "stripe";
-
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: "2025-08-27.basil",
-});
 
 interface WelcomePacketItem {
   id: string;

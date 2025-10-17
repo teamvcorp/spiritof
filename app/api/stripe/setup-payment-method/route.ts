@@ -7,6 +7,10 @@ import { Types } from "mongoose";
 
 export async function POST(request: NextRequest) {
   try {
+    // Debug log to verify Stripe key mode
+    const isLiveMode = process.env.STRIPE_SECRET_KEY?.startsWith('sk_live_');
+    console.log(`🔑 Setup payment method - Stripe mode: ${isLiveMode ? 'LIVE' : 'TEST'}`);
+    
     const session = await auth();
     if (!session?.user?.id) {
       return NextResponse.json({ error: "Authentication required" }, { status: 401 });
@@ -58,10 +62,13 @@ export async function POST(request: NextRequest) {
       },
     });
 
+    console.log(`✅ Created checkout session: ${checkoutSession.id} (${checkoutSession.livemode ? 'LIVE' : 'TEST'} mode)`);
+
     return NextResponse.json({
       success: true,
       url: checkoutSession.url,
       sessionId: checkoutSession.id,
+      livemode: checkoutSession.livemode, // Include mode in response for debugging
     });
 
   } catch (error) {

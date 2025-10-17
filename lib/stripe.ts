@@ -4,7 +4,12 @@ if (!process.env.STRIPE_SECRET_KEY) {
   throw new Error('STRIPE_SECRET_KEY is not set in environment variables');
 }
 
+// Log Stripe key mode on initialization
+const keyPrefix = process.env.STRIPE_SECRET_KEY.substring(0, 8);
+console.log(`🔑 Initializing Stripe with key prefix: ${keyPrefix}`);
+
 export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
+  apiVersion: '2025-08-27.basil', // Match API version used in other routes
   typescript: true,
 });
 
