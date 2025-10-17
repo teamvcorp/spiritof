@@ -28,7 +28,7 @@ export default async function ChildrenPickerPage() {
       {/* Ice sheet container */}
       <div className="relative bg-white/95 backdrop-blur-sm rounded-2xl shadow-[0_4px_12px_rgba(0,0,0,0.15)] p-8 sm:p-12 max-w-6xl w-full">
         {/* Light reflection overlay */}
-        <div className="absolute inset-0 rounded-2xl overflow-hidden pointer-events-none">
+        <div className="absolute inset-0 rounded-2xl overflow-hidden pointer-events-none hover:bg-mint">
           <div className="absolute top-0 left-0 right-0 h-32 bg-gradient-to-b from-white/20 to-transparent transform -skew-y-3"></div>
         </div>
 
@@ -50,7 +50,7 @@ export default async function ChildrenPickerPage() {
                 return (
                   <li key={id} className="flex flex-col items-center gap-4 ">
                     <Link href={`/children/${id}/childdash`} className="group focus:outline-none text-mint">
-                      <div className="relative h-32 w-32 sm:h-40 sm:w-40 rounded-full overflow-hidden ring-4 shadow-[0_4px_12px_rgba(0,0,0,0.2)] group-hover:ring-santa transition-all duration-300 transform hover:scale-110 bg-gradient-to-br from-santa/20 to-evergreen/20">
+                      <div className="relative h-32 w-32 sm:h-40 sm:w-40 rounded-full overflow-hidden ring-4 hover:bg-mint shadow-[0_4px_12px_rgba(0,0,0,0.2)] group-hover:ring-santa transition-all duration-300 transform hover:scale-110 ">
                         {c.avatarUrl ? (
                           <img src={c.avatarUrl} alt={c.displayName} className="h-full w-full object-cover" />
                         ) : (

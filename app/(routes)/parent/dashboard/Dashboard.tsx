@@ -18,6 +18,7 @@ import DashboardClient from "./DashboardClient";
 import dynamic from "next/dynamic";
 import Image from "next/image";
 import Link from "next/link";
+import SpecialRequestApprovals from "@/components/parents/SpecialRequestApprovals";
 
 // Dynamically import client components
 const QRShareButton = dynamic(() => import("@/components/parents/QRShareButton"));
@@ -53,10 +54,10 @@ async function createChildWrapper(formData: FormData) {
   const existingChildren = await Child.find({ parentId: parent._id });
   const currentTotalAllocation = existingChildren.reduce((sum, child) => sum + (child.percentAllocation || 0), 0);
   const newTotalAllocation = currentTotalAllocation + percentAllocation;
-  
+
   if (newTotalAllocation > 100) {
-    return { 
-      error: `Budget exceeded! You've already allocated ${currentTotalAllocation}% to existing children. You can only allocate ${100 - currentTotalAllocation}% more.` 
+    return {
+      error: `Budget exceeded! You've already allocated ${currentTotalAllocation}% to existing children. You can only allocate ${100 - currentTotalAllocation}% more.`
     };
   }
 
@@ -238,7 +239,7 @@ export default async function ParentDashboardPage({ searchParams }: DashboardPro
           parentId={parent._id.toString()}
           hasChristmasSetup={!!parent.christmasSettings?.setupCompleted}
           searchParams={searchParams}
-        />  
+        />
 
         {/* Summary cards */}
         <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -258,7 +259,9 @@ export default async function ParentDashboardPage({ searchParams }: DashboardPro
             </div>
           </Card>
         </section>
-
+        <section>
+          <SpecialRequestApprovals />
+        </section>
         {/* Wallet Top-up Section */}
         <section className="bg-white/95 backdrop-blur-sm rounded-lg p-6 shadow-[0_4px_12px_rgba(0,0,0,0.15)]">
           <h2 className="text-xl font-semibold mb-3 text-gray-800">Wallet Management</h2>
@@ -293,7 +296,7 @@ export default async function ParentDashboardPage({ searchParams }: DashboardPro
               </Link>
             )}
           </div>
-          
+
           {children.length === 0 ? (
             <div className="text-center py-8 text-gray-500">
               <p>No children added yet. Add your first child below!</p>
@@ -332,15 +335,16 @@ export default async function ParentDashboardPage({ searchParams }: DashboardPro
                           childId={String(c._id)}
                           childName={c.displayName}
                           shareSlug={c.shareSlug}
+                          
                         />
 
                         {/* Edit modal toggle */}
                         <input id={`edit-${id}`} type="checkbox" className="peer hidden" />
-                        <label htmlFor={`edit-${id}`} className="btn-secondary">Edit</label>
+                        <label htmlFor={`edit-${id}`} className="btn-secondary hover:underline hover:cursor-pointer">Edit</label>
 
                         {/* Delete confirm (details) */}
                         <details className="[&_summary]:list-none">
-                          <summary className="btn-danger">Delete</summary>
+                          <summary className="btn-danger hover:underline hover:cursor-pointer">Delete</summary>
                           <div className="mt-2 p-2 rounded border text-sm">
                             <div className="mb-2">This cannot be undone.</div>
                             <form action={deleteChild}>
@@ -424,7 +428,7 @@ export default async function ParentDashboardPage({ searchParams }: DashboardPro
                   <span className="text-2xl text-santa group-open:rotate-180 transition-transform">▼</span>
                 </div>
               </summary>
-              
+
               <div className="px-6 pb-6">
                 <div className="bg-gradient-to-br from-santa/10 via-evergreen/10 to-blueberry/10 rounded-2xl border-2 border-santa/20 overflow-hidden">
                   <div className="bg-white/60 backdrop-blur-sm p-6">

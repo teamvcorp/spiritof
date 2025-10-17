@@ -68,7 +68,7 @@ export async function POST(request: NextRequest) {
       }, { status: 400 });
     }
 
-    // Create friend gift request - auto-approved since parents enabled friend gifts
+    // Create friend gift request - needs parent approval
     const friendGiftRequest = {
       giftId,
       giftTitle: gift.title,
@@ -79,41 +79,31 @@ export async function POST(request: NextRequest) {
       message,
       requestedPoints,
       requestedAt: new Date(),
-      status: 'approved' as const,
-      type: 'friend_gift' as const,
-      approvedAt: new Date(),
-      approvedBy: 'auto-approved' // Since friend gifts are parent-enabled
+      status: 'pending' as const
     };
 
     // Add to child's friend gift requests
     if (!child.friendGiftRequests) {
       child.friendGiftRequests = [];
     }
-    child.friendGiftRequests.push(friendGiftRequest);
-
-    // Deduct magic points (prioritize parent votes first, then neighbor donations)
-    const parentVotes = child.score365 || 0;
-    const neighborCents = child.neighborBalanceCents || 0;
     
-    if (requestedPoints <= parentVotes) {
-      // Can deduct entirely from parent votes
-      child.score365 -= requestedPoints;
-    } else {
-      // Need to deduct from both parent votes and neighbor donations
-      const remainingAfterParentVotes = requestedPoints - parentVotes;
-      const neighborPointsNeeded = remainingAfterParentVotes * 100;
-      
-      // Ensure we don't go negative
-      if (neighborCents >= neighborPointsNeeded) {
-        child.score365 = 0;
-        child.neighborBalanceCents -= neighborPointsNeeded;
-      } else {
-        // This shouldn't happen due to validation, but safety check
-        throw new Error('Insufficient magic points');
-      }
-    }
+    console.log('💝 Before push - friendGiftRequests length:', child.friendGiftRequests.length);
+    child.friendGiftRequests.push(friendGiftRequest);
+    console.log('💝 After push - friendGiftRequests length:', child.friendGiftRequests.length);
+    console.log('💝 Request data:', friendGiftRequest);
 
+    // Don't deduct magic points yet - only deduct when parent approves the request
+    // Points will be deducted during parent approval in the parent dashboard API
+
+    // Mark the field as modified to ensure Mongoose saves it
+    child.markModified('friendGiftRequests');
+    
     await child.save();
+    
+    console.log('✅ Child saved. Verifying save by re-fetching...');
+    const verifyChild = await Child.findById(childId).lean();
+    console.log('🔍 Verified friendGiftRequests count:', verifyChild?.friendGiftRequests?.length || 0);
+    console.log('🔍 All requests:', verifyChild?.friendGiftRequests);
 
     // Send admin notification for logistics
     try {
@@ -129,14 +119,10 @@ export async function POST(request: NextRequest) {
       // Don't fail the request if email fails
     }
 
-    // Calculate remaining total points for response
-    const newNeighborMagicPoints = Math.floor((child.neighborBalanceCents || 0) / 100);
-    const newTotalMagicPoints = (child.score365 || 0) + newNeighborMagicPoints;
-
     return NextResponse.json({ 
       success: true, 
-      message: 'Friend gift approved! Santa\'s workshop will send it to your friend soon.',
-      remainingPoints: newTotalMagicPoints
+      message: 'Friend gift request submitted! Waiting for parent approval. Magic points will be deducted once approved.',
+      remainingPoints: totalMagicPoints // Return current points (not deducted yet)
     });
 
   } catch (error) {

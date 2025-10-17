@@ -63,16 +63,7 @@ export default function HeaderAuth() {
       // Fully set up - show user avatar and dashboard link
       return (
         <div className="flex flex-col md:flex-row items-center gap-3 w-full">
-         
-
-          {/* Dashboard quick access */}
-          <Link href="/parent/dashboard" className=" md:w-auto">
-            <Button  className="relative px-6 py-2 min-w-[12rem] rounded-lg font-semibold text-white  transition-all duration-300 hover:scale-105  overflow-hidden group flex items-center justify-center"
-                >
-              Dashboard
-            </Button>
-          </Link>
-
+           
           {/* Small sign out button */}
           <Button 
            className="relative px-6 py-2 min-w-[8rem] bg-santa rounded-lg font-semibold text-white transition-all duration-300 hover:scale-105 hover:shadow-lg overflow-hidden group flex items-center justify-center"

@@ -94,10 +94,10 @@ const {id: childId} = await params;
         <h1 className='text-evergreen text-2xl sm:text-3xl md:text-4xl uppercase font-bold pt-10'>Welcome back, {child.displayName}! </h1>
 
         <Cards className="mt-10 mb-10">
-          <Card className="flex flex-col justify-between p-6 text-center text-center bg-santa border-0 text-white md:flex-row flex-wrap shadow-[0_4px_12px_rgba(0,0,0,0.15)]">
+          <Card className="flex flex-col justify-between p-6 text-center text-center bg-santa border-0 text-white gap-4 flex-wrap shadow-[0_4px_12px_rgba(0,0,0,0.15)]">
           <div className="flex-1 space-y-2 md:items-start md:justify-center">
             <h2 className="text-xl sm:text-2xl uppercase font-semibold">My Naughty Nice Meter</h2>
-            <p className="text-md opacity-90 mb-10">
+            <p className="text-md opacity-90 ">
               {nicenessPercentage >= 80 
                 ? "You're being amazing! Santa is very impressed!" 
                 : nicenessPercentage >= 50 
@@ -114,10 +114,7 @@ const {id: childId} = await params;
                   currentGiftCount={giftList.length}
                 />
               </div>
-              <div className='flex flex-col items-center  gap-3 sm:gap-4'>
-                <h3 className='text-lg sm:text-xl'>Latest Vote</h3>
-                <FaThumbsUp className="shrink-0" size={36} />
-              </div>
+    
             </div>
           </Card>
 
@@ -300,14 +297,14 @@ const {id: childId} = await params;
         {/* Special Christmas Features */}
         {(allowEarlyGifts || allowFriendGifts) && (
           <Cards className="mt-6">
-            <Card className="bg-orange-400 border-0 text-white shadow-[0_4px_12px_rgba(0,0,0,0.15)]">
+            <Card className="bg-mint border-0 text-white shadow-[0_4px_12px_rgba(0,0,0,0.15)]">
               <div className="text-center p-6">
-                <h2 className="text-2xl font-semibold mb-4">🎁 Special Christmas Features</h2>
+                <h2 className="text-2xl font-semibold mb-12 uppercase">Special Christmas Features</h2>
                 <div className={`grid gap-4 ${(allowEarlyGifts && allowFriendGifts) ? 'grid-cols-1 md:grid-cols-2' : 'grid-cols-1 place-items-center'}`}>
                   {allowEarlyGifts && (
                     <Link href={`/children/${String(child._id)}/early-gifts`}>
-                      <Button className='bg-white text-orange-600 hover:bg-gray-100 w-full p-4 text-lg font-semibold rounded-xl'>
-                        ⭐ Request Early Gift
+                      <Button className='flex flex-col  bg-santa text-white hover:bg-[#cc001e] w-full p-4 text-lg font-semibold rounded-xl'>
+                        Request Early Gift
                         <div className="text-sm font-normal mt-1">
                           Ask for a gift as a reward for good behavior!
                         </div>
@@ -316,8 +313,8 @@ const {id: childId} = await params;
                   )}
                   {allowFriendGifts && (
                     <Link href={`/children/${String(child._id)}/friend-gifts`}>
-                      <Button className='bg-white text-orange-600 hover:bg-gray-100 w-full p-4 text-lg font-semibold rounded-xl'>
-                        💝 Send Friend Gift
+                      <Button className='flex flex-col  bg-berryPink text-white hover:bg-[#EB2062] w-full p-4 text-lg font-semibold rounded-xl'>
+                         Send Friend Gift
                         <div className="text-sm font-normal mt-1">
                           Share the Christmas spirit with friends!
                         </div>
@@ -330,7 +327,7 @@ const {id: childId} = await params;
           </Cards>
         )}
         <Link href="/parent/dashboard">
-          <Button className='bg-frostyBlue max-w-full my-6 text-white'><MdOutlineGroup/> Parent Portal</Button>
+          <Button className='bg-frostyBlue max-w-full mt-10 py-2 px-4 text-white hover:bg-[#0084b5]'><MdOutlineGroup/> Parent Portal</Button>
         </Link>
         </div>
       </Container>

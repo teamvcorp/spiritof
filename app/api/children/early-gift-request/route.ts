@@ -72,7 +72,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Gift missing required data' }, { status: 400 });
     }
 
-    // Create early gift request - auto-approved since parents already approved the gift
+    // Create early gift request - needs parent approval
     const earlyGiftRequest = {
       giftId,
       giftTitle: gift.title,
@@ -81,41 +81,31 @@ export async function POST(request: NextRequest) {
       reason,
       requestedPoints,
       requestedAt: new Date(),
-      status: 'approved' as const,
-      type: 'early_gift' as const,
-      approvedAt: new Date(),
-      approvedBy: 'auto-approved' // Since gift was already parent-approved in setup
+      status: 'pending' as const
     };
 
     // Add to child's early gift requests
     if (!child.earlyGiftRequests) {
       child.earlyGiftRequests = [];
     }
-    child.earlyGiftRequests.push(earlyGiftRequest);
-
-    // Deduct magic points (prioritize parent votes first, then neighbor donations)
-    const parentVotes = child.score365 || 0;
-    const neighborCents = child.neighborBalanceCents || 0;
     
-    if (requestedPoints <= parentVotes) {
-      // Can deduct entirely from parent votes
-      child.score365 -= requestedPoints;
-    } else {
-      // Need to deduct from both parent votes and neighbor donations
-      const remainingAfterParentVotes = requestedPoints - parentVotes;
-      const neighborPointsNeeded = remainingAfterParentVotes * 100;
-      
-      // Ensure we don't go negative
-      if (neighborCents >= neighborPointsNeeded) {
-        child.score365 = 0;
-        child.neighborBalanceCents -= neighborPointsNeeded;
-      } else {
-        // This shouldn't happen due to validation, but safety check
-        throw new Error('Insufficient magic points');
-      }
-    }
+    console.log('🎁 Before push - earlyGiftRequests length:', child.earlyGiftRequests.length);
+    child.earlyGiftRequests.push(earlyGiftRequest);
+    console.log('🎁 After push - earlyGiftRequests length:', child.earlyGiftRequests.length);
+    console.log('🎁 Request data:', earlyGiftRequest);
 
+    // Don't deduct magic points yet - only deduct when parent approves the request
+    // Points will be deducted during parent approval in the parent dashboard API
+
+    // Mark the field as modified to ensure Mongoose saves it
+    child.markModified('earlyGiftRequests');
+    
     await child.save();
+    
+    console.log('✅ Child saved. Verifying save by re-fetching...');
+    const verifyChild = await Child.findById(childId).lean();
+    console.log('🔍 Verified earlyGiftRequests count:', verifyChild?.earlyGiftRequests?.length || 0);
+    console.log('🔍 All requests:', verifyChild?.earlyGiftRequests);
 
     // Send admin notification for logistics
     try {
@@ -131,14 +121,10 @@ export async function POST(request: NextRequest) {
       // Don't fail the request if email fails
     }
 
-    // Calculate remaining total points for response
-    const newNeighborMagicPoints = Math.floor((child.neighborBalanceCents || 0) / 100);
-    const newTotalMagicPoints = (child.score365 || 0) + newNeighborMagicPoints;
-
     return NextResponse.json({ 
       success: true, 
-      message: 'Early gift request approved! Your gift has been sent to Santa\'s workshop for processing.',
-      remainingPoints: newTotalMagicPoints
+      message: 'Early gift request submitted! Waiting for parent approval. Magic points will be deducted once approved.',
+      remainingPoints: totalMagicPoints // Return current points (not deducted yet)
     });
 
   } catch (error) {

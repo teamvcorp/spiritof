@@ -5,6 +5,7 @@ import { Card } from "@/components/ui/Card";
 import Button from "@/components/ui/Button";
 import Image from "next/image";
 import { FaCheck, FaTimes, FaGift, FaHeart, FaClock, FaUser, FaMapMarkerAlt, FaEnvelope } from "react-icons/fa";
+import { useToast } from "@/components/ui/Toast";
 
 interface SpecialRequest {
   type: 'early_gift' | 'friend_gift';
@@ -23,6 +24,8 @@ interface SpecialRequest {
   requestedPoints: number;
   requestedAt: string;
   status: string;
+  respondedAt?: string;
+  parentResponse?: string;
   shippingAddress?: {
     recipientName?: string;
     street?: string;
@@ -36,6 +39,8 @@ interface SpecialRequest {
 
 interface SpecialRequestsStats {
   totalRequests: number;
+  pendingRequests: number;
+  approvedRequests: number;
   earlyGiftRequests: number;
   friendGiftRequests: number;
   totalValue: number;
@@ -47,11 +52,12 @@ interface SpecialRequestsData {
 }
 
 export default function SpecialRequestsManager() {
+  const { showToast } = useToast();
   const [data, setData] = useState<SpecialRequestsData | null>(null);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [filter, setFilter] = useState<"all" | "early_gifts" | "friend_gifts">("all");
+  const [filter, setFilter] = useState<"all" | "pending" | "approved" | "early_gifts" | "friend_gifts">("all");
 
   useEffect(() => {
     fetchSpecialRequests();
@@ -95,11 +101,16 @@ export default function SpecialRequestsManager() {
         throw new Error(`Failed to ${action} request`);
       }
 
+      const result = await response.json();
+      showToast('success', result.message || `Request ${action}d successfully! 🎅`);
+
       // Refresh data
       await fetchSpecialRequests();
     } catch (err) {
       console.error(`Failed to ${action} request:`, err);
-      setError(err instanceof Error ? err.message : `Failed to ${action} request`);
+      const errorMsg = err instanceof Error ? err.message : `Failed to ${action} request`;
+      setError(errorMsg);
+      showToast('error', errorMsg);
     } finally {
       setActionLoading(null);
     }
@@ -109,6 +120,10 @@ export default function SpecialRequestsManager() {
     if (!data) return [];
     
     switch (filter) {
+      case "pending":
+        return data.requests.filter(r => r.status === 'pending');
+      case "approved":
+        return data.requests.filter(r => r.status === 'approved');
       case "early_gifts":
         return data.requests.filter(r => r.type === 'early_gift');
       case "friend_gifts":
@@ -153,13 +168,33 @@ export default function SpecialRequestsManager() {
     <div className="space-y-6">
       {/* Stats Overview */}
       {data && (
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4">
           <Card className="p-4 bg-blue-50 border-blue-200">
             <div className="flex items-center">
               <FaClock className="text-blue-600 mr-3 text-xl" />
               <div>
                 <div className="text-2xl font-bold text-blue-800">{data.stats.totalRequests}</div>
-                <div className="text-sm text-blue-600">Total Requests</div>
+                <div className="text-sm text-blue-600">Total</div>
+              </div>
+            </div>
+          </Card>
+          
+          <Card className="p-4 bg-yellow-50 border-yellow-200">
+            <div className="flex items-center">
+              <FaClock className="text-yellow-600 mr-3 text-xl" />
+              <div>
+                <div className="text-2xl font-bold text-yellow-800">{data.stats.pendingRequests}</div>
+                <div className="text-sm text-yellow-600">Pending</div>
+              </div>
+            </div>
+          </Card>
+          
+          <Card className="p-4 bg-green-50 border-green-200">
+            <div className="flex items-center">
+              <FaCheck className="text-green-600 mr-3 text-xl" />
+              <div>
+                <div className="text-2xl font-bold text-green-800">{data.stats.approvedRequests}</div>
+                <div className="text-sm text-green-600">Approved</div>
               </div>
             </div>
           </Card>
@@ -169,7 +204,7 @@ export default function SpecialRequestsManager() {
               <FaGift className="text-orange-600 mr-3 text-xl" />
               <div>
                 <div className="text-2xl font-bold text-orange-800">{data.stats.earlyGiftRequests}</div>
-                <div className="text-sm text-orange-600">Early Gifts</div>
+                <div className="text-sm text-orange-600">Early</div>
               </div>
             </div>
           </Card>
@@ -179,17 +214,17 @@ export default function SpecialRequestsManager() {
               <FaHeart className="text-pink-600 mr-3 text-xl" />
               <div>
                 <div className="text-2xl font-bold text-pink-800">{data.stats.friendGiftRequests}</div>
-                <div className="text-sm text-pink-600">Friend Gifts</div>
+                <div className="text-sm text-pink-600">Friend</div>
               </div>
             </div>
           </Card>
           
-          <Card className="p-4 bg-green-50 border-green-200">
+          <Card className="p-4 bg-emerald-50 border-emerald-200">
             <div className="flex items-center">
-              <span className="text-green-600 mr-3 text-xl">$</span>
+              <span className="text-emerald-600 mr-3 text-xl font-bold">$</span>
               <div>
-                <div className="text-2xl font-bold text-green-800">${data.stats.totalValue}</div>
-                <div className="text-sm text-green-600">Total Value</div>
+                <div className="text-2xl font-bold text-emerald-800">${data.stats.totalValue}</div>
+                <div className="text-sm text-emerald-600">Value</div>
               </div>
             </div>
           </Card>
@@ -202,7 +237,21 @@ export default function SpecialRequestsManager() {
           onClick={() => setFilter("all")}
           className={`${filter === "all" ? "bg-gray-600 hover:bg-gray-700" : "bg-gray-400 hover:bg-gray-500"}`}
         >
-          All Requests ({data?.stats.totalRequests || 0})
+          All ({data?.stats.totalRequests || 0})
+        </Button>
+        <Button
+          onClick={() => setFilter("pending")}
+          className={`${filter === "pending" ? "bg-yellow-600 hover:bg-yellow-700" : "bg-yellow-400 hover:bg-yellow-500"}`}
+        >
+          <FaClock className="mr-2" />
+          Pending ({data?.stats.pendingRequests || 0})
+        </Button>
+        <Button
+          onClick={() => setFilter("approved")}
+          className={`${filter === "approved" ? "bg-green-600 hover:bg-green-700" : "bg-green-400 hover:bg-green-500"}`}
+        >
+          <FaCheck className="mr-2" />
+          Approved ({data?.stats.approvedRequests || 0})
         </Button>
         <Button
           onClick={() => setFilter("early_gifts")}
@@ -262,13 +311,28 @@ export default function SpecialRequestsManager() {
                 {/* Request Details */}
                 <div className="flex-1 space-y-4">
                   <div>
-                    <h3 className="text-xl font-semibold text-gray-800 mb-2">{request.giftTitle}</h3>
+                    <div className="flex items-center gap-2 mb-2">
+                      <h3 className="text-xl font-semibold text-gray-800">{request.giftTitle}</h3>
+                      <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+                        request.status === 'pending' 
+                          ? 'bg-yellow-100 text-yellow-800 border border-yellow-300' 
+                          : 'bg-green-100 text-green-800 border border-green-300'
+                      }`}>
+                        {request.status === 'pending' ? '⏳ Awaiting Parent' : '✅ Parent Approved'}
+                      </span>
+                    </div>
                     <div className="flex items-center gap-4 text-sm text-gray-600">
                       <span className="font-medium">${request.giftPrice}</span>
                       <span>•</span>
                       <span>{request.requestedPoints} magic points</span>
                       <span>•</span>
                       <span>{new Date(request.requestedAt).toLocaleDateString()}</span>
+                      {request.respondedAt && (
+                        <>
+                          <span>•</span>
+                          <span className="text-green-600">Approved {new Date(request.respondedAt).toLocaleDateString()}</span>
+                        </>
+                      )}
                     </div>
                   </div>
 
@@ -320,6 +384,17 @@ export default function SpecialRequestsManager() {
                       )}
                     </div>
                   </div>
+
+                  {/* Parent Response */}
+                  {request.parentResponse && (
+                    <div className="bg-green-50 border-l-4 border-green-400 p-4 rounded">
+                      <h4 className="font-medium text-green-800 mb-2 flex items-center">
+                        <FaCheck className="mr-2" />
+                        Parent's Message to Child:
+                      </h4>
+                      <p className="text-sm text-green-700">{request.parentResponse}</p>
+                    </div>
+                  )}
 
                   {/* Shipping Address (for early gifts) */}
                   {request.type === 'early_gift' && request.shippingAddress && (

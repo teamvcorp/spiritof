@@ -44,7 +44,8 @@ export async function GET() {
       // Process early gift requests
       if (child.earlyGiftRequests?.length) {
         for (const request of child.earlyGiftRequests) {
-          if (request.status === 'pending') {
+          // Show pending (awaiting parent approval) and approved (awaiting admin fulfillment)
+          if (request.status === 'pending' || request.status === 'approved') {
             requestsData.push({
               type: 'early_gift',
               requestId: request._id,
@@ -59,6 +60,8 @@ export async function GET() {
               requestedPoints: request.requestedPoints,
               requestedAt: request.requestedAt,
               status: request.status,
+              respondedAt: request.respondedAt,
+              parentResponse: request.parentResponse,
               shippingAddress: parent.christmasSettings?.shippingAddress || null
             });
           }
@@ -68,7 +71,8 @@ export async function GET() {
       // Process friend gift requests
       if (child.friendGiftRequests?.length) {
         for (const request of child.friendGiftRequests) {
-          if (request.status === 'pending') {
+          // Show pending (awaiting parent approval) and approved (awaiting admin fulfillment)
+          if (request.status === 'pending' || request.status === 'approved') {
             requestsData.push({
               type: 'friend_gift',
               requestId: request._id,
@@ -85,6 +89,8 @@ export async function GET() {
               requestedPoints: request.requestedPoints,
               requestedAt: request.requestedAt,
               status: request.status,
+              respondedAt: request.respondedAt,
+              parentResponse: request.parentResponse,
               shippingAddress: null // Friend gifts ship to friend's address
             });
           }
@@ -97,6 +103,8 @@ export async function GET() {
 
     const stats = {
       totalRequests: requestsData.length,
+      pendingRequests: requestsData.filter(r => r.status === 'pending').length,
+      approvedRequests: requestsData.filter(r => r.status === 'approved').length,
       earlyGiftRequests: requestsData.filter(r => r.type === 'early_gift').length,
       friendGiftRequests: requestsData.filter(r => r.type === 'friend_gift').length,
       totalValue: requestsData.reduce((sum, r) => sum + (r.giftPrice || 0), 0)
@@ -149,13 +157,36 @@ export async function POST(req: NextRequest) {
       }
 
       if (action === 'approve') {
+        // Check if already approved by parent (would have status 'approved')
+        // If still pending, parent hasn't approved yet, so deduct points now
+        if (request.status === 'pending') {
+          const requestedPoints = request.requestedPoints;
+          const parentVotes = child.score365 || 0;
+          const neighborCents = child.neighborBalanceCents || 0;
+          
+          if (requestedPoints <= parentVotes) {
+            child.score365 -= requestedPoints;
+          } else {
+            const remainingAfterParentVotes = requestedPoints - parentVotes;
+            const neighborPointsNeeded = remainingAfterParentVotes * 100;
+            child.score365 = 0;
+            child.neighborBalanceCents -= neighborPointsNeeded;
+          }
+        }
+        
         request.status = 'approved';
         request.respondedAt = new Date();
       } else if (action === 'deny') {
+        // Check status BEFORE changing it
+        const wasAlreadyApproved = request.status === 'approved';
+        
         request.status = 'denied';
         request.respondedAt = new Date();
-        // Refund magic points
-        child.score365 += request.requestedPoints;
+        
+        // Only refund if points were already deducted (status was 'approved')
+        if (wasAlreadyApproved) {
+          child.score365 += request.requestedPoints;
+        }
       }
     } else if (requestType === 'friend_gift') {
       const request = child.friendGiftRequests?.find(r => r._id?.toString() === requestId);
@@ -164,13 +195,36 @@ export async function POST(req: NextRequest) {
       }
 
       if (action === 'approve') {
+        // Check if already approved by parent (would have status 'approved')
+        // If still pending, parent hasn't approved yet, so deduct points now
+        if (request.status === 'pending') {
+          const requestedPoints = request.requestedPoints;
+          const parentVotes = child.score365 || 0;
+          const neighborCents = child.neighborBalanceCents || 0;
+          
+          if (requestedPoints <= parentVotes) {
+            child.score365 -= requestedPoints;
+          } else {
+            const remainingAfterParentVotes = requestedPoints - parentVotes;
+            const neighborPointsNeeded = remainingAfterParentVotes * 100;
+            child.score365 = 0;
+            child.neighborBalanceCents -= neighborPointsNeeded;
+          }
+        }
+        
         request.status = 'approved';
         request.respondedAt = new Date();
       } else if (action === 'deny') {
+        // Check status BEFORE changing it
+        const wasAlreadyApproved = request.status === 'approved';
+        
         request.status = 'denied';
         request.respondedAt = new Date();
-        // Refund magic points
-        child.score365 += request.requestedPoints;
+        
+        // Only refund if points were already deducted (status was 'approved')
+        if (wasAlreadyApproved) {
+          child.score365 += request.requestedPoints;
+        }
       }
     }
 

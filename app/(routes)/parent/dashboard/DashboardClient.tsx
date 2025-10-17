@@ -120,7 +120,7 @@ export default function DashboardClient({ parentId, hasChristmasSetup, searchPar
             className={`inline-flex items-center px-4 py-2 text-sm font-medium transition-colors ${
               hasChristmasSetup 
                 ? "bg-evergreen hover:bg-green-600 text-white" 
-                : "bg-santa hover:bg-red-700 text-white animate-pulse"
+                : "bg-santa hover:bg-[#cc001e] text-white animate-pulse"
             }`}
           >
             <FaCalendarAlt className="mr-2" />

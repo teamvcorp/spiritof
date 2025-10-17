@@ -138,8 +138,8 @@ export default async function Home() {
             <p className="mt-2 ">Christmas is about giving and with Christmas Magic you can earn points to get free stuff. Earn magic by helping others and doing well in school. Find out how much Christmas Magic you can earn this year!</p>
           </Card>
         </Cards>
-        <Cards className="mb-10">
-          <Card className="flex flex-col md:flex-row items-center mb-10 md:items-center gap-6 md:gap-10 bg-berryPink text-white p-6 md:p-8 shadow-[0_4px_12px_rgba(0,0,0,0.15)]">
+        <Cards>
+          <Card className="flex flex-col md:flex-row items-center  md:items-center gap-6 md:gap-10 bg-berryPink text-white p-6 md:p-8 shadow-[0_4px_12px_rgba(0,0,0,0.15)]">
             <div className=" min-w-0 w-32 shrink-0 sm:w-40 md:w-[300px] mx-auto md:mx-0">
             <Image
               src="/images/elfGift.png"

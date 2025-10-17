@@ -5,6 +5,7 @@ import Image from "next/image";
 import { Card } from "@/components/ui/Card";
 import Button from "@/components/ui/Button";
 import { FaGift, FaStar, FaCheck, FaSpinner } from "react-icons/fa";
+import { useToast } from "@/components/ui/Toast";
 
 interface Gift {
   _id: string;
@@ -28,6 +29,7 @@ export default function EarlyGiftRequestForm({
   magicPoints, 
   childName 
 }: EarlyGiftRequestFormProps) {
+  const { showToast } = useToast();
   const [selectedGift, setSelectedGift] = useState<Gift | null>(null);
   const [reason, setReason] = useState("");
   const [loading, setLoading] = useState(false);
@@ -55,13 +57,15 @@ export default function EarlyGiftRequestForm({
       });
 
       if (response.ok) {
+        const data = await response.json();
         setSubmitted(true);
+        showToast('success', data.message || 'Early gift request submitted! 🎁');
       } else {
         const data = await response.json();
-        alert(data.error || 'Failed to submit request');
+        showToast('error', data.error || 'Failed to submit request');
       }
     } catch (error) {
-      alert('Failed to submit request. Please try again.');
+      showToast('error', 'Failed to submit request. Please try again.');
     } finally {
       setLoading(false);
     }

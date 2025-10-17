@@ -5,6 +5,7 @@ import Image from "next/image";
 import { Card } from "@/components/ui/Card";
 import Button from "@/components/ui/Button";
 import { FaHeart, FaStar, FaCheck, FaSpinner, FaGift } from "react-icons/fa";
+import { useToast } from "@/components/ui/Toast";
 
 interface Gift {
   _id: string;
@@ -30,6 +31,7 @@ export default function FriendGiftForm({
   childName,
   maxGiftValue 
 }: FriendGiftFormProps) {
+  const { showToast } = useToast();
   const [selectedGift, setSelectedGift] = useState<Gift | null>(null);
   const [friendName, setFriendName] = useState("");
   const [friendAddress, setFriendAddress] = useState("");
@@ -61,13 +63,15 @@ export default function FriendGiftForm({
       });
 
       if (response.ok) {
+        const data = await response.json();
         setSubmitted(true);
+        showToast('success', data.message || 'Friend gift request submitted! 💝');
       } else {
         const data = await response.json();
-        alert(data.error || 'Failed to submit request');
+        showToast('error', data.error || 'Failed to submit request');
       }
     } catch (error) {
-      alert('Failed to submit request. Please try again.');
+      showToast('error', 'Failed to submit request. Please try again.');
     } finally {
       setLoading(false);
     }

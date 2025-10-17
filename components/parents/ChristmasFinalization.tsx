@@ -301,7 +301,7 @@ export default function ChristmasFinalization({
             <Button
               onClick={fetchPreview}
               disabled={!canFinalize() || loadingPreview}
-              className="bg-evergreen link-btn hover:bg-[#1E534A]"
+              className="bg-evergreen py-2 px-4 text-white hover:bg-green-600"
             >
               {loadingPreview ? "Loading..." : (isBeforeLockDate() ? "Preview & Finalize" : "Preview & Finalize")}
             </Button>
