@@ -12,15 +12,12 @@ import Vote from "@/components/parents/Vote";
 import WalletTopup from "@/components/parents/WalletTopup";
 import AddChildFormWrapper from "@/components/parents/AddChildFormWrapper.client";
 import ChristmasFinalization from "@/components/parents/ChristmasFinalization";
-import { WelcomePacketButton } from "@/components/parents/WelcomePacketButton";
-import { hasCompletedWelcomePacket, generateUniqueShareSlug, clampInt } from "@/lib/welcome-packet-helpers";
+import { generateUniqueShareSlug, clampInt } from "@/lib/welcome-packet-helpers";
 import DashboardClient from "./DashboardClient";
 import dynamic from "next/dynamic";
 import Image from "next/image";
 import Link from "next/link";
 import SpecialRequestApprovals from "@/components/parents/SpecialRequestApprovals";
-import SendVotingSMSButton from "@/components/parents/SendVotingSMSButton";
-import PhoneManagement from "@/components/parents/PhoneManagement";
 
 // Dynamically import client components
 const QRShareButton = dynamic(() => import("@/components/parents/QRShareButton"));
@@ -40,15 +37,8 @@ async function createChildWrapper(formData: FormData) {
   const parent = await Parent.findById(user.parentId);
   if (!parent) return { error: "Parent not found" };
 
-  // Check if welcome packet has been completed before allowing child creation
-  const hasWelcomePacket = await hasCompletedWelcomePacket(parent._id.toString());
-  if (!hasWelcomePacket) {
-    return { error: "Welcome packet must be completed before adding children" };
-  }
-
   const displayName = String(formData.get("displayName") || "").trim();
   const percentAllocation = Number(formData.get("percentAllocation") || 0);
-  const avatarUrl = String(formData.get("avatarUrl") || "").trim() || undefined;
 
   if (!displayName) return { error: "Display name is required" };
 
@@ -63,77 +53,11 @@ async function createChildWrapper(formData: FormData) {
     };
   }
 
-  const shareSlug = await generateUniqueShareSlug();
-  const hasCompletedOrder = parent.welcomePacketOrders?.some(order => order.status === 'completed');
-
-  if (hasCompletedOrder && existingChildren.length > 0) {
-    // For additional children, return a special response that triggers payment flow
-    return {
-      requiresPayment: true,
-      message: "This child requires a welcome packet purchase. You'll be redirected to payment."
-    };
-  }
-
-  // For the first child, create normally (welcome packet already handled in setup)
-  let newChild;
-  try {
-    newChild = await Child.create({
-      parentId: parent._id,
-      displayName,
-      avatarUrl,
-      percentAllocation: clampInt(percentAllocation, 0, 100),
-      score365: 0,
-      donationsEnabled: true,
-      shareSlug,
-      neighborBalanceCents: 0,
-      neighborLedger: [],
-    });
-  } catch (error: any) {
-    // Handle the extremely rare case where collision occurs between check and create
-    if (error.code === 11000 && error.message.includes('shareSlug')) {
-      console.warn('⚠️ Rare shareSlug collision during create, retrying...');
-      const retrySlug = await generateUniqueShareSlug();
-      newChild = await Child.create({
-        parentId: parent._id,
-        displayName,
-        avatarUrl,
-        percentAllocation: clampInt(percentAllocation, 0, 100),
-        score365: 0,
-        donationsEnabled: true,
-        shareSlug: retrySlug,
-        neighborBalanceCents: 0,
-        neighborLedger: [],
-      });
-    } else {
-      throw error; // Re-throw other errors
-    }
-  }
-
-  // Create a new welcome packet order for this child based on the original order
-  const originalOrder = parent.welcomePacketOrders?.find(order => order.status === 'completed');
-  if (originalOrder) {
-    // Create a new welcome packet order marked as completed (no payment required for first child)
-    if (!parent.welcomePacketOrders) {
-      parent.welcomePacketOrders = [];
-    }
-
-    parent.welcomePacketOrders.push({
-      stripeSessionId: `auto_${newChild._id}_${Date.now()}`,
-      selectedItems: originalOrder.selectedItems || [],
-      totalAmount: originalOrder.totalAmount || 10,
-      status: 'completed', // Auto-complete for first child
-      shippingAddress: originalOrder.shippingAddress,
-      shipped: false,
-      createdAt: new Date(),
-      childId: newChild._id,
-      childName: displayName
-    });
-
-    await parent.save();
-  }
-
-  revalidatePath("/parent/dashboard");
-  return { success: true };
+  // Always require welcome packet payment for each child
+  return {
+    requiresPayment: true,
+    message: "This child requires a welcome packet purchase. You'll be redirected to payment."
+  };
 }
 
 // Server actions (edit & delete)
@@ -230,9 +154,6 @@ export default async function ParentDashboardPage({ searchParams }: DashboardPro
 
   const children = await Child.find({ parentId: parent._id }).lean();
 
-  // Check if welcome packet has been completed
-  const hasWelcomePacket = await hasCompletedWelcomePacket(parent._id.toString());
-
   return (
     <div className="min-h-screen bg-gradient-to-b from-[#005574] via-[#032255] to-[#001a33] pt-35 lg:pt-25">
       <main className="mx-auto max-w-5xl px-4 py-8 space-y-8">
@@ -265,14 +186,6 @@ export default async function ParentDashboardPage({ searchParams }: DashboardPro
           <SpecialRequestApprovals />
         </section>
         
-        {/* Phone Management for SMS Voting */}
-        <PhoneManagement 
-          initialPhone={parent.phone} 
-          initialNotificationTime={parent.smsNotificationTime}
-          initialNotificationsEnabled={parent.smsNotificationsEnabled}
-          initialTimezone={parent.timezone}
-        />
-        
         {/* Wallet Top-up Section */}
         <section className="bg-white/95 backdrop-blur-sm rounded-lg p-6 shadow-[0_4px_12px_rgba(0,0,0,0.15)]">
           <h2 className="text-xl font-semibold mb-3 text-gray-800">Wallet Management</h2>
@@ -300,16 +213,11 @@ export default async function ParentDashboardPage({ searchParams }: DashboardPro
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <h2 className="text-xl font-semibold text-gray-800">Children</h2>
             {children.length > 0 && (
-              <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
-                <Link href="/parent/vote" className="w-full sm:w-auto">
-                  <Button className="bg-santa hover:bg-red-700 text-white w-full sm:w-auto">
-                    Vote for Good Behavior
-                  </Button>
-                </Link>
-                {parent.phone && (
-                  <SendVotingSMSButton />
-                )}
-              </div>
+              <Link href="/parent/vote" className="w-full sm:w-auto">
+                <Button className="bg-santa hover:bg-red-700 text-white w-full sm:w-auto">
+                  Vote for Good Behavior
+                </Button>
+              </Link>
             )}
           </div>
 
@@ -427,47 +335,44 @@ export default async function ParentDashboardPage({ searchParams }: DashboardPro
           )}
         </section>
 
-        {/* Welcome Packet & Add Child Section */}
+        {/* Add Child Section */}
         <section className="bg-white/95 backdrop-blur-sm rounded-lg shadow-[0_4px_12px_rgba(0,0,0,0.15)]">
-          {!hasWelcomePacket ? (
-            <div className="p-6">
-              <WelcomePacketButton
-                hasCompletedWelcomePacket={hasWelcomePacket}
-                className="mb-6"
-              />
-            </div>
-          ) : (
-            <details className="group">
-              <summary className="cursor-pointer list-none p-6 hover:bg-white/50 transition-colors rounded-lg">
-                <div className="flex items-center justify-between">
-                  <h2 className="text-2xl font-paytone-one text-santa">Add a New Child</h2>
-                  <span className="text-2xl text-santa group-open:rotate-180 transition-transform">▼</span>
-                </div>
-              </summary>
+          <details className="group">
+            <summary className="cursor-pointer list-none p-6 hover:bg-white/50 transition-colors rounded-lg">
+              <div className="flex items-center justify-between">
+                <h2 className="text-2xl font-paytone-one text-santa">Add a New Child</h2>
+                <span className="text-2xl text-santa group-open:rotate-180 transition-transform">▼</span>
+              </div>
+            </summary>
 
-              <div className="px-6 pb-6">
-                <div className="bg-gradient-to-br from-santa/10 via-evergreen/10 to-blueberry/10 rounded-2xl border-2 border-santa/20 overflow-hidden">
-                  <div className="bg-white/60 backdrop-blur-sm p-6">
-                    <AddChildFormWrapper createChildAction={createChildWrapper} />
+            <div className="px-6 pb-6">
+              <div className="bg-gradient-to-br from-santa/10 via-evergreen/10 to-blueberry/10 rounded-2xl border-2 border-santa/20 overflow-hidden">
+                <div className="bg-white/60 backdrop-blur-sm p-6">
+                  <div className="mb-4 bg-blueberry/10 rounded-lg p-4 border-l-4 border-blueberry">
+                    <p className="text-sm text-gray-700">
+                      <span className="font-semibold text-blueberry">🎁 Welcome Packet Required:</span> Each child needs their own welcome packet ($5 enrollment + optional items). You'll be redirected to payment after filling out their information.
+                    </p>
+                  </div>
+                  
+                  <AddChildFormWrapper createChildAction={createChildWrapper} />
 
-                    {/* Tips Section */}
-                    <div className="mt-6 bg-blueberry/10 rounded-lg p-4 border-l-4 border-blueberry">
-                      <h5 className="text-sm font-medium text-blueberry mb-2 flex items-center">
-                        <span className="mr-2">💡</span>
-                        Tips for Setting Up Your Child
-                      </h5>
-                      <ul className="text-xs text-gray-700 space-y-1">
-                        <li>• You can always edit their information later</li>
-                        <li>• Budget percentages should add up to 100% across all children</li>
-                        <li>• Each child gets their own Christmas list and magic score</li>
-                        <li>• Profile pictures make the experience more personal and fun!</li>
-                      </ul>
-                    </div>
+                  {/* Tips Section */}
+                  <div className="mt-6 bg-blueberry/10 rounded-lg p-4 border-l-4 border-blueberry">
+                    <h5 className="text-sm font-medium text-blueberry mb-2 flex items-center">
+                      <span className="mr-2">💡</span>
+                      Tips for Setting Up Your Child
+                    </h5>
+                    <ul className="text-xs text-gray-700 space-y-1">
+                      <li>• You can always edit their information later</li>
+                      <li>• Budget percentages should add up to 100% across all children</li>
+                      <li>• Each child gets their own Christmas list and magic score</li>
+                      <li>• Profile pictures make the experience more personal and fun!</li>
+                    </ul>
                   </div>
                 </div>
               </div>
-            </details>
-          )}
+            </div>
+          </details>
         </section>
       </main>
     </div>

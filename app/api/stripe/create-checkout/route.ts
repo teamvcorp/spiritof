@@ -73,48 +73,36 @@ export async function POST(req: NextRequest) {
       await parent.save();
     }
 
-    // Create checkout session
-    const checkoutSession = await stripe.checkout.sessions.create({
+    // Create PaymentIntent for embedded payment
+    const paymentIntent = await stripe.paymentIntents.create({
       customer: stripeCustomerId,
-      payment_method_types: ['card'],
-      mode: STRIPE_CONFIG.mode,
-      locale: 'en', // Explicitly set to English
-      line_items: [
-        {
-          price_data: {
-            currency: STRIPE_CONFIG.currency,
-            product_data: {
-              name: 'Spirit of Santa - Wallet Top-up',
-              description: description || `Add $${(amount / 100).toFixed(2)} to your Christmas Magic wallet`,
-              images: [`${process.env.NEXTAUTH_URL}/images/christmasMagic.png`],
-            },
-            unit_amount: amount,
-          },
-          quantity: 1,
-        },
-      ],
+      amount: amount,
+      currency: STRIPE_CONFIG.currency,
+      automatic_payment_methods: {
+        enabled: true,
+      },
       metadata: {
         type: 'wallet_topup',
         parentId: parent._id.toString(),
         userId: session.user.id,
         amount: amount.toString(),
       },
-      success_url: `${process.env.NEXTAUTH_URL}/parent/dashboard?payment=success&session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${process.env.NEXTAUTH_URL}/parent/dashboard?payment=cancelled`,
+      description: description || `Add $${(amount / 100).toFixed(2)} to your Christmas Magic wallet`,
     });
 
     // Create pending ledger entry
     parent.addLedgerEntry({
       type: "TOP_UP",
       amountCents: amount,
-      stripeCheckoutSessionId: checkoutSession.id,
+      stripePaymentIntentId: paymentIntent.id,
       status: "PENDING",
     });
     await parent.save();
 
     return NextResponse.json({ 
-      checkoutUrl: checkoutSession.url,
-      sessionId: checkoutSession.id 
+      clientSecret: paymentIntent.client_secret,
+      paymentIntentId: paymentIntent.id,
+      amount: amount
     });
 
   } catch (error) {

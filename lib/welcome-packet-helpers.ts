@@ -2,6 +2,10 @@ import { Parent } from "@/models/Parent";
 import { Child } from "@/models/Child";
 import { dbConnect } from "@/lib/db";
 
+/**
+ * Check if a parent has completed at least one welcome packet order.
+ * Used for tracking and analytics purposes.
+ */
 export async function hasCompletedWelcomePacket(parentId: string): Promise<boolean> {
   await dbConnect();
   
@@ -16,27 +20,6 @@ export async function hasCompletedWelcomePacket(parentId: string): Promise<boole
   );
   
   return hasCompleted;
-}
-
-export async function canAddChildren(parentId: string): Promise<{
-  canAdd: boolean;
-  reason?: string;
-  hasWelcomePacket: boolean;
-}> {
-  const hasWelcomePacket = await hasCompletedWelcomePacket(parentId);
-  
-  if (!hasWelcomePacket) {
-    return {
-      canAdd: false,
-      reason: "Must complete welcome packet setup before adding children",
-      hasWelcomePacket: false
-    };
-  }
-  
-  return {
-    canAdd: true,
-    hasWelcomePacket: true
-  };
 }
 
 function generateRandomSlug(length: number = 12): string {

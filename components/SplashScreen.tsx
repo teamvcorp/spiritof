@@ -287,24 +287,15 @@ export default function SplashScreen({ isInDev }: SplashScreenProps) {
         <div className="w-full max-w-lg mx-auto p-6 space-y-8 relative z-20">
           {/* Animated Logo */}
           <div className="flex flex-col items-center space-y-6">
-            <div className="relative w-48 h-48">
+           
               <Image
-                src="/images/logo.svg"
+                src="/images/comingSoon.gif"
                 alt="Spirit of Santa"
                 width={192}
                 height={192}
-                className="w-full h-full object-contain animate-pulse"
+                className="w-full h-full object-contain animate-pulse rounded-xl"
               />
-            </div>
-
-            <div className="text-center space-y-2">
-              <h1 className="text-4xl font-paytone-one text-white">
-                Spirit of Santa
-              </h1>
-              <p className="text-xl text-white/80">
-                🎄 Launching January 1, 2026! 🎅
-              </p>
-            </div>
+        
           </div>
 
           {/* Pre-Registration Card */}

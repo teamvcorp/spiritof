@@ -327,6 +327,81 @@ async function handleSetupIntentSucceeded(setupIntent: Stripe.SetupIntent) {
 
 async function handlePaymentSucceeded(paymentIntent: Stripe.PaymentIntent) {
   
+  // Handle wallet top-up payments (using PaymentIntent directly)
+  if (paymentIntent.metadata?.type === 'wallet_topup') {
+    const parentId = paymentIntent.metadata.parentId;
+    const amount = parseInt(paymentIntent.metadata.amount || '0');
+    
+    if (parentId && amount) {
+      try {
+        const parent = await Parent.findById(parentId);
+        if (parent) {
+          // Find the pending ledger entry and mark as succeeded
+          const pendingEntry = parent.walletLedger.find(
+            (entry: { stripePaymentIntentId?: string; status: string }) => 
+              entry.stripePaymentIntentId === paymentIntent.id && entry.status === 'PENDING'
+          );
+
+          if (pendingEntry) {
+            console.log(`✅ Webhook: Completing wallet top-up for parent ${parentId}: $${amount / 100}`);
+            
+            (pendingEntry as { status: string }).status = 'SUCCEEDED';
+            
+            // Recompute wallet balance
+            const oldBalance = parent.walletBalanceCents;
+            parent.recomputeWalletBalance();
+            const newBalance = parent.walletBalanceCents;
+            
+            await parent.save();
+            
+            console.log(`✅ Webhook: Wallet balance updated from ${oldBalance} to ${newBalance}`);
+          } else {
+            console.log(`⚠️ Webhook: No pending entry found for PaymentIntent ${paymentIntent.id}`);
+          }
+        }
+      } catch (error) {
+        console.error(`❌ Error processing wallet top-up payment: ${error}`);
+      }
+    }
+    return;
+  }
+  
+  // Handle welcome packet payments (using PaymentIntent directly)
+  if (paymentIntent.metadata?.type === 'child_welcome_packet') {
+    const parentId = paymentIntent.metadata.parentId;
+    const childId = paymentIntent.metadata.childId;
+    const childName = paymentIntent.metadata.childName;
+    
+    if (parentId && childId) {
+      try {
+        const parent = await Parent.findById(parentId);
+        if (parent) {
+          // Find the pending welcome packet order
+          const pendingOrder = parent.welcomePacketOrders?.find(
+            order => order.stripeSessionId === paymentIntent.id && 
+                     order.status === 'pending' && 
+                     order.childId?.toString() === childId
+          );
+
+          if (pendingOrder) {
+            console.log(`✅ Webhook: Completing welcome packet order for ${childName}`);
+            
+            // Update order status
+            pendingOrder.status = 'completed';
+            await parent.save();
+            
+            console.log(`✅ Webhook: Welcome packet order completed for ${childName}`);
+          } else {
+            console.log(`⚠️ Webhook: No pending order found for PaymentIntent ${paymentIntent.id}`);
+          }
+        }
+      } catch (error) {
+        console.error(`❌ Error processing welcome packet payment: ${error}`);
+      }
+    }
+    return;
+  }
+  
   // Handle Christmas finalization payments
   if (paymentIntent.metadata?.type === 'christmas_finalization') {
     const parentId = paymentIntent.metadata.parentId;

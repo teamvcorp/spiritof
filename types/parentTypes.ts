@@ -134,10 +134,7 @@ export interface IParent {
     _id: ObjectId;
     name: string;
     email: string;
-    phone?: string; // Cell phone for SMS voting links
-    smsNotificationTime?: string; // 24-hour format HH:MM (default 17:00 = 5 PM)
-    smsNotificationsEnabled?: boolean; // Default true
-    timezone?: string; // User's timezone (default America/New_York)
+    phone?: string;                 // Contact phone number (not for automated SMS)
     avatarUrl?: string;
     userId: ObjectId;
 

@@ -3,14 +3,26 @@
 import { useState } from "react";
 import Button from "@/components/ui/Button";
 import { FaCreditCard, FaDollarSign } from "react-icons/fa";
+import WalletTopupModal from "./WalletTopupModal";
+import { useRouter } from "next/navigation";
+import toast from "react-hot-toast";
 
 type WalletTopupProps = {
   currentBalance: number;
 };
 
 export default function WalletTopup({ currentBalance }: WalletTopupProps) {
+  const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  
+  // Modal state
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [paymentData, setPaymentData] = useState<{
+    clientSecret: string;
+    amount: number;
+    paymentIntentId: string;
+  } | null>(null);
 
   const handleTopup = async (amount: number) => {
     setLoading(true);
@@ -32,13 +44,36 @@ export default function WalletTopup({ currentBalance }: WalletTopupProps) {
         throw new Error(data.error || "Failed to create checkout");
       }
 
-      // Redirect to Stripe Checkout
-      window.location.href = data.checkoutUrl;
+      // Show payment modal with client secret
+      if (data.clientSecret) {
+        setPaymentData({
+          clientSecret: data.clientSecret,
+          amount: amount,
+          paymentIntentId: data.paymentIntentId,
+        });
+        setShowPaymentModal(true);
+        setLoading(false);
+      } else {
+        throw new Error("No client secret received");
+      }
 
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong");
       setLoading(false);
     }
+  };
+
+  const handlePaymentSuccess = () => {
+    setShowPaymentModal(false);
+    setPaymentData(null);
+    toast.success(`💰 Wallet topped up successfully!`);
+    router.refresh();
+  };
+
+  const handleCloseModal = () => {
+    setShowPaymentModal(false);
+    setPaymentData(null);
+    setLoading(false);
   };
 
   const topupOptions = [
@@ -50,6 +85,17 @@ export default function WalletTopup({ currentBalance }: WalletTopupProps) {
 
   return (
     <div className="space-y-4 p-4 rounded-lg border bg-white">
+      {/* Payment Modal */}
+      {showPaymentModal && paymentData && (
+        <WalletTopupModal
+          isOpen={showPaymentModal}
+          onClose={handleCloseModal}
+          clientSecret={paymentData.clientSecret}
+          amount={paymentData.amount}
+          onSuccess={handlePaymentSuccess}
+        />
+      )}
+
       <div className="text-center">
         <h3 className="text-lg font-semibold text-evergreen flex items-center justify-center gap-2">
           <FaCreditCard />

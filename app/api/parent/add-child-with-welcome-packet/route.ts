@@ -4,7 +4,7 @@ import { dbConnect } from "@/lib/db";
 import { Parent } from "@/models/Parent";
 import { Child } from "@/models/Child";
 import { User } from "@/models/User";
-import { hasCompletedWelcomePacket, generateUniqueShareSlug, clampInt } from "@/lib/welcome-packet-helpers";
+import { generateUniqueShareSlug, clampInt } from "@/lib/welcome-packet-helpers";
 import { stripe } from "@/lib/stripe";
 import Stripe from "stripe";
 
@@ -70,15 +70,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Parent profile not found" }, { status: 404 });
     }
 
-    // Check if welcome packet has been completed
-    const hasWelcomePacket = await hasCompletedWelcomePacket(parent._id.toString());
-    console.log(`🎁 Welcome packet status for parent ${parent._id}: ${hasWelcomePacket}`);
-    
-    if (!hasWelcomePacket) {
-      return NextResponse.json({ 
-        error: "Welcome packet must be completed before adding children" 
-      }, { status: 400 });
-    }
+    console.log(`🎁 Adding child with welcome packet for parent ${parent._id}`);
 
     // Parse form data instead of JSON
     const formData = await req.formData();
@@ -159,18 +151,9 @@ export async function POST(req: NextRequest) {
 
     console.log(`👶 Created new child: ${displayName}`);
 
-    // Get the original welcome packet order for shipping address
-    const originalOrder = parent.welcomePacketOrders?.find(order => order.status === 'completed');
-    console.log(`🔍 Found original order for shipping address:`, originalOrder ? 'Yes' : 'No');
-    
-    if (!originalOrder) {
-      // This shouldn't happen if hasWelcomePacket check passed, but just in case
-      console.log("❌ No completed welcome packet found, but hasWelcomePacket was true");
-      console.log("📦 Available orders:", parent.welcomePacketOrders?.map(o => ({ status: o.status, items: o.selectedItems?.length })));
-      return NextResponse.json({ 
-        error: "No completed welcome packet found" 
-      }, { status: 400 });
-    }
+    // Get the previous welcome packet order for shipping address (if exists)
+    const previousOrder = parent.welcomePacketOrders?.find(order => order.status === 'completed');
+    console.log(`🔍 Found previous order for shipping address:`, previousOrder ? 'Yes' : 'No');
 
     // Calculate total for this child's welcome packet (use custom selected items)
     console.log(`🎁 Using custom selected items for ${displayName}: ${customSelectedItems.join(', ') || 'none'}`);
@@ -180,61 +163,15 @@ export async function POST(req: NextRequest) {
     }, 0);
     const totalAmount = ENROLLMENT_FEE + itemsTotal;
 
-    // Create line items for Stripe checkout
-    const lineItems: Stripe.Checkout.SessionCreateParams.LineItem[] = [
-      // Enrollment fee (required)
-      {
-        price_data: {
-          currency: 'usd',
-          product_data: {
-            name: `Welcome Letter Package for ${displayName}`,
-            description: `Personalized welcome letter and login instructions for ${displayName}`,
-            metadata: {
-              type: 'enrollment',
-              productId: ENROLLMENT_PRODUCT_ID,
-              childId: newChild._id.toString(),
-              childName: displayName
-            }
-          },
-          unit_amount: ENROLLMENT_FEE * 100, // Convert to cents
-        },
-        quantity: 1,
-      }
-    ];
+    console.log(`💰 Total welcome packet cost: $${totalAmount} (Enrollment: $${ENROLLMENT_FEE} + Items: $${itemsTotal})`);
 
-    // Add the custom selected items
-    customSelectedItems.forEach((itemId: string) => {
-      const item = WELCOME_PACKET_ITEMS.find(i => i.id === itemId);
-      if (item) {
-        lineItems.push({
-          price_data: {
-            currency: 'usd',
-            product_data: {
-              name: `${item.name} for ${displayName}`,
-              description: item.description,
-              metadata: {
-                type: 'welcome_addon',
-                productId: item.stripeProductId,
-                itemId: item.id,
-                childId: newChild._id.toString(),
-                childName: displayName
-              }
-            },
-            unit_amount: item.price * 100, // Convert to cents
-          },
-          quantity: 1,
-        });
-      }
-    });
-
-    // Create Stripe checkout session
-    const checkoutSession = await stripe.checkout.sessions.create({
-      payment_method_types: ['card'],
-      line_items: lineItems,
-      mode: 'payment',
-      locale: 'en', // Explicitly set to English
-      success_url: `${process.env.NEXTAUTH_URL}/parent/dashboard?child_welcome_packet=success&child=${encodeURIComponent(displayName)}`,
-      cancel_url: `${process.env.NEXTAUTH_URL}/parent/dashboard?child_welcome_packet=cancelled&child=${encodeURIComponent(displayName)}`,
+    // Create Stripe PaymentIntent for embedded payment
+    const paymentIntent = await stripe.paymentIntents.create({
+      amount: Math.round(totalAmount * 100), // Convert to cents
+      currency: 'usd',
+      automatic_payment_methods: {
+        enabled: true,
+      },
       metadata: {
         type: 'child_welcome_packet',
         parentId: parent._id.toString(),
@@ -243,11 +180,7 @@ export async function POST(req: NextRequest) {
         selectedItems: JSON.stringify(customSelectedItems),
         totalAmount: totalAmount.toString()
       },
-      customer_email: session.user.email || undefined,
-      billing_address_collection: 'required',
-      shipping_address_collection: {
-        allowed_countries: ['US', 'CA']
-      }
+      description: `Welcome Packet for ${displayName}`,
     });
 
     // Store the pending order in parent's record
@@ -256,11 +189,11 @@ export async function POST(req: NextRequest) {
     }
 
     parent.welcomePacketOrders.push({
-      stripeSessionId: checkoutSession.id,
+      stripeSessionId: paymentIntent.id, // Store PaymentIntent ID
       selectedItems: customSelectedItems,
       totalAmount,
       status: 'pending',
-      shippingAddress: originalOrder.shippingAddress, // Pre-populate with existing address
+      shippingAddress: previousOrder?.shippingAddress, // Pre-populate with existing address if available
       shipped: false,
       createdAt: new Date(),
       childId: newChild._id,
@@ -269,7 +202,7 @@ export async function POST(req: NextRequest) {
 
     await parent.save();
 
-    console.log(`🎁 Created welcome packet checkout for child ${displayName}: $${totalAmount}`);
+    console.log(`🎁 Created welcome packet PaymentIntent for child ${displayName}: $${totalAmount}`);
 
     return NextResponse.json({
       success: true,
@@ -278,9 +211,9 @@ export async function POST(req: NextRequest) {
         name: displayName,
         shareSlug: newChild.shareSlug
       },
-      welcomePacket: {
-        checkoutUrl: checkoutSession.url,
-        sessionId: checkoutSession.id,
+      payment: {
+        clientSecret: paymentIntent.client_secret,
+        paymentIntentId: paymentIntent.id,
         totalAmount,
         items: customSelectedItems
       }

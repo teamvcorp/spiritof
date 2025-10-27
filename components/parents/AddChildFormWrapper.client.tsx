@@ -2,6 +2,9 @@
 
 import { useState } from "react";
 import AddChildForm from "./AddChildForm";
+import WelcomePacketPaymentModal from "./WelcomePacketPaymentModal";
+import { useRouter } from "next/navigation";
+import toast from "react-hot-toast";
 
 interface AddChildFormWrapperProps {
   createChildAction: (formData: FormData) => Promise<{ 
@@ -13,18 +16,29 @@ interface AddChildFormWrapperProps {
 }
 
 export default function AddChildFormWrapper({ createChildAction }: AddChildFormWrapperProps) {
+  const router = useRouter();
   const [isProcessing, setIsProcessing] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  
+  // Payment modal state
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [paymentData, setPaymentData] = useState<{
+    clientSecret: string;
+    childName: string;
+    totalAmount: number;
+    paymentIntentId: string;
+  } | null>(null);
 
   const handleSubmit = async (formData: FormData) => {
     if (isProcessing) return;
     
     setIsProcessing(true);
+    setErrorMessage(null);
     
     try {
       const result = await createChildAction(formData);
       
-      // Check if this child requires payment (additional child)
+      // Check if this child requires payment (should always be true now)
       if (result?.requiresPayment) {
         // Make the payment-required API call
         try {
@@ -40,44 +54,96 @@ export default function AddChildFormWrapper({ createChildAction }: AddChildFormW
             console.error("Failed to create child with welcome packet:", errorMsg);
             console.error("Full response:", paymentResult);
             setErrorMessage(errorMsg);
+            setIsProcessing(false);
             return;
           }
           
-          // Redirect to Stripe checkout for the welcome packet payment
-          if (paymentResult.welcomePacket?.checkoutUrl) {
-            window.location.href = paymentResult.welcomePacket.checkoutUrl;
-            return;
+          // Show payment modal with client secret
+          if (paymentResult.payment?.clientSecret) {
+            setPaymentData({
+              clientSecret: paymentResult.payment.clientSecret,
+              childName: paymentResult.child.name,
+              totalAmount: paymentResult.payment.totalAmount,
+              paymentIntentId: paymentResult.payment.paymentIntentId,
+            });
+            setShowPaymentModal(true);
+            setIsProcessing(false);
           } else {
-            console.error("No checkout URL received:", paymentResult);
+            console.error("No client secret received:", paymentResult);
             setErrorMessage('Failed to create payment session. Please try again.');
-            return;
+            setIsProcessing(false);
           }
         } catch (error) {
           console.error('Error setting up welcome packet payment:', error);
           setErrorMessage('Failed to set up welcome packet payment. Please try again.');
-          return;
+          setIsProcessing(false);
         }
+        return;
       }
       
       if (result?.error) {
         console.error("Failed to create child:", result.error);
         setErrorMessage(result.error);
+        setIsProcessing(false);
       }
       
-      // If successful, the page will revalidate automatically
-      if (result?.success) {
-        // Success! Page will refresh
-      }
     } catch (error) {
       console.error("Error in handleSubmit:", error);
       setErrorMessage("An unexpected error occurred. Please try again.");
-    } finally {
       setIsProcessing(false);
     }
   };
 
+  const handlePaymentSuccess = async () => {
+    if (!paymentData) return;
+
+    try {
+      // Optionally collect shipping address here or use the pre-filled one
+      const response = await fetch('/api/parent/complete-welcome-packet', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          paymentIntentId: paymentData.paymentIntentId,
+        }),
+      });
+
+      if (response.ok) {
+        setShowPaymentModal(false);
+        setPaymentData(null);
+        toast.success(`🎉 ${paymentData.childName} has been added!`);
+        router.refresh();
+      } else {
+        const errorData = await response.json();
+        toast.error(errorData.error || 'Failed to complete welcome packet order');
+      }
+    } catch (error) {
+      console.error('Error completing welcome packet:', error);
+      toast.error('Failed to complete welcome packet order');
+    }
+  };
+
+  const handleCloseModal = () => {
+    setShowPaymentModal(false);
+    setPaymentData(null);
+    setIsProcessing(false);
+  };
+
   return (
     <div className="relative">
+      {/* Payment Modal */}
+      {showPaymentModal && paymentData && (
+        <WelcomePacketPaymentModal
+          isOpen={showPaymentModal}
+          onClose={handleCloseModal}
+          clientSecret={paymentData.clientSecret}
+          childName={paymentData.childName}
+          totalAmount={paymentData.totalAmount}
+          onSuccess={handlePaymentSuccess}
+        />
+      )}
+
       {/* Error Message Banner */}
       {errorMessage && (
         <div className="mb-6 bg-red-50 border-2 border-red-300 rounded-xl p-4 animate-shake">
