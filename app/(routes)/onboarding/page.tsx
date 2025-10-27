@@ -37,6 +37,7 @@ async function submitOnboarding(formData: FormData) {
   const minGifts = parseIntField(formData.get("minGifts"), 1);
   const maxGifts = parseIntField(formData.get("maxGifts"), 5);
   const perGiftCapCents = parseDollarToCents(formData.get("perGiftCap"));
+  const phone = String(formData.get("phone") || "").trim();
 
   // If already has a parent, just mark onboarded
   if (user.parentId) {
@@ -49,7 +50,12 @@ async function submitOnboarding(formData: FormData) {
   let parent = await Parent.findOne({ email: user.email });
   
   if (parent) {
-    // Parent already exists, just link this user to it
+    // Parent already exists, update their info and link this user to it
+    if (phone) {
+      parent.phone = phone;
+      await parent.save();
+    }
+    
     await User.findByIdAndUpdate(
       session.user.id,
       { 
@@ -76,6 +82,7 @@ async function submitOnboarding(formData: FormData) {
       userId: user._id,
       name: user.name ?? "",
       email: user.email,
+      phone: phone || undefined,
       magicBudgetCents,
       giftSettings: { minGifts, maxGifts, perGiftCapCents },
       stripeCustomerId,
@@ -220,6 +227,20 @@ export default async function OnboardingPage({
                 <p className="text-sm text-green-700">
                   ✅ Age verification complete! Now let&apos;s set up your family&apos;s Christmas magic.
                 </p>
+              </div>
+              
+              <div className="grid grid-cols-1 gap-4">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Cell Phone Number</label>
+                  <input 
+                    name="phone" 
+                    type="tel" 
+                    className="w-full rounded-md border px-3 py-2 text-sm bg-background" 
+                    placeholder="(555) 123-4567"
+                    required
+                  />
+                  <p className="text-xs text-muted-foreground">We'll send you quick voting links to track your children's behavior throughout the day.</p>
+                </div>
               </div>
               
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

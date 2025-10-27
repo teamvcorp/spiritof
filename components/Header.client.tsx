@@ -26,7 +26,8 @@ export default function HeaderAuth() {
     e?.preventDefault();
     if (actionLoading) return;
     setActionLoading(true);
-    await signOut();
+    // signOut() automatically clears all cookies and session data
+    await signOut({ callbackUrl: "/" });
     setActionLoading(false);
   };
 

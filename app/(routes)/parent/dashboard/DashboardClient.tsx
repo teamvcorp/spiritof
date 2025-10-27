@@ -113,20 +113,19 @@ export default function DashboardClient({ parentId, hasChristmasSetup, searchPar
       {/* Header with Christmas Setup */}
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl lg:text-4xl text-white">Parent Dashboard</h1>
-        <div className="flex items-center gap-4">
-          {/* Christmas Setup Button */}
-          <Button
-            onClick={() => setShowChristmasSetup(true)}
-            className={`inline-flex items-center px-4 py-2 text-sm font-medium transition-colors ${
-              hasChristmasSetup 
-                ? "bg-evergreen hover:bg-green-600 text-white" 
-                : "bg-santa hover:bg-[#cc001e] text-white animate-pulse"
-            }`}
-          >
-            <FaCalendarAlt className="mr-2" />
-            {hasChristmasSetup ? "Christmas Settings" : "Setup Christmas"}
-          </Button>
-        </div>
+        {/* Only show Christmas Setup button if not completed */}
+        {!hasChristmasSetup && (
+          <div className="flex items-center gap-4">
+            {/* Christmas Setup Button */}
+            <Button
+              onClick={() => setShowChristmasSetup(true)}
+              className="inline-flex items-center px-4 py-2 text-sm font-medium transition-colors bg-santa hover:bg-[#cc001e] text-white animate-pulse"
+            >
+              <FaCalendarAlt className="mr-2" />
+              Setup Christmas
+            </Button>
+          </div>
+        )}
       </div>
 
       {/* Setup Reminder Card (if not completed) */}

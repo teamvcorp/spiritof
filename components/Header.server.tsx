@@ -89,7 +89,7 @@ export default async function Header() {
           </div>
 
           {/* Mobile Menu Component with Hamburger */}
-          <MobileMenu />
+          <MobileMenu className='relative z-50 block md:hidden' />
         </div>
       ) : (
         // Desktop Layout - Winter Northern Lights Theme
@@ -120,8 +120,8 @@ export default async function Header() {
           </div>
 
           {/* Center: Navigation with aurora/flame theme */}
-          <div className="flex items-center justify-center flex-1">
-            <div className="flex gap-6">
+          <div className="fixed  left-1/2 transform -translate-x-1/2  z-50">
+            <div className="flex  gap-6">
               {/* Home - Warm flame accent */}
               <Link
                 href="/"

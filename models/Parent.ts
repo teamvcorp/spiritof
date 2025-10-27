@@ -124,6 +124,10 @@ const ParentSchema = new Schema<IParent>(
     {
         name: { type: String, required: true, trim: true },
         email: { type: String, required: true, unique: true, lowercase: true, index: true },
+        phone: { type: String, trim: true }, // Cell phone for SMS voting links
+        smsNotificationTime: { type: String, default: "17:00" }, // 24-hour format HH:MM (default 5 PM)
+        smsNotificationsEnabled: { type: Boolean, default: true },
+        timezone: { type: String, default: "America/New_York" }, // User's timezone
         avatarUrl: { type: String },
         // in Parent schema fields
         userId: { type: Types.ObjectId, ref: "User", required: true, index: true },
@@ -207,4 +211,9 @@ ParentSchema.methods.recordVote = function (childId: string, todayISO: string) {
 };
 
 
-export const Parent = models.Parent as ParentModel || model<IParent, ParentModel>("Parent", ParentSchema);
+// Delete the cached model to force recompilation with new schema fields
+if (models.Parent) {
+  delete models.Parent;
+}
+
+export const Parent = model<IParent, ParentModel>("Parent", ParentSchema);

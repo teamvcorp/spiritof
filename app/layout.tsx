@@ -4,6 +4,7 @@ import "./globals.css";
 import Header from "@/components/Header.server";
 import Footer from "@/components/Footer";
 import Providers from "@/components/Providers.client";
+import SplashScreen from "@/components/SplashScreen";
 const paytoneOne = Paytone_One({
   variable: "--font-paytone-one",
   subsets: ["latin"],
@@ -35,12 +36,19 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  // Check if we're in development/pre-launch mode
+  const isInDev = process.env.INDEV === 'true';
+  
   return (
     <html lang="en">
       <body
         className={`${geistSans.variable} ${geistMono.variable} ${paytoneOne.variable} antialiased`}
       >
         <Providers>
+          {/* Show splash screen if in dev/pre-launch mode */}
+          <SplashScreen isInDev={isInDev} />
+          
+          {/* Normal app layout - only visible when INDEV is false */}
           <Header />
           <main className="pt-[74px] pb-4 md:pb-24">
             {children}

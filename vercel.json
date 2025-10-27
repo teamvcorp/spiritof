@@ -1,8 +1,0 @@
-{
-  "crons": [
-    {
-      "path": "/api/cron/migrate-images",
-      "schedule": "0 2 1 * *"
-    }
-  ]
-}

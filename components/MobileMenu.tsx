@@ -6,7 +6,11 @@ import Link from "next/link";
 import { FaBars, FaTimes } from "react-icons/fa";
 import HeaderAuth from "./Header.client";
 
-export default function MobileMenu() {
+interface MobileMenuProps {
+  className?: string;
+}
+
+export default function MobileMenu({ className = "" }: MobileMenuProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
 
@@ -18,7 +22,7 @@ export default function MobileMenu() {
   const closeMenu = () => setIsOpen(false);
 
   return (
-    <>
+    <div className={className}>
       {/* Hamburger Button */}
       <button
         onClick={toggleMenu}
@@ -118,6 +122,6 @@ export default function MobileMenu() {
         </>,
         document.body
       )}
-    </>
+    </div>
   );
 }

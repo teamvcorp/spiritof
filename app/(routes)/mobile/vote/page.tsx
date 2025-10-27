@@ -9,10 +9,15 @@ import { Types } from "mongoose";
 import Vote from "@/components/parents/Vote";
 import Link from "next/link";
 
-export default async function MobileVotePage() {
+type PageProps = {
+  searchParams: Promise<{ pid?: string }>;
+};
+
+export default async function MobileVotePage({ searchParams }: PageProps) {
   const session = await auth();
   const headersList = await headers();
   const userAgent = headersList.get("user-agent") || "";
+  const params = await searchParams;
 
   // Check if user is on a mobile device
   const isMobile = isMobileDevice(userAgent);
@@ -29,7 +34,37 @@ export default async function MobileVotePage() {
 
   // Fetch parent and children data
   await dbConnect();
-  const parent = await Parent.findOne({ userId: new Types.ObjectId(session.user.id) }).lean();
+  
+  // Support direct access via parent ID from SMS link
+  let parent;
+  if (params.pid) {
+    // Verify the parent ID belongs to the authenticated user
+    parent = await Parent.findOne({ 
+      _id: new Types.ObjectId(params.pid),
+      userId: new Types.ObjectId(session.user.id)
+    }).lean();
+    
+    if (!parent) {
+      return (
+        <div className="min-h-screen bg-gradient-to-b from-santa to-berryPink p-6 flex items-center justify-center">
+          <div className="bg-white rounded-2xl shadow-xl p-6 max-w-md">
+            <p className="text-center text-gray-700 mb-4">
+              ⚠️ Invalid or unauthorized access.
+            </p>
+            <Link 
+              href="/mobile/vote"
+              className="block text-center text-blueberry hover:underline"
+            >
+              Go to Your Voting Page →
+            </Link>
+          </div>
+        </div>
+      );
+    }
+  } else {
+    // Regular lookup by user ID
+    parent = await Parent.findOne({ userId: new Types.ObjectId(session.user.id) }).lean();
+  }
   
   if (!parent) {
     return (

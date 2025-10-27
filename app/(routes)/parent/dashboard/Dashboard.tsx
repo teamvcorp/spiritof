@@ -19,6 +19,8 @@ import dynamic from "next/dynamic";
 import Image from "next/image";
 import Link from "next/link";
 import SpecialRequestApprovals from "@/components/parents/SpecialRequestApprovals";
+import SendVotingSMSButton from "@/components/parents/SendVotingSMSButton";
+import PhoneManagement from "@/components/parents/PhoneManagement";
 
 // Dynamically import client components
 const QRShareButton = dynamic(() => import("@/components/parents/QRShareButton"));
@@ -262,6 +264,15 @@ export default async function ParentDashboardPage({ searchParams }: DashboardPro
         <section>
           <SpecialRequestApprovals />
         </section>
+        
+        {/* Phone Management for SMS Voting */}
+        <PhoneManagement 
+          initialPhone={parent.phone} 
+          initialNotificationTime={parent.smsNotificationTime}
+          initialNotificationsEnabled={parent.smsNotificationsEnabled}
+          initialTimezone={parent.timezone}
+        />
+        
         {/* Wallet Top-up Section */}
         <section className="bg-white/95 backdrop-blur-sm rounded-lg p-6 shadow-[0_4px_12px_rgba(0,0,0,0.15)]">
           <h2 className="text-xl font-semibold mb-3 text-gray-800">Wallet Management</h2>
@@ -286,14 +297,19 @@ export default async function ParentDashboardPage({ searchParams }: DashboardPro
 
         {/* Children list */}
         <section className="bg-white/95 backdrop-blur-sm rounded-lg p-6 shadow-[0_4px_12px_rgba(0,0,0,0.15)] space-y-4">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <h2 className="text-xl font-semibold text-gray-800">Children</h2>
             {children.length > 0 && (
-              <Link href="/parent/vote">
-                <Button className="bg-santa p-2 hover:bg-red-700 text-white">
-                  Vote for Good Behavior
-                </Button>
-              </Link>
+              <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+                <Link href="/parent/vote" className="w-full sm:w-auto">
+                  <Button className="bg-santa hover:bg-red-700 text-white w-full sm:w-auto">
+                    Vote for Good Behavior
+                  </Button>
+                </Link>
+                {parent.phone && (
+                  <SendVotingSMSButton />
+                )}
+              </div>
             )}
           </div>
 

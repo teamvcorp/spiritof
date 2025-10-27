@@ -14,6 +14,9 @@ interface IUser {
   createdAt?: Date;
   updatedAt?: Date;
   admin?: boolean;
+  emailVerified?: Date;
+  preRegistrationDate?: Date;
+  preRegistrationPaymentIntentId?: string;
 }
 
 interface UserMethods {
@@ -29,6 +32,9 @@ const UserSchema = new Schema<IUser>({
   parentId: { type: Types.ObjectId, ref: "Parent" },
   isParentOnboarded: { type: Boolean, default: false },
   admin: { type: Boolean, default: false },
+  emailVerified: Date,
+  preRegistrationDate: Date,
+  preRegistrationPaymentIntentId: String,
 }, { timestamps: true });
 
 // Hash password before saving
