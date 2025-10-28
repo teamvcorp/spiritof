@@ -307,8 +307,8 @@ export default function SplashScreen({ isInDev }: SplashScreenProps) {
                     Pre-Register Now!
                   </h2>
                   <p className="text-gray-600">
-                    Be among the first to experience the Magic of Christmas Behavior management. 
-                    Start off right with Christmas Magic and your Welcome kit !
+                    Be among the first to experience the Magic of Christmas for the new generation. 
+                    Christmas Magic can be earned or given! Make Christmas truly magical for parents and children alike
                   </p>
                 </div>
 
